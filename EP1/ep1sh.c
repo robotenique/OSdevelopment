@@ -8,6 +8,10 @@
  * A custom Shell made in C. Part 1 of EP1.
  */
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <readline/readline.h>
+#include <readline/history.h>
 /*
  * Function: main
  * --------------------------------------------------------
@@ -18,6 +22,20 @@
  * @return default
  */
 int main(int argc, char const *argv[]) {
-    printf("Hello world!\n");
+    char *inpt;
+    while (1) {
+        // TODO Print working directory
+        inpt = readline(">>> ");
+        add_history(inpt);
+
+        // TODO Split line and execute command
+        // Test lines ---------//
+        printf("%s\n", inpt);  //
+        // --------------------//
+
+        // TODO Implement chown and date
+
+        free(inpt);
+    }
     return 0;
 }

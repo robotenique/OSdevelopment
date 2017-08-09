@@ -13,7 +13,7 @@ all: ep1sh simproc
 
 
 ep1sh: ep1sh.o error.o
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ -lreadline
 
 simproc: simproc.o error.o
 	$(CC) -o $@ $^
