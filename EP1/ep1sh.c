@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include "error.h"
 #include "buffer.h"
 
@@ -42,6 +43,7 @@ int main(int argc, char const *argv[]) {
     char *inpt;
     char *fshell;
     int i;
+    set_prog_name("ep1sh");
     while (1) {
         fshell = buildShellString();
         inpt = readline(fshell);
@@ -61,15 +63,16 @@ int main(int argc, char const *argv[]) {
                 // TODO Wait until child process end to loop again
                 // TODO Redirect signals like ^C and ^Z to child process
                 pid_t child;
-                if ((child = fork()) == 0)
-                    // TODO It gets buggy when receiving something not
-                    // executable, like "cow", as path
-                    execve(pair->path, pair->argv, __environ);
+                if ((child = fork()) == 0) {
+                    execvp(pair->path, pair->argv);
+                    die("Cannot find %s\n", pair->path);
+                }
             }
             for (i = 0; pair->argv[i] != NULL; i++)
                 free(pair->argv[i]);
             free(pair->path);
             free(pair);
+            sleep(1);
         }
 
         // TODO Implement chown and date
@@ -131,7 +134,7 @@ Pair *splitString(const char* string) {
     if (!string)
         return (Pair *)NULL;
 
-    // Removes trailing whitespaces
+    // Skip trailing whitespaces
     for (i = 0; i < size && whitespace(string[i]); i++);
     if (i == size)
         return (Pair *)NULL;
@@ -165,7 +168,7 @@ Pair *splitString(const char* string) {
         }
         if (whitespace(string[i])) {
             if (state) {
-                pair->argv[j] = buffer_to_string(buff);
+                pair->argv[j] = estrdup(buff->data);
                 buffer_reset(buff);
                 j++;
             }
@@ -177,7 +180,7 @@ Pair *splitString(const char* string) {
         }
     }
     if (buff->i) {
-        pair->argv[j] = buffer_to_string(buff);
+        pair->argv[j] = estrdup(buff->data);
         j++;
     }
 
@@ -209,5 +212,6 @@ char *getName(const char* path) {
     for (i = buff->i - 1, j = 0; i >= 0; i--, j++)
         name[j] = buff->data[i];
     name[buff->i] = 0;
+    buffer_destroy(buff);
     return name;
 }

@@ -74,14 +74,3 @@ int read_line(FILE *input, Buffer *B){
 	}
 	return count_char;
 }
-
-/*
-  Return buffer content as a string
-*/
-char *buffer_to_string(Buffer* B) {
-	char *string;
-	string = emalloc((B->i + 1)*sizeof(char));
-	strcpy(string, B->data);
-	string[B->i] = 0;
-	return string;
-}

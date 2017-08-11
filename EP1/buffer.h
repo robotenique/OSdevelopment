@@ -41,9 +41,4 @@ void buffer_push_back(Buffer *B, char c);
 */
 int read_line(FILE *input, Buffer *B);
 
-/*
-  Return buffer content as a string
-*/
-char *buffer_to_string(Buffer* B);
-
 #endif

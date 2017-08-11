@@ -2,7 +2,7 @@
   error.c
 */
 
-#include "../include/error.h"
+#include "error.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,13 +67,13 @@ void die(const char *msg, ...) {
   if (error_msg[len - 1] == ':' && errno) {
     fprintf(stderr, "%s: %s %s\n", prog_name, error_msg,
             strerror(errno));
-    exit(-1);
+    exit(0);
   }
   else if (error_msg[len - 1] == ':')
     error_msg[len - 1] = '.';
 
   fprintf(stderr, "%s: %s\n", prog_name, error_msg);
-  exit(-1);
+  exit(0);
 }
 
 
@@ -100,6 +100,6 @@ char *estrdup(const char *s) {
   }
 
   strcpy(ret, s);
-
+  ret[strlen(s)] = 0;
   return ret;
 }
