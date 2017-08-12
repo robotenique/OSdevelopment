@@ -8,33 +8,26 @@ Buffer *buffer_create(){
 	Buffer *buff;
 	buff = emalloc(sizeof(Buffer));
 	buff->data = emalloc(1024 * sizeof(char));
+	for (int i = 0; i < 1024; i++)
+		buff->data[i] = '\0';
 	buff->i = 0;
 	buff->n = 1024;
 	return buff;
 }
 
-/*
-  Destroy a buffer.
-*/
 void buffer_destroy(Buffer *B){
 	free(B->data);
 	free(B);
 	return;
 }
 
-/*
-  Reset buffer, eliminating contents.
-*/
 void buffer_reset(Buffer *B){
 	for (int i = 0; i < B->i; i++)
-		B->data[i] = 0;
+		B->data[i] = '\0';
 	B->i = 0;
 	return;
 }
 
-/*
-  Add a bool b to the end of the buffer.
-*/
 void buffer_push_back(Buffer *B, char c){
 	char *Vaux;
 	B->data[B->i] = c;
@@ -50,15 +43,6 @@ void buffer_push_back(Buffer *B, char c){
 	return;
 }
 
-/*
-  Read a line (i.e., reads up to a newline '\n' character or the
-  end-of-file) from the input file and places it into the given
-  buffer, including the newline character if it is present. The buffer
-  is resetted before the line is read.
-
-  Returns the number of characters read; in particular, returns ZERO
-  if end-of-file is reached before any characters are read.
-*/
 int read_line(FILE *input, Buffer *B){
 	char c = fgetc(input);
 	int count_char = 0;

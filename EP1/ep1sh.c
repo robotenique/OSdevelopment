@@ -13,21 +13,19 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include "error.h"
 #include "buffer.h"
 
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
-typedef struct path_argv_pair {
-    char **argv;
-    char *path;
-} Pair;
-
 char * buildShellString();
-Pair *splitString(const char*);
+char **splitString(const char*);
 char *getName(const char*);
+void printDate();
 
 /*
  * Function: main
@@ -39,43 +37,56 @@ char *getName(const char*);
  * @return default
  */
 int main(int argc, char const *argv[]) {
-    Pair *pair;
     char *inpt;
     char *fshell;
-    int i;
+    char **largv;
+    char *path;
+
     set_prog_name("ep1sh");
+
     while (1) {
         fshell = buildShellString();
         inpt = readline(fshell);
         add_history(inpt);
-        pair = splitString(inpt);
-        if (pair) {
-            if(!strcmp(pair->argv[0], "exit")){
-                for (i = 0; pair->argv[i] != NULL; i++)
-                    free(pair->argv[i]);
-                free(pair->path);
-                free(pair);
+        largv = splitString(inpt);
+
+        if (largv) {
+            path = largv[0];
+            largv[0] = getName(path);
+            if (!strcmp(largv[0], "exit")){
+                for (; *largv != NULL; largv++)
+                    free(*largv);
                 free(inpt);
                 free(fshell);
                 exit(0);
             }
-            else {
-                // TODO Wait until child process end to loop again
-                // TODO Redirect signals like ^C and ^Z to child process
+            else if (!strcmp(largv[0], "date")) {
                 pid_t child;
+                int status;
                 if ((child = fork()) == 0) {
-                    execvp(pair->path, pair->argv);
-                    die("Cannot find %s\n", pair->path);
+                    printDate();
+                    exit(0);
                 }
+                else
+                    waitpid(child, &status, 0);
             }
-            for (i = 0; pair->argv[i] != NULL; i++)
-                free(pair->argv[i]);
-            free(pair->path);
-            free(pair);
-            sleep(1);
-        }
+            // TODO Implement chown
+            else {
+                // TODO Maybe redirect signals like ^C and ^Z to child process
+                pid_t child;
+                int status;
+                if ((child = fork()) == 0) {
+                    execvp(path, largv);
+                    die("cannot find: %s\n", path);
+                }
+                else
+                    waitpid(child, &status, 0);
+            }
 
-        // TODO Implement chown and date
+            for (; *largv != NULL; largv++)
+                free(*largv);
+            free(path);
+        }
 
         free(fshell);
         free(inpt);
@@ -99,15 +110,14 @@ char * buildShellString(){
     getcwd(buf, size);
     size = strlen(buf) + 5;
     char *fshell = emalloc(size);
-    fshell[0]='[';
-    fshell[size - 1] = 0;
+
+    fshell[0] = '[';
+    strcpy(fshell + 1, buf);
+    fshell[size - 1] = '\0';
     fshell[size - 2] = ' ';
     fshell[size - 3] = '$';
     fshell[size - 4] = ']';
 
-    int i;
-    int j;
-    for (i = 1, j = 0; i < size - 4; fshell[i++] = buf[j++]);
     free(buf);
     return fshell;
 }
@@ -115,29 +125,29 @@ char * buildShellString(){
 /*
  * Function: splitString
  * --------------------------------------------------------
- * Gets a string and split it into words, using any whitespace character
+ * Receive a string and split it into words, using any whitespace character
  * as divisor (unless it's preceeded with a backward slash character),
  * and returns the result as a NULL ended array of null-terminated strings.
  *
- * @args string : string
+ * @args string : const char*
  *
  * @return a pointer to the array or NULL if string is entirely made of
- *         whitespace or string is NULL.
+ *         whitespaces or the string is NULL.
  */
-Pair *splitString(const char* string) {
+char **splitString(const char* string) {
     Buffer *buff;
-    Pair *pair;
+    char **argv;
     int i, j, mem;
     int size = strlen(string);
     int state = 0;
     int words = 0;
     if (!string)
-        return (Pair *)NULL;
+        return (char **)NULL;
 
     // Skip trailing whitespaces
     for (i = 0; i < size && whitespace(string[i]); i++);
     if (i == size)
-        return (Pair *)NULL;
+        return (char **)NULL;
     mem = i;
 
     // Count words
@@ -155,8 +165,7 @@ Pair *splitString(const char* string) {
     }
 
     // Add words to array
-    pair = emalloc(sizeof(Pair));
-    pair->argv = emalloc((words + 1)*sizeof(char *));
+    argv = emalloc((words + 1)*sizeof(char *));
     buff = buffer_create();
     for (i = mem, j = 0, state = 0; i < size; i++) {
         if (string[i] == '\\') {
@@ -168,7 +177,7 @@ Pair *splitString(const char* string) {
         }
         if (whitespace(string[i])) {
             if (state) {
-                pair->argv[j] = estrdup(buff->data);
+                argv[j] = estrdup(buff->data);
                 buffer_reset(buff);
                 j++;
             }
@@ -180,24 +189,22 @@ Pair *splitString(const char* string) {
         }
     }
     if (buff->i) {
-        pair->argv[j] = estrdup(buff->data);
+        argv[j] = estrdup(buff->data);
         j++;
     }
 
-    pair->path = pair->argv[0];
-    pair->argv[0] = getName(pair->path);
-    pair->argv[j] = (char *)NULL;
+    argv[j] = (char *)NULL;
 
     buffer_destroy(buff);
-    return pair;
+    return argv;
 }
 
 /*
  * Function: getName
  * --------------------------------------------------------
- * Gets the path to a program and returns the program name.
+ * Receive the path to a program and returns the program name.
  *
- * @args path : string
+ * @args path : const char*
  *
  * @return program name
  */
@@ -211,7 +218,35 @@ char *getName(const char* path) {
     name = emalloc((buff->i + 1)*sizeof(char));
     for (i = buff->i - 1, j = 0; i >= 0; i--, j++)
         name[j] = buff->data[i];
-    name[buff->i] = 0;
+    name[buff->i] = '\0';
     buffer_destroy(buff);
     return name;
+}
+
+/*
+ * Function: printDate
+ * --------------------------------------------------------
+ * Emulate date command without flags
+ *
+ * @args none
+ *
+ * @return void
+ */
+void printDate() {
+    char *const wdays[] = {"dom", "seg", "ter", "qua", "qui", "sex", "sáb"};
+    char *const months[] = {"jan", "fev", "mar", "abr", "mai", "jun", "jul",
+                            "ago", "set", "out", "nov", "dez"};
+    struct tm *cal;
+    char *s;
+    time_t epoch;
+
+    time(&epoch);
+    cal = localtime(&epoch);
+
+    s = emalloc(20*sizeof(char));
+    strftime(s, 21, "%d %H:%M:%S %Z %Y", cal);
+    printf("%s %s %s\n", wdays[cal->tm_wday], months[cal->tm_mon], s);
+
+    free(s);
+    return;
 }

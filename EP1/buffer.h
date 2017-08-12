@@ -11,34 +11,66 @@ typedef struct buffer_s {
 } Buffer;
 
 /*
-  Create and return a new and empty buffer.
-*/
+ * Function: buffer_create
+ * --------------------------------------------------------
+ * Create and return a new and empty buffer.
+ *
+ * @args none
+ *
+ * @return a pointer to the created buffer
+ */
 Buffer *buffer_create();
 
 /*
   Destroy a buffer.
 */
+/*
+ * Function: buffer_destroy
+ * --------------------------------------------------------
+ * Destroy a buffer.
+ *
+ * @args B : Buffer*
+ *
+ * @return void
+ */
 void buffer_destroy(Buffer *B);
 
 /*
-  Reset buffer, eliminating contents.
-*/
+ * Function: buffer_reset
+ * --------------------------------------------------------
+ * Reset buffer, eliminating contents.
+ *
+ * @args B : Buffer*
+ *
+ * @return void
+ */
 void buffer_reset(Buffer *B);
 
 /*
-  Add a char c to the end of the buffer.
-*/
+ * Function: buffer_push_back
+ * --------------------------------------------------------
+ * Add a char c to the end of the buffer.
+ *
+ * @args B : Buffer*
+ *       c : char
+ *
+ * @return void
+ */
 void buffer_push_back(Buffer *B, char c);
 
 /*
-  Read a line (i.e., reads up to a newline '\n' character or the
-  end-of-file) from the input file and places it into the given
-  buffer, including the newline character if it is present. The buffer
-  is resetted before the line is read.
-
-  Returns the number of characters read; in particular, returns ZERO
-  if end-of-file is reached before any characters are read.
-*/
+ * Function: read_line
+ * --------------------------------------------------------
+ * Read a line (up to a newline '\n' character or the end-of-file) from
+ * the input file and places it into the given buffer, including the
+ * newline character if it is present. The buffer is resetted before
+ * the line is read.
+ *
+ * @args input : FILE*
+ *       B : Buffer*
+ *
+ * @return number of character read
+ */
 int read_line(FILE *input, Buffer *B);
 
 #endif
