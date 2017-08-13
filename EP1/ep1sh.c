@@ -1,12 +1,12 @@
 /*
- * @author: João Gabriel Basi
- * @author: Juliano Garcia
- *
- * MAC0422
- * 11/09/17
- *
- * A custom Shell made in C. Part 1 of EP1.
- */
+* @author: João Gabriel Basi
+* @author: Juliano Garcia
+*
+* MAC0422
+* 11/09/17
+*
+* A custom Shell made in C. Part 1 of EP1.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +16,7 @@
 #include <time.h>
 #include "error.h"
 #include "buffer.h"
-
+#include <grp.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <readline/readline.h>
@@ -25,17 +25,19 @@
 char * buildShellString();
 char **splitString(const char*);
 char *getName(const char*);
+void executeChown(char**);
 void printDate();
 
+
 /*
- * Function: main
- * --------------------------------------------------------
- * Executes the Shell and awaits the user commands
- *
- * @args
- *
- * @return default
- */
+* Function: main
+* --------------------------------------------------------
+* Executes the Shell and awaits the user commands
+*
+* @args
+*
+* @return default
+*/
 int main(int argc, char const *argv[]) {
     char *inpt;
     char *fshell;
@@ -55,7 +57,7 @@ int main(int argc, char const *argv[]) {
             largv[0] = getName(path);
             if (!strcmp(largv[0], "exit")){
                 for (; *largv != NULL; largv++)
-                    free(*largv);
+                free(*largv);
                 free(inpt);
                 free(fshell);
                 exit(0);
@@ -68,23 +70,25 @@ int main(int argc, char const *argv[]) {
                     exit(0);
                 }
                 else
-                    waitpid(child, &status, 0);
+                waitpid(child, &status, 0);
             }
-            // TODO Implement chown
+            else if (!strcmp(largv[0], "chown")) {
+                executeChown(largv);
+            }
             else {
                 // TODO Maybe redirect signals like ^C and ^Z to child process
                 pid_t child;
                 int status;
                 if ((child = fork()) == 0) {
                     execvp(path, largv);
-                    die("cannot find: %s\n", path);
+                    die("cannot find: %s", path);
                 }
                 else
                     waitpid(child, &status, 0);
             }
 
             for (; *largv != NULL; largv++)
-                free(*largv);
+            free(*largv);
             free(path);
         }
 
@@ -95,15 +99,15 @@ int main(int argc, char const *argv[]) {
 }
 
 /*
- * Function: buildShellString
- * --------------------------------------------------------
- * Get the current working directory, and build the shell
- * initial string in the form '[x]$ ' as required.
- *
- * @args
- *
- * @return the formmated string for the shell input
- */
+* Function: buildShellString
+* --------------------------------------------------------
+* Get the current working directory, and build the shell
+* initial string in the form '[x]$ ' as required.
+*
+* @args
+*
+* @return the formmated string for the shell input
+*/
 char * buildShellString(){
     long size = pathconf(".", _PC_PATH_MAX);
     char *buf = (char *)emalloc(size);
@@ -123,17 +127,17 @@ char * buildShellString(){
 }
 
 /*
- * Function: splitString
- * --------------------------------------------------------
- * Receive a string and split it into words, using any whitespace character
- * as divisor (unless it's preceeded with a backward slash character),
- * and returns the result as a NULL ended array of null-terminated strings.
- *
- * @args string : const char*
- *
- * @return a pointer to the array or NULL if string is entirely made of
- *         whitespaces or the string is NULL.
- */
+* Function: splitString
+* --------------------------------------------------------
+* Receive a string and split it into words, using any whitespace character
+* as divisor (unless it's preceeded with a backward slash character),
+* and returns the result as a NULL ended array of null-terminated strings.
+*
+* @args string : const char*
+*
+* @return a pointer to the array or NULL if string is entirely made of
+*         whitespaces or the string is NULL.
+*/
 char **splitString(const char* string) {
     Buffer *buff;
     char **argv;
@@ -142,12 +146,12 @@ char **splitString(const char* string) {
     int state = 0;
     int words = 0;
     if (!string)
-        return (char **)NULL;
+    return (char **)NULL;
 
     // Skip trailing whitespaces
     for (i = 0; i < size && whitespace(string[i]); i++);
     if (i == size)
-        return (char **)NULL;
+    return (char **)NULL;
     mem = i;
 
     // Count words
@@ -161,7 +165,7 @@ char **splitString(const char* string) {
             words++;
         }
         else if (whitespace(string[i]))
-            state = 0;
+        state = 0;
     }
 
     // Add words to array
@@ -172,7 +176,7 @@ char **splitString(const char* string) {
             buffer_push_back(buff, string[i]);
             state = 1;
             if (i++ < size)
-                buffer_push_back(buff, string[i]);
+            buffer_push_back(buff, string[i]);
             continue;
         }
         if (whitespace(string[i])) {
@@ -200,42 +204,42 @@ char **splitString(const char* string) {
 }
 
 /*
- * Function: getName
- * --------------------------------------------------------
- * Receive the path to a program and returns the program name.
- *
- * @args path : const char*
- *
- * @return program name
- */
+* Function: getName
+* --------------------------------------------------------
+* Receive the path to a program and returns the program name.
+*
+* @args path : const char*
+*
+* @return program name
+*/
 char *getName(const char* path) {
     Buffer *buff;
     char *name;
     int i, j;
     buff = buffer_create();
     for (i = strlen(path) - 1; i >= 0 && path[i] != '/'; i--)
-        buffer_push_back(buff, path[i]);
+    buffer_push_back(buff, path[i]);
     name = emalloc((buff->i + 1)*sizeof(char));
     for (i = buff->i - 1, j = 0; i >= 0; i--, j++)
-        name[j] = buff->data[i];
+    name[j] = buff->data[i];
     name[buff->i] = '\0';
     buffer_destroy(buff);
     return name;
 }
 
 /*
- * Function: printDate
- * --------------------------------------------------------
- * Emulate date command without flags
- *
- * @args none
- *
- * @return void
- */
+* Function: printDate
+* --------------------------------------------------------
+* Emulate date command without flags
+*
+* @args none
+*
+* @return void
+*/
 void printDate() {
     char *const wdays[] = {"dom", "seg", "ter", "qua", "qui", "sex", "sáb"};
     char *const months[] = {"jan", "fev", "mar", "abr", "mai", "jun", "jul",
-                            "ago", "set", "out", "nov", "dez"};
+    "ago", "set", "out", "nov", "dez"};
     struct tm *cal;
     char *s;
     time_t epoch;
@@ -249,4 +253,20 @@ void printDate() {
 
     free(s);
     return;
+}
+
+/*
+ * Function: executeChown
+ * --------------------------------------------------------
+ * Change the group of a file, given the args provided. Doesn't
+ * check/treat any error and consider the entry args to always
+ * be correct, as stated in the assignement description!
+ *
+ * @args
+ *
+ * @return
+ */
+void executeChown(char** args){
+    struct group *gres = getgrnam(args[1] + 1);
+    chown(args[2], -1, gres->gr_gid);
 }
