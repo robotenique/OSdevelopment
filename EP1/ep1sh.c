@@ -25,7 +25,9 @@
 char * buildShellString();
 char **splitString(const char*);
 char *getName(const char*);
-void executeChown(char**);
+void execChown(char**);
+void execApp(char *, char **);
+void execDate();
 void printDate();
 
 
@@ -62,30 +64,12 @@ int main(int argc, char const *argv[]) {
                 free(fshell);
                 exit(0);
             }
-            else if (!strcmp(largv[0], "date")) {
-                pid_t child;
-                int status;
-                if ((child = fork()) == 0) {
-                    printDate();
-                    exit(0);
-                }
-                else
-                waitpid(child, &status, 0);
-            }
-            else if (!strcmp(largv[0], "chown")) {
-                executeChown(largv);
-            }
-            else {
-                // TODO Maybe redirect signals like ^C and ^Z to child process
-                pid_t child;
-                int status;
-                if ((child = fork()) == 0) {
-                    execvp(path, largv);
-                    die("cannot find: %s", path);
-                }
-                else
-                    waitpid(child, &status, 0);
-            }
+            else if (!strcmp(largv[0], "date"))
+                execDate();
+            else if (!strcmp(largv[0], "chown"))
+                execChown(largv);
+            else
+                execApp(path, largv);
 
             for (; *largv != NULL; largv++)
             free(*largv);
@@ -146,12 +130,12 @@ char **splitString(const char* string) {
     int state = 0;
     int words = 0;
     if (!string)
-    return (char **)NULL;
+        return (char **)NULL;
 
     // Skip trailing whitespaces
     for (i = 0; i < size && whitespace(string[i]); i++);
     if (i == size)
-    return (char **)NULL;
+        return (char **)NULL;
     mem = i;
 
     // Count words
@@ -165,7 +149,7 @@ char **splitString(const char* string) {
             words++;
         }
         else if (whitespace(string[i]))
-        state = 0;
+            state = 0;
     }
 
     // Add words to array
@@ -262,11 +246,56 @@ void printDate() {
  * check/treat any error and consider the entry args to always
  * be correct, as stated in the assignement description!
  *
- * @args
+ * @args none
  *
- * @return
+ * @return void
  */
-void executeChown(char** args){
+void execChown(char** args){
+    // Search for the group by using the name
+    // the string in the args is ":grname", so args[1]+1 == "grname"
     struct group *gres = getgrnam(args[1] + 1);
+    // change the group, but keep the owner (-1 to keep)
     chown(args[2], -1, gres->gr_gid);
+}
+
+/*
+ * Function: execApp
+ * --------------------------------------------------------
+ * Execute an arbitrary app, given the path and the args
+ *
+ * @args  path :  the path of the executable
+ *        largv : list of arguments
+ *
+ * @return  void
+ */
+void execApp(char *path, char **largv){
+    // TODO Maybe redirect signals like ^C and ^Z to child process
+    pid_t child;
+    int status;
+    if ((child = fork()) == 0) {
+        execvp(path, largv);
+        die("cannot find: %s", path);
+    }
+    else
+        waitpid(child, &status, 0);
+}
+
+/*
+ * Function: execDate
+ * --------------------------------------------------------
+ * Print the date as in the bash shell
+ *
+ * @args  none
+ *
+ * @return  void
+ */
+void execDate(){
+    pid_t child;
+    int status;
+    if ((child = fork()) == 0) {
+        printDate();
+        exit(0);
+    }
+    else
+        waitpid(child, &status, 0);
 }
