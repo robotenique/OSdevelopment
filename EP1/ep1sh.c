@@ -221,19 +221,14 @@ char *getName(const char* path) {
 * @return void
 */
 void printDate() {
-    char *const wdays[] = {"dom", "seg", "ter", "qua", "qui", "sex", "sáb"};
-    char *const months[] = {"jan", "fev", "mar", "abr", "mai", "jun", "jul",
-    "ago", "set", "out", "nov", "dez"};
-    struct tm *cal;
     char *s;
     time_t epoch;
 
     time(&epoch);
-    cal = localtime(&epoch);
 
-    s = emalloc(20*sizeof(char));
-    strftime(s, 21, "%d %H:%M:%S %Z %Y", cal);
-    printf("%s %s %s\n", wdays[cal->tm_wday], months[cal->tm_mon], s);
+    s = emalloc(29*sizeof(char));
+    strftime(s, 29, "%a %b %d %H:%M:%S %Z %Y", localtime(&epoch));
+    printf("%s\n", s);
 
     free(s);
     return;
