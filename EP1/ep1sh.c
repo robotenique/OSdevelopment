@@ -14,18 +14,18 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
-#include "error.h"
-#include "buffer.h"
 #include <grp.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include "error.h"
+#include "buffer.h"
 
 char * buildShellString();
-char **splitString(const char*);
-char *getName(const char*);
-void execChown(char**);
+char **splitString(const char *);
+char *getName(const char *);
+void execChown(char **);
 void execApp(char *, char **);
 void execDate();
 void printDate();
@@ -122,7 +122,7 @@ char * buildShellString(){
 * @return a pointer to the array or NULL if string is entirely made of
 *         whitespaces or the string is NULL.
 */
-char **splitString(const char* string) {
+char **splitString(const char *string) {
     Buffer *buff;
     char **argv;
     int i, j, mem;
@@ -196,7 +196,7 @@ char **splitString(const char* string) {
 *
 * @return program name
 */
-char *getName(const char* path) {
+char *getName(const char *path) {
     Buffer *buff;
     char *name;
     int i, j;
@@ -245,7 +245,7 @@ void printDate() {
  *
  * @return void
  */
-void execChown(char** args){
+void execChown(char **args){
     // Search for the group by using the name
     // the string in the args is ":grname", so args[1]+1 == "grname"
     struct group *gres = getgrnam(args[1] + 1);
