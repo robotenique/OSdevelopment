@@ -157,27 +157,3 @@ void sink(MinPQ self, int k){
         k = j;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool isEmpty_MinPQ(MinPQ pq);
-int size_MinPQ(MinPQ pq);
-const Process *const min_MinPQ(MinPQ pq);
-void insert_MinPQ(Process p);
-Process delMin_MinPQ(MinPQ pq);
