@@ -34,16 +34,17 @@ int main(int argc, char const *argv[]) {
         // insert into pq
         pq->insert(pq, ptest);
     }
-    debugPQ(pq);
-    printf("DELETANDO ALGUNS PROCESSOS DA FILA DE PRIORIDADE....\n");
     for(int i = 0; i <= 1200; i++)
         pq->delMin(pq);
-    debugPQ(pq);
     destroy_MinPQ(pq);
 
     return 0;
 }
 
 int comparator(Process a, Process b){
-    return a.dt - b.dt;
+    if(a.dt == b.dt)
+        return 0;
+    if(a.dt < b.dt)
+        return -1;
+    return 1;
 }
