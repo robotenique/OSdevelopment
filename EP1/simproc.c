@@ -45,5 +45,10 @@ int main(int argc, char const *argv[]) {
 }
 
 int comparator(Process a, Process b){
-    return a.dt - b.dt;
+    double dif = a.dt - b.dt;
+    if (dif < 0)
+        return -1;
+    else if (dif > 0)
+        return 1;
+    return 0;
 }
