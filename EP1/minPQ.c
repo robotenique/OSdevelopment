@@ -215,14 +215,34 @@ void swap(MinPQ self, int i, int j){
     self->pq[i] = self->pq[j];
     self->pq[j] = tmp;
 }
-
+/*
+ * Function: swim
+ * --------------------------------------------------------
+ * Raises the element in the k-position to maintain the heap
+ * in the right order
+ *
+ * @args  self :  the MinPQ
+ *        i    : the position of the element
+ *
+ * @return
+ */
 void swim(MinPQ self, int k){
     while(k > 1 && greater(self, k/2, k)){
         swap(self, k, k/2);
         k = k/2;
     }
 }
-
+/*
+ * Function: sink
+ * --------------------------------------------------------
+ * Decreases the level of the k-th element in the heap to
+ * maintain the right order
+ *
+ * @args  self :  the MinPQ
+ *        i    : the position of the element
+ *
+ * @return
+ */
 void sink(MinPQ self, int k){
     while(2*k <= self->n){
         int j = 2*k;
