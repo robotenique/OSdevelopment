@@ -42,9 +42,9 @@ int main(int argc, char const *argv[]) {
 }
 
 int comparator(Process a, Process b){
-    if(a.dt == b.dt)
-        return 0;
-    if(a.dt < b.dt)
+    if (a.dt < b.dt)
         return -1;
-    return 1;
+    else if (a.dt > b.dt)
+        return 1;
+    return 0;
 }
