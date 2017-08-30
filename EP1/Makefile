@@ -15,7 +15,7 @@ all: ep1sh simproc
 ep1sh: ep1sh.o error.o buffer.o
 	$(CC) -o $@ $^ -lreadline
 
-simproc: simproc.o error.o
+simproc: simproc.o error.o minPQ.o
 	$(CC) -o $@ $^
 
 

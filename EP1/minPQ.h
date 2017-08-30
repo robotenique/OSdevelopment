@@ -13,24 +13,35 @@
 
 /*-------- Types definitions -------- */
 typedef struct {
-    char **name;
+    char *name;
     double t0;
     double dt;
     double deadline;
     unsigned int id;
 } Process;
 
-typedef struct pqimpl_s *MinPQ;
-
 typedef enum { false, true } bool;
 
-/*-------- Functions -------- */
-MinPQ create_MinPQ(int initCapacity, int (*compare)(Process a, Process b));
-bool isEmpty_MinPQ(MinPQ pq);
-int size_MinPQ(MinPQ pq);
-const Process *const min_MinPQ(MinPQ pq);
-void insert_MinPQ(Process p);
-Process delMin_MinPQ(MinPQ pq);
+typedef struct pqclass {
+    unsigned int n; // Last index in the PQ
+    unsigned int length; // Absolute size of the array
+    Process *pq; // the process queue itself
+
+    bool(*isEmpty)(struct pqclass*);
+    int(*size)(struct pqclass*);
+    const Process (*min)(struct pqclass*);
+    void(*insert)(struct pqclass*, Process p);
+    Process(*delMin)(struct pqclass*);
+    int (*compare)(Process a, Process b);
+
+} pqclass;
+
+typedef pqclass* MinPQ;
+
+/*-------- Fucntion definitions (public) -------- */
+MinPQ new_MinPQ(int (*comp)(Process, Process));
+// TODO: remove this debug in the end
+void debugPQ(MinPQ);
 
 
 #endif
