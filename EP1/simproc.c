@@ -13,11 +13,30 @@
 #include <stdio.h>
 #include <string.h>
 
+struct pstruct{
+    Process *v;
+    int i;
+    int size;
+};
 
+typedef struct pstruct *ProcArray;
 
 int comparator(Process, Process);
+ProcArray create_ProcArray(char const *[]);
+void resizeProcArray(ProcArray, int);
+void insertProcArray(ProcArray, char *, int);
+void destroy_ProcArray(ProcArray self);
+
+void debug(ProcArray self);
+
+
 
 int main(int argc, char const *argv[]) {
+    if(argc < 2)
+        die("You need to pass at least the trace file!!");
+    ProcArray readyJobs = create_ProcArray(argv);
+    debug(readyJobs);
+
     // create a minPQ
     MinPQ pq = new_MinPQ(&comparator);
 
@@ -26,7 +45,7 @@ int main(int argc, char const *argv[]) {
         Process ptest;
         char temp[20] = "";
         sprintf(temp, "Processo t%02i", i);
-        ptest.id = i;
+        ptest.nLine = i;
         ptest.t0 = 5*i;
         ptest.dt = -0.0045*(i*i) + 9*i; // parabola >>SUAVE<<
         ptest.deadline = 45;
@@ -37,6 +56,7 @@ int main(int argc, char const *argv[]) {
     for(int i = 0; i <= 1200; i++)
         pq->delMin(pq);
     destroy_MinPQ(pq);
+    destroy_ProcArray(readyJobs);
 
     return 0;
 }
@@ -47,4 +67,58 @@ int comparator(Process a, Process b){
     else if (a.dt > b.dt)
         return 1;
     return 0;
+}
+
+/* Entry reading realated functions */
+ProcArray create_ProcArray(char const *argv[]) {
+    ProcArray temp = emalloc(sizeof(struct pstruct));
+    temp->i = 0;
+    temp->size = 1;
+    temp->v = emalloc(sizeof(Process));
+    FILE *fp;
+    char buff[255];
+    fp = fopen(argv[1],"r");
+    int lNumber = 0;
+    while(fgets(buff, 255, fp) != NULL) {
+        insertProcArray(temp, buff, lNumber++);
+    }
+    fclose(fp);
+    return temp;
+}
+
+void insertProcArray(ProcArray self, char *line, int lNumber){
+    Process p;
+    if(self->i >= self->size)
+        resizeProcArray(self, self->size*2);
+    const char sep[2] = " ";
+    p.nLine = lNumber;
+    p.t0 = strtod(strtok(line, sep), NULL);
+    p.dt = strtod(strtok(NULL, sep), NULL);
+    p.deadline = strtod(strtok(NULL, sep), NULL);
+    char *name = strtok(NULL, sep);
+    name[strlen(name) - 1] = 0;
+    p.name = estrdup(name);
+    self->v[self->i] = p;
+    self->i += 1;
+}
+
+void resizeProcArray(ProcArray self, int capacity){
+    Process *t = emalloc(sizeof(Process)*capacity);
+    for (int i = 0; i < self->i; t[i] = self->v[i], i++);
+    free(self->v);
+    self->v = t;
+    self->size = capacity;
+}
+
+void destroy_ProcArray(ProcArray self) {
+    free(self->v);
+    free(self);
+}
+
+// TODO: remove debug functions
+void debug(ProcArray self){
+    for(int i = 0; i < self->i; i++){
+        Process p = self->v[i];
+        printf("%02.2lf  %0.2lf %02.2lf %s line(%d)\n", p.t0, p.dt, p.deadline, p.name, p.nLine);
+    }
 }

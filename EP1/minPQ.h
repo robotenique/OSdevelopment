@@ -17,7 +17,7 @@ typedef struct {
     double t0;
     double dt;
     double deadline;
-    unsigned int id;
+    unsigned int nLine;
 } Process;
 
 typedef enum { false, true } bool;
