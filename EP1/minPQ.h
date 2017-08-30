@@ -40,6 +40,7 @@ typedef pqclass* MinPQ;
 
 /*-------- Fucntion definitions (public) -------- */
 MinPQ new_MinPQ(int (*comp)(Process, Process));
+void destroy_MinPQ(MinPQ);
 // TODO: remove this debug in the end
 void debugPQ(MinPQ);
 
