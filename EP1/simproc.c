@@ -12,7 +12,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+/* If DEBUG_MODE is activated, print detailed
+ * events to stderr!
+ */
 bool DEBUG_MODE = false;
 
 struct pstruct{
