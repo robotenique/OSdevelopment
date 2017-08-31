@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+bool DEBUG_MODE = false;
+
 struct pstruct{
     Process *v;
     int i;
@@ -22,7 +24,8 @@ struct pstruct{
 typedef struct pstruct *ProcArray;
 
 int comparator(Process, Process);
-ProcArray create_ProcArray(char const *[]);
+int cmp_ProcArray(const void *, const void *);
+ProcArray create_ProcArray(char *);
 void resizeProcArray(ProcArray, int);
 void insertProcArray(ProcArray, char *, int);
 void destroy_ProcArray(ProcArray self);
@@ -32,16 +35,35 @@ void debug(ProcArray self);
 
 
 int main(int argc, char const *argv[]) {
-    if(argc < 2)
-        die("You need to pass at least the trace file!!");
-    ProcArray readyJobs = create_ProcArray(argv);
+    set_prog_name("simproc");
+    if(argc < 4)
+        die("Wrong number of arguments! \n Usage ./simproc <schedulerID> <traceFile> <outputFile> <d(optional)>");
+    int schedType = atoi(argv[1]);
+    char *infile = estrdup(argv[2]);
+    char *outfile = estrdup(argv[3]);
+    if(argc >= 5 && strcmp(argv[4], "d"))
+        DEBUG_MODE = true;
+    ProcArray readyJobs = create_ProcArray(infile);
+    switch (schedType) {
+        case 1:
+            //schedulerSJF(readyJobs, outfile);
+            break;
+        case 2:
+            //schedulerRoundRobin(readyJobs, outfile);
+            break;
+        case 3:
+            //schedulerPriority(readyJobs, outfile);
+            break;
+        default:
+            die("The scheduler algorithm id specified is invalid!");
+    }
+
     debug(readyJobs);
 
     // create a minPQ
     MinPQ pq = new_MinPQ(&comparator);
-
     for(int i = 0; i <= 1220; i++){
-        // test process
+        // testing the minPQ
         Process ptest;
         char temp[20] = "";
         sprintf(temp, "Processo t%02i", i);
@@ -55,12 +77,23 @@ int main(int argc, char const *argv[]) {
     }
     for(int i = 0; i <= 1200; i++)
         pq->delMin(pq);
+
     destroy_MinPQ(pq);
     destroy_ProcArray(readyJobs);
 
     return 0;
 }
-
+/*
+ * Function: comparator
+ * --------------------------------------------------------
+ * Comparator for use in the MinPQ. This is what defines
+ * the priority of the MinPQ, after all!
+ *
+ * @args a : the first process
+ *       b : the second process
+ *
+ * @return 1 if a > b, -1 if b < a, 0 otherwise
+ */
 int comparator(Process a, Process b){
     if (a.dt < b.dt)
         return -1;
@@ -68,24 +101,76 @@ int comparator(Process a, Process b){
         return 1;
     return 0;
 }
+/*
+ * Function: cmp_ProcArray
+ * --------------------------------------------------------
+ * Function to use as comparator in the qsort of the ProcArray
+ * while being created. Sorts first by t0, then by dt.
+ *
+ * @args a : the first process
+ *       b : the second process
+ *
+ * @return 1 if a > b, -1 if b < a, 0 otherwise
+ */
+int cmp_ProcArray(const void *a, const void *b){
+    Process p1 = *(Process*)a;
+    Process p2 = *(Process*)b;
+    if(p1.t0 < p2.t0)
+        return -1;
+    if(p1.t0 > p2.t0)
+        return 1;
+    if(p1.dt < p2.dt)
+        return -1;
+    if(p1.dt > p2.dt)
+        return 1;
+    return 0;
+}
 
 /* Entry reading realated functions */
-ProcArray create_ProcArray(char const *argv[]) {
+/*
+ * Function: create_ProcArray
+ * --------------------------------------------------------
+ * Create a ProcArray, reading the processes from the passed
+ * file. Doesn't check for errors, assuming the entry was
+ * passed correct!
+ * The list of processes is sorted by the t0, and if the t0
+ * is equal, is sorted by dt to optimize the insert operation
+ * into the process queue later.
+ *
+ * @args filename : The name of the trace file
+ *
+ * @return  The ProcArray with the processes to simulate
+ */
+ProcArray create_ProcArray(char *filename) {
     ProcArray temp = emalloc(sizeof(struct pstruct));
     temp->i = 0;
     temp->size = 1;
     temp->v = emalloc(sizeof(Process));
     FILE *fp;
     char buff[255];
-    fp = fopen(argv[1],"r");
+    fp = fopen(filename,"r");
     int lNumber = 0;
-    while(fgets(buff, 255, fp) != NULL) {
+    while(fgets(buff, 255, fp) != NULL)
         insertProcArray(temp, buff, lNumber++);
-    }
+    qsort(temp->v, temp->i, sizeof(Process), cmp_ProcArray);
     fclose(fp);
     return temp;
 }
 
+/*
+ * Function: insertProcArray
+ * --------------------------------------------------------
+ * Inserts a process in the ProcArray, by providing the line
+ * with the format specified in the assignment description.
+ * No errors checks are made, so the format in the string must
+ * be met for the insertion to work correctly.
+ *
+ * @args  self : the ProcArray
+ *        line : the line of the trace file
+ *        lNumber : the number of the line in the trace file
+ *
+ * @return  returned value
+ */
 void insertProcArray(ProcArray self, char *line, int lNumber){
     Process p;
     if(self->i >= self->size)
@@ -101,7 +186,16 @@ void insertProcArray(ProcArray self, char *line, int lNumber){
     self->v[self->i] = p;
     self->i += 1;
 }
-
+/*
+ * Function: resizeProcArray
+ * --------------------------------------------------------
+ * Resize the ProcArray to the new capacity.
+ *
+ * @args self : the ProcArray
+ *       capacity  : the new capacity of the ProcArray
+ *
+ * @return
+ */
 void resizeProcArray(ProcArray self, int capacity){
     Process *t = emalloc(sizeof(Process)*capacity);
     for (int i = 0; i < self->i; t[i] = self->v[i], i++);
@@ -109,11 +203,22 @@ void resizeProcArray(ProcArray self, int capacity){
     self->v = t;
     self->size = capacity;
 }
-
+/*
+ * Function: destroy_ProcArray
+ * --------------------------------------------------------
+ * Destroys the ProcArray provided, freeing its memory
+ *
+ * @args self : the ProcArray
+ *
+ * @return
+ */
 void destroy_ProcArray(ProcArray self) {
     free(self->v);
     free(self);
 }
+
+
+
 
 // TODO: remove debug functions
 void debug(ProcArray self){
