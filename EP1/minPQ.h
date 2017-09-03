@@ -12,6 +12,8 @@
 #define __MIN_PQ_H__
 
 #include "process.h"
+#include "error.h"
+
 
 typedef struct pqclass {
     unsigned int n; // Last index in the PQ

@@ -11,7 +11,6 @@
 */
 
 #include "minPQ.h"
-#include "error.h"
 
 /* -- Function signatures --- */
 void pqclass_Init(MinPQ self);

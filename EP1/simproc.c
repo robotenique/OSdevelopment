@@ -11,6 +11,7 @@
 #include "minPQ.h"
 #include "error.h"
 #include "roundrobin.h"
+#include "sjf.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,7 +41,7 @@ int main(int argc, char const *argv[]) {
     ProcArray readyJobs = create_ProcArray(infile);
     switch (schedType) {
         case 1:
-            //schedulerSJF(readyJobs, outfile);
+            schedulerSJF(readyJobs, outfile);
             break;
         case 2:
             schedulerRoundRobin(readyJobs, outfile);
@@ -52,7 +53,7 @@ int main(int argc, char const *argv[]) {
             die("The scheduler algorithm id specified is invalid!");
     }
 
-    debug(readyJobs);
+    //debug(readyJobs);
     /*
     // create a minPQ
     MinPQ pq = new_MinPQ(&comparator);
@@ -144,6 +145,7 @@ ProcArray create_ProcArray(char *filename) {
     FILE *fp;
     char buff[255];
     fp = fopen(filename,"r");
+    if (fp == NULL) exit (EXIT_FAILURE);
     int lNumber = 0;
     while(fgets(buff, 255, fp) != NULL)
         insertProcArray(temp, buff, lNumber++);
