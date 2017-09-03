@@ -6,53 +6,7 @@
 #include "error.h"
 #include "process.h"
 #include "minPQ.h"
-
-#define NANO_CONVERT 1e-9
-/* ----------- #TODO: PUT THE TIMER IN A IN A SEPARATE FILE ------------- */
-typedef struct timespec Time;
-struct timer_s{
-    Time t;
-    double(*passed)(struct timer_s*);
-    double(*value)(struct timer_s*);
-};
-typedef struct timer_s* Timer;
-
-double val(Time t){
-    double total;
-    total = (double)t.tv_sec;
-    total +=  (double)t.tv_nsec*NANO_CONVERT;
-    return total;
-}
-double passed(Timer self){
-    Time current;
-    clock_gettime(CLOCK_MONOTONIC, &current);
-    double selfTotal = val(self->t);
-    double currentTotal = val(current);
-    return currentTotal - selfTotal;
-}
-double value(Timer self){
-    return val(self->t);
-}
-Timer new_Timer(){
-    Timer self = emalloc(sizeof(struct timer_s));
-    clock_gettime(CLOCK_MONOTONIC, &(self->t));
-    self->passed = &passed;
-    self->value = &value;
-    return self;
-}
-void destroy_Timer(Timer self){
-    free(self);
-}
-
-void sleepFor(double dt){
-    // IDLE for time dt (in Seconds)
-    printf("Dormindo por %ld (sec)  e %ld (nsec)\n",(long)floor(dt),(long)((dt-floor(dt))/NANO_CONVERT));
-    nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/NANO_CONVERT)}, NULL);
-
-}
-
-
-/* ----------- -------------------------------------------- ------------- */
+#include "utilities.h"
 
 int cmpSJF(Process a, Process b){
     if (a.dt < b.dt)
@@ -62,32 +16,46 @@ int cmpSJF(Process a, Process b){
     return 0;
 }
 
+
+void *runSJF(void *proc){
+    Process p = (*(Process *)proc);
+    debugger(RUN_EVENT, p, 0);
+    sleepFor(p.dt);
+    debugger(EXIT_EVENT, p, 0);
+    pthread_exit(NULL);
+}
+
 void schedulerSJF(ProcArray readyJobs, char *outfile){
-    printf("OLar...\n");
-    //Processes to arrive
+    FILE* out = efopen (outfile, "w");
+    int outLine = 1;
     ProcArray rj = readyJobs;
-    // Processes to run
     MinPQ pPQ = new_MinPQ(&cmpSJF);
-    // Get the first process
     Process curr = rj->v[rj->nextP++];
-    // Initialize the timer
     Timer timer = new_Timer();
     // Sleep until the first process arrives at the cpu
-    if(curr.t0 >= 1)
-        sleepFor(curr.t0);
+    sleepFor(curr.t0);
+    debugger(ARRIVAL_EVENT, curr, 0);
     pPQ->insert(pPQ, curr);
-    while(rj->nextP < rj->size){
+
+    while(rj->nextP < rj->i || !pPQ->isEmpty(pPQ)){
         double tNow = timer->passed(timer);
         int i;
-        for(i = rj->nextP; i < rj->size &&  rj->v[i].t0 <= tNow; i++)
+        if(pPQ->isEmpty(pPQ)){
+            sleepFor(rj->v[rj->nextP].t0 - tNow);
+            tNow = timer->passed(timer);
+        }
+        for(i = rj->nextP; i < rj->i &&  rj->v[i].t0 <= tNow; i++){
+            debugger(ARRIVAL_EVENT, rj->v[i], 0);
             pPQ->insert(pPQ, rj->v[i]);
+        }
         rj->nextP = i;
+        if(pPQ->isEmpty(pPQ))   continue;
         curr = pPQ->delMin(pPQ);
-
+        pthread_create(&curr.pid, NULL, &runSJF, &curr);
+        pthread_join(curr.pid, NULL);
+        debugger(END_EVENT, curr, outLine++);
+        fprintf(out, "%s %lf %lf\n",curr.name, timer->passed(timer), timer->passed(timer) - curr.t0);
     }
-    while(!pPQ->isEmpty(pPQ)){
-        // Run the remaining processes
-    }
-
-
+    // In SJF there's no context switch...
+    fprintf(out, "%d\n",0);
 }
