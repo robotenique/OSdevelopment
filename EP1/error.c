@@ -101,3 +101,10 @@ char *estrdup(const char *s) {
     ret[strlen(s)] = '\0';
     return ret;
 }
+
+FILE *efopen(const char *filename, const char *mode){
+    FILE* ret = fopen (filename, mode);
+    if (ret == NULL)
+        die("Error opening file %s", filename);
+    return ret;
+}

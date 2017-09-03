@@ -1,3 +1,12 @@
+/*
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * Shortest Job First scheduler implementation.
+ */
 #include <math.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -6,54 +15,80 @@
 #include "error.h"
 #include "process.h"
 #include "minPQ.h"
+#include "utilities.h"
 
-#define NANO_CONVERT 1e-9
-/* ----------- #TODO: PUT THE TIMER IN A IN A SEPARATE FILE ------------- */
-typedef struct timespec Time;
-struct timer_s{
-    Time t;
-    double(*passed)(struct timer_s*);
-    double(*value)(struct timer_s*);
-};
-typedef struct timer_s* Timer;
+int cmpSJF(Process, Process);
+void *execProcess(void *proc);
 
-double val(Time t){
-    double total;
-    total = (double)t.tv_sec;
-    total +=  (double)t.tv_nsec*NANO_CONVERT;
-    return total;
+/*
+ * Function: schedulerSJF
+ * --------------------------------------------------------
+ * Receives an array of processes to run (the pQueue), and the name
+ * of the file to write the informations.
+ * The algorithm uses a MinPQ to sort by dt. It gets all the processes
+ * in the pool which have arrived, then put then into the MinPQ.
+ * Then, run the min dt process of the MinPQ. After this, checks again
+ * the pool to see if another processes has arrived. If true, add the
+ * new processes into the MinPQ, and procedes the algorithm (run the
+ * min dt process of the MinPQ), until there's no process left in the
+ * MinPQ AND in the pool.
+ * If there's no process in the MinPQ, sleeps until another process
+ * arrives, then proceed the algorithm.
+ *
+ * @args  pQueue :  A ProcArray with the processes to run
+ *        outfile : The name of the file to write the information
+ *
+ * @return
+ */
+void schedulerSJF(ProcArray pQueue, char *outfile){
+    FILE* out = efopen (outfile, "w");
+    int outLine = 1;
+    MinPQ pPQ = new_MinPQ(&cmpSJF);
+    Process curr = pQueue->v[pQueue->nextP++];
+    Timer timer = new_Timer();
+    // Sleep until the first process arrives at the cpu
+    sleepFor(curr.t0);
+    debugger(ARRIVAL_EVENT, curr, 0);
+    pPQ->insert(pPQ, curr);
+    while(pQueue->nextP < pQueue->i || !pPQ->isEmpty(pPQ)){
+        double tNow = timer->passed(timer);
+        int i;
+        if(pPQ->isEmpty(pPQ)){
+            // If there isn't processes to run, sleep until the next t0
+            sleepFor(pQueue->v[pQueue->nextP].t0 - tNow);
+            tNow = timer->passed(timer);
+        }
+        // Insert all the arrived processes into the MinPQ
+        for(i = pQueue->nextP; i < pQueue->i &&  pQueue->v[i].t0 <= tNow; i++){
+            debugger(ARRIVAL_EVENT, pQueue->v[i], 0);
+            pPQ->insert(pPQ, pQueue->v[i]);
+        }
+        pQueue->nextP = i;
+        if(pPQ->isEmpty(pPQ))   continue;
+        // Run the min dt process
+        curr = pPQ->delMin(pPQ);
+        pthread_create(&curr.pid, NULL, &execProcess, &curr);
+        pthread_join(curr.pid, NULL);
+        debugger(END_EVENT, curr, outLine++);
+        fprintf(out, "%s %lf %lf\n",curr.name, timer->passed(timer), timer->passed(timer) - curr.t0);
+    }
+    // In SJF there's no context switch...
+    fprintf(out, "%d\n",0);
+    fclose(out);
+    destroy_MinPQ(pPQ);
+    destroy_Timer(timer);
 }
-double passed(Timer self){
-    Time current;
-    clock_gettime(CLOCK_MONOTONIC, &current);
-    double selfTotal = val(self->t);
-    double currentTotal = val(current);
-    return currentTotal - selfTotal;
-}
-double value(Timer self){
-    return val(self->t);
-}
-Timer new_Timer(){
-    Timer self = emalloc(sizeof(struct timer_s));
-    clock_gettime(CLOCK_MONOTONIC, &(self->t));
-    self->passed = &passed;
-    self->value = &value;
-    return self;
-}
-void destroy_Timer(Timer self){
-    free(self);
-}
 
-void sleepFor(double dt){
-    // IDLE for time dt (in Seconds)
-    printf("Dormindo por %ld (sec)  e %ld (nsec)\n",(long)floor(dt),(long)((dt-floor(dt))/NANO_CONVERT));
-    nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/NANO_CONVERT)}, NULL);
-
-}
-
-
-/* ----------- -------------------------------------------- ------------- */
-
+/*
+ * Function: cmpSJF
+ * --------------------------------------------------------
+ * Priority function to use in the MinPQ
+ *
+ * @args a : the first Process
+ *       b : the second process
+ *
+ * @return 1 if a > b, -1 if b < a, 0 otherwise
+ */
 int cmpSJF(Process a, Process b){
     if (a.dt < b.dt)
         return -1;
@@ -62,32 +97,19 @@ int cmpSJF(Process a, Process b){
     return 0;
 }
 
-void schedulerSJF(ProcArray readyJobs, char *outfile){
-    printf("OLar...\n");
-    //Processes to arrive
-    ProcArray rj = readyJobs;
-    // Processes to run
-    MinPQ pPQ = new_MinPQ(&cmpSJF);
-    // Get the first process
-    Process curr = rj->v[rj->nextP++];
-    // Initialize the timer
-    Timer timer = new_Timer();
-    // Sleep until the first process arrives at the cpu
-    if(curr.t0 >= 1)
-        sleepFor(curr.t0);
-    pPQ->insert(pPQ, curr);
-    while(rj->nextP < rj->size){
-        double tNow = timer->passed(timer);
-        int i;
-        for(i = rj->nextP; i < rj->size &&  rj->v[i].t0 <= tNow; i++)
-            pPQ->insert(pPQ, rj->v[i]);
-        rj->nextP = i;
-        curr = pPQ->delMin(pPQ);
-
-    }
-    while(!pPQ->isEmpty(pPQ)){
-        // Run the remaining processes
-    }
-
-
+/*
+ * Function: execProcess
+ * --------------------------------------------------------
+ * Simulates a process executing (Sleeps for the dt of the process)
+ *
+ * @args proc : a pointer to a process...
+ *
+ * @return
+ */
+void *execProcess(void *proc){
+    Process p = (*(Process *)proc);
+    debugger(RUN_EVENT, p, 0);
+    sleepFor(p.dt);
+    debugger(EXIT_EVENT, p, 0);
+    pthread_exit(NULL);
 }

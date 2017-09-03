@@ -1,5 +1,15 @@
+/*
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * Header for some process structs and global variables.
+ */
 #ifndef _PROCESS_H_
 #define _PROCESS_H_
+#include <pthread.h>
 
 typedef enum { false, true } bool;
 
@@ -8,17 +18,18 @@ typedef struct {
     double t0;
     double dt;
     double deadline;
+    pthread_t pid;
     unsigned int nLine;
 } Process;
 
 
 struct pstruct{
     Process *v;
-    int i; // Last position of array
+    int i; // Last position of the last process
     int size;
-    int nextP;
+    int nextP; // Pointer to next Process in the array
 };
 
 typedef struct pstruct *ProcArray;
-
+bool DEBUG_MODE;
 #endif

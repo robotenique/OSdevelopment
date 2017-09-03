@@ -7,18 +7,14 @@
  *
  * Process scheduler simulator!
 */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "process.h"
 #include "minPQ.h"
 #include "error.h"
 #include "roundrobin.h"
 #include "sjf.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-/* If DEBUG_MODE is activated, print detailed
- * events to stderr!
- */
-bool DEBUG_MODE = false;
 
 int comparator(Process, Process);
 int cmp_ProcArray(const void *, const void *);
@@ -27,16 +23,15 @@ void resizeProcArray(ProcArray, int);
 void insertProcArray(ProcArray, char *, int);
 void destroy_ProcArray(ProcArray self);
 
-void debug(ProcArray self);
-
 int main(int argc, char const *argv[]) {
     set_prog_name("simproc");
+    DEBUG_MODE = false;
     if(argc < 4)
         die("Wrong number of arguments! \n Usage ./simproc <schedulerID> <traceFile> <outputFile> <d(optional)>");
     int schedType = atoi(argv[1]);
     char *infile = estrdup(argv[2]);
     char *outfile = estrdup(argv[3]);
-    if(argc >= 5 && strcmp(argv[4], "d"))
+    if(argc >= 5 && !strcmp(argv[4], "d"))
         DEBUG_MODE = true;
     ProcArray readyJobs = create_ProcArray(infile);
     readyJobs->nextP = 0;
@@ -145,8 +140,8 @@ ProcArray create_ProcArray(char *filename) {
     temp->v = emalloc(sizeof(Process));
     FILE *fp;
     char buff[255];
-    fp = fopen(filename,"r");
-    if (fp == NULL) exit (EXIT_FAILURE);
+    fp = efopen(filename,"r");
+
     int lNumber = 0;
     while(fgets(buff, 255, fp) != NULL)
         insertProcArray(temp, buff, lNumber++);
@@ -213,15 +208,4 @@ void resizeProcArray(ProcArray self, int capacity){
 void destroy_ProcArray(ProcArray self) {
     free(self->v);
     free(self);
-}
-
-
-
-
-// TODO: remove debug functions
-void debug(ProcArray self){
-    for(int i = 0; i < self->i; i++){
-        Process p = self->v[i];
-        printf("%02.2lf  %0.2lf %02.2lf %s line(%d)\n", p.t0, p.dt, p.deadline, p.name, p.nLine);
-    }
 }

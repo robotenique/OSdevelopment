@@ -10,6 +10,7 @@
 #define __ERROR_H__
 
 #include <stdlib.h>
+#include <stdio.h>
 
 /*
  * Function: set_prog_name
@@ -84,6 +85,18 @@ void die(const char *msg, ...);
  */
 void *emalloc(size_t size);
 
+/*
+ * Function: efopen
+ * --------------------------------------------------------
+ * Like fopen, but exit the program with an error message on
+ * failure.
+ *
+ * @args filename : the name of the file
+ *       mode : the mode to open the file
+ *
+ * @return a pointer to the opened file
+ */
+FILE *efopen(const char *filename, const char *mode);
 /*
  * Function: estrdup
  * --------------------------------------------------------
