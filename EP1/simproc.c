@@ -7,8 +7,10 @@
  *
  * Process scheduler simulator!
 */
+#include "process.h"
 #include "minPQ.h"
 #include "error.h"
+#include "roundrobin.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -16,14 +18,6 @@
  * events to stderr!
  */
 bool DEBUG_MODE = false;
-
-struct pstruct{
-    Process *v;
-    int i;
-    int size;
-};
-
-typedef struct pstruct *ProcArray;
 
 int comparator(Process, Process);
 int cmp_ProcArray(const void *, const void *);
@@ -33,8 +27,6 @@ void insertProcArray(ProcArray, char *, int);
 void destroy_ProcArray(ProcArray self);
 
 void debug(ProcArray self);
-
-
 
 int main(int argc, char const *argv[]) {
     set_prog_name("simproc");
@@ -51,7 +43,7 @@ int main(int argc, char const *argv[]) {
             //schedulerSJF(readyJobs, outfile);
             break;
         case 2:
-            //schedulerRoundRobin(readyJobs, outfile);
+            schedulerRoundRobin(readyJobs, outfile);
             break;
         case 3:
             //schedulerPriority(readyJobs, outfile);
@@ -61,7 +53,7 @@ int main(int argc, char const *argv[]) {
     }
 
     debug(readyJobs);
-
+    /*
     // create a minPQ
     MinPQ pq = new_MinPQ(&comparator);
     for(int i = 0; i <= 1220; i++){
@@ -81,6 +73,7 @@ int main(int argc, char const *argv[]) {
         pq->delMin(pq);
 
     destroy_MinPQ(pq);
+    */
     destroy_ProcArray(readyJobs);
 
     return 0;

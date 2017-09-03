@@ -11,16 +11,7 @@
 #ifndef __MIN_PQ_H__
 #define __MIN_PQ_H__
 
-/*-------- Types definitions -------- */
-typedef struct {
-    char *name;
-    double t0;
-    double dt;
-    double deadline;
-    unsigned int nLine;
-} Process;
-
-typedef enum { false, true } bool;
+#include "process.h"
 
 typedef struct pqclass {
     unsigned int n; // Last index in the PQ
