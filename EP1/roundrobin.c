@@ -30,6 +30,7 @@ void wakeup_next(PPack*);
 
 double gtime = 0.0;
 int finished = 0;
+pthread_mutex_t gmtx;
 
 Queue new_queue() {
     Queue q = (Queue)emalloc(sizeof(Node));
@@ -85,7 +86,7 @@ Node *stack_remove(Stack *s) {
 }
 
 Node *stack_top(Stack *s) {
-    if (s->i == -1)
+    if (s->i == 0)
         return NULL;
     return &(s->v[s->i - 1]);
 }
@@ -100,18 +101,18 @@ int wait(double ms) {
 }
 
 void *run(void *arg) {
-    PPack *pack = (PPack *)arg;
-    Node *node = queue_first(pack->q);
+    Node *node = (Node *)arg;
     double w;
 
     while ((w = fmin(node->p->dt, 1.0))) {
         pthread_mutex_lock(&(node->mtx));
         wait(w);
-        printf("HI\n");
+        printf("=\n");
         node->p->dt -= w;
         gtime += w;
         printf("%s ran for %gs (%p)\n", node->p->name, w, node->p);
-        wakeup_next(pack);
+        //wakeup_next(pack);
+        pthread_mutex_unlock(&gmtx);
     }
 
     printf("%s finished!\n", node->p->name);
@@ -127,14 +128,23 @@ void queue_debug(Queue q) {
     printf("%p\n", NULL);
 }
 
+void print_stack(Stack *s) {
+    for (int i = 0; i < s->i; i++)
+        printf("%s ", s->v[i].p->name);
+    printf("\n");
+}
+
 void wakeup_next(PPack *pack) {
     Node *n = stack_top(pack->s);
     queue_debug(pack->q);
     //printf("%s will enter at queue with %g <= %g\n", n->p->name, n->p->t0, gtime);
-    while (n->p->t0 <= gtime) {
+    while (n && n->p->t0 <= gtime) {
+        print_stack(pack->s);
         queue_add(pack->q, n);
         stack_remove(pack->s);
+        pthread_create(&(n->t), NULL, &run, (void *)n);
         n = stack_top(pack->s);
+        printf("%p\n", n);
     }
     queue_debug(pack->q);
     n = queue_first(pack->q);
@@ -144,12 +154,15 @@ void wakeup_next(PPack *pack) {
         queue_remove(pack->q);
     queue_debug(pack->q);
     n = queue_first(pack->q);
+    printf("Unlocked %s\n", n->p->name);
+    printf("gtime = %g\n", gtime);
     pthread_mutex_unlock(&(n->mtx));
 }
 
 void schedulerRoundRobin(ProcArray readyJobs, char *outfile) {
     PPack *pack;
     Stack *s = new_stack(readyJobs->i);
+    pthread_mutex_init(&gmtx, NULL);
 
     for (int i = readyJobs->i - 1; i >= 0; i--)
         s->v[readyJobs->i - i - 1].p = &(readyJobs->v[i]);
@@ -161,20 +174,27 @@ void schedulerRoundRobin(ProcArray readyJobs, char *outfile) {
     queue_add(pack->q, tmp);
 
     for (int i = 0; i < readyJobs->i; i++) {
-        //printf("%d\n", i);
         pthread_mutex_init(&(s->v[i].mtx), NULL);
         pthread_mutex_lock(&(s->v[i].mtx));
-        pthread_create(&(s->v[i].t), NULL, &run, (void *)pack);
     }
 
     stack_remove(s);
+    pthread_create(&(tmp->t), NULL, &run, (void *)tmp);
+    pthread_mutex_lock(&gmtx);
 
-    //pthread_create(&(tmp->t), NULL, &run, (void *)pack);
+    print_stack(s);
 
-    // TODO: Add something to wait when there is no process running
+    while (finished < readyJobs->i) {
+        if (queue_first(pack->q))
+            wakeup_next(pack);
+        else
+            break;
+        pthread_mutex_lock(&gmtx);
+        // TODO: Add something to wait when there is no process running
+    }
+
     // TODO: Change fake gtime to real time
-
-    pthread_mutex_unlock(&(tmp->mtx));
+    // TODO: Refactor the code
 
     pthread_exit(NULL);
 }
