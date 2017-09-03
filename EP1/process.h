@@ -1,3 +1,12 @@
+/*
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * Header for some process structs and global variables.
+ */
 #ifndef _PROCESS_H_
 #define _PROCESS_H_
 #include <pthread.h>
@@ -16,9 +25,9 @@ typedef struct {
 
 struct pstruct{
     Process *v;
-    int i; // Last position of array
+    int i; // Last position of the last process
     int size;
-    int nextP;
+    int nextP; // Pointer to next Process in the array
 };
 
 typedef struct pstruct *ProcArray;

@@ -7,14 +7,14 @@
  *
  * Process scheduler simulator!
 */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "process.h"
 #include "minPQ.h"
 #include "error.h"
 #include "roundrobin.h"
 #include "sjf.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 int comparator(Process, Process);
 int cmp_ProcArray(const void *, const void *);
@@ -23,7 +23,6 @@ void resizeProcArray(ProcArray, int);
 void insertProcArray(ProcArray, char *, int);
 void destroy_ProcArray(ProcArray self);
 
-void debug(ProcArray self);
 int main(int argc, char const *argv[]) {
     set_prog_name("simproc");
     DEBUG_MODE = false;
@@ -209,15 +208,4 @@ void resizeProcArray(ProcArray self, int capacity){
 void destroy_ProcArray(ProcArray self) {
     free(self->v);
     free(self);
-}
-
-
-
-
-// TODO: remove debug functions
-void debug(ProcArray self){
-    for(int i = 0; i < self->i; i++){
-        Process p = self->v[i];
-        printf("%02.2lf  %0.2lf %02.2lf %s line(%d)\n", p.t0, p.dt, p.deadline, p.name, p.nLine);
-    }
 }

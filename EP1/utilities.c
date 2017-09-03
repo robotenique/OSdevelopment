@@ -1,12 +1,31 @@
 #define _GNU_SOURCE
 #include "utilities.h"
 
+/*
+ * Function: val
+ * --------------------------------------------------------
+ * Returns the number in double of the seconds represented
+ * for a given Time t
+ *
+ * @args t : Time struct (timeval)
+ *
+ * @return double representing the number of seconds
+ */
 double val(Time t){
     double total;
     total = (double)t.tv_sec;
     total +=  (double)t.tv_nsec*NANO_CONVERT;
     return total;
 }
+/*
+ * Function: passed
+ * --------------------------------------------------------
+ * Returns the seconds passed since the timer was created
+ *
+ * @args self : the timer
+ *
+ * @return double representing seconds passed
+ */
 double passed(Timer self){
     Time current;
     clock_gettime(CLOCK_MONOTONIC, &current);
@@ -14,12 +33,24 @@ double passed(Timer self){
     double currentTotal = val(current);
     return currentTotal - selfTotal;
 }
+/*
+ * Function: value
+ * --------------------------------------------------------
+ * Same as val, but receives a Timer instead of time. Returns
+ * the value of the seconds + nanoseconds in double.
+ *
+ * @args self : the timer
+ *
+ * @return value of seconds + nanoseconds in double.
+ */
 double value(Timer self){
     return val(self->t);
 }
+
 Timer new_Timer(){
     Timer self = emalloc(sizeof(struct timer_s));
-    clock_gettime(CLOCK_MONOTONIC, &(self->t));
+    // CLOCK_MONOTONIC_RAW is the best for calculating elapsed time!
+    clock_gettime(CLOCK_MONOTONIC_RAW, &(self->t));
     self->passed = &passed;
     self->value = &value;
     return self;

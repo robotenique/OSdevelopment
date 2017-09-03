@@ -1,3 +1,13 @@
+/*
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * Header for utilities. Defines some useful constants
+ * and event codes for the debugger
+ */
 #ifndef _UTILITIES_H_
 #define _UTILITIES_H_
 
@@ -25,9 +35,51 @@ struct timer_s{
 };
 typedef struct timer_s* Timer;
 
+
+/*
+ * Function: new_Timer
+ * --------------------------------------------------------
+ * Creates a new timer and returns it
+ *
+ * @args
+ *
+ * @return  a new timer
+ */
 Timer new_Timer();
-void destroy_Timer();
+/*
+ * Function: destroy_Timer
+ * --------------------------------------------------------
+ * Destroy a timer, freeing memory
+ *
+ * @args timer : the timer to destroy
+ *
+ * @return
+ */
+void destroy_Timer(Timer);
+/*
+ * Function: sleepFor
+ * --------------------------------------------------------
+ * Sleeps for dt seconds
+ *
+ * @args dt : seconds to sleep
+ *
+ * @return
+ */
 void sleepFor(double);
+/*
+ * Function: debugger
+ * --------------------------------------------------------
+ * Print to stderr debug information, which information and
+ * format is specified mainly by the EVENT_CODE argument.
+ * It always receives a process.
+ *
+ * @args EVENT_CODE : code of the event.
+ *       p : a process
+ *       arg : an integer, arbitrary argument. Used in specific
+ *             instances of the debugger, like the END_EVENT
+ *
+ * @return
+ */
 void debugger(int, Process, int);
 
 #endif
