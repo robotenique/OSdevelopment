@@ -28,7 +28,7 @@ double val(Time t){
  */
 double passed(Timer self){
     Time current;
-    clock_gettime(CLOCK_MONOTONIC, &current);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &current);
     double selfTotal = val(self->t);
     double currentTotal = val(current);
     return currentTotal - selfTotal;
@@ -62,7 +62,6 @@ void destroy_Timer(Timer self){
 void sleepFor(double dt){
     //printf("         sleep %ld (sec) , %ld (nsec)\n",(long)floor(dt),(long)((dt-floor(dt))/NANO_CONVERT));
     nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/NANO_CONVERT)}, NULL);
-
 }
 
 void debugger(int EVENT_CODE, Process p, int arg){

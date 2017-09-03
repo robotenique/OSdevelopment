@@ -12,11 +12,8 @@
 #define _UTILITIES_H_
 
 #define NANO_CONVERT 1e-9
-#define ARRIVAL_EVENT 0
-#define RUN_EVENT 1
-#define EXIT_EVENT 2
-#define END_EVENT 3
-#define CONTEXT_EVENT 4
+// TODO: CHANGE TO enum
+typedef enum {ARRIVAL_EVENT, RUN_EVENT, EXIT_EVENT, END_EVENT, CONTEXT_EVENT} EVENTS;
 #include <math.h>
 #include <pthread.h>
 #include <stdio.h>
