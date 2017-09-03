@@ -39,6 +39,7 @@ int main(int argc, char const *argv[]) {
     if(argc >= 5 && strcmp(argv[4], "d"))
         DEBUG_MODE = true;
     ProcArray readyJobs = create_ProcArray(infile);
+    readyJobs->nextP = 0;
     switch (schedType) {
         case 1:
             schedulerSJF(readyJobs, outfile);

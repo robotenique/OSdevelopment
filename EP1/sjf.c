@@ -5,8 +5,9 @@
 #include <time.h>
 #include "error.h"
 #include "process.h"
+#include "minPQ.h"
 
-#define NANO_CONVERT 0.0000000001
+#define NANO_CONVERT 1e-9
 /* ----------- #TODO: PUT THE TIMER IN A IN A SEPARATE FILE ------------- */
 typedef struct timespec Time;
 struct timer_s{
@@ -42,19 +43,51 @@ Timer new_Timer(){
 void destroy_Timer(Timer self){
     free(self);
 }
+
+void sleepFor(double dt){
+    // IDLE for time dt (in Seconds)
+    printf("Dormindo por %ld (sec)  e %ld (nsec)\n",(long)floor(dt),(long)((dt-floor(dt))/NANO_CONVERT));
+    nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/NANO_CONVERT)}, NULL);
+
+}
+
+
 /* ----------- -------------------------------------------- ------------- */
 
-
-
-
+int cmpSJF(Process a, Process b){
+    if (a.dt < b.dt)
+        return -1;
+    else if (a.dt > b.dt)
+        return 1;
+    return 0;
+}
 
 void schedulerSJF(ProcArray readyJobs, char *outfile){
+    printf("OLar...\n");
+    //Processes to arrive
+    ProcArray rj = readyJobs;
+    // Processes to run
+    MinPQ pPQ = new_MinPQ(&cmpSJF);
+    // Get the first process
+    Process curr = rj->v[rj->nextP++];
+    // Initialize the timer
     Timer timer = new_Timer();
-    printf("Olar tAtual = %lf \n",timer->value(timer));
-    Time t;
-    t.tv_sec = 4;
-    t.tv_nsec = 0;
-    nanosleep(&t, NULL);
-    printf("Olar tAtual = %lf \n",timer->passed(timer));
+    // Sleep until the first process arrives at the cpu
+    if(curr.t0 >= 1)
+        sleepFor(curr.t0);
+    pPQ->insert(pPQ, curr);
+    while(rj->nextP < rj->size){
+        double tNow = timer->passed(timer);
+        int i;
+        for(i = rj->nextP; i < rj->size &&  rj->v[i].t0 <= tNow; i++)
+            pPQ->insert(pPQ, rj->v[i]);
+        rj->nextP = i;
+        curr = pPQ->delMin(pPQ);
+
+    }
+    while(!pPQ->isEmpty(pPQ)){
+        // Run the remaining processes
+    }
+
 
 }

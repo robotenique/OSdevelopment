@@ -14,8 +14,9 @@ typedef struct {
 
 struct pstruct{
     Process *v;
-    int i;
+    int i; // Last position of array
     int size;
+    int nextP;
 };
 
 typedef struct pstruct *ProcArray;

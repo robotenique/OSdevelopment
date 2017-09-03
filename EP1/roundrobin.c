@@ -95,7 +95,7 @@ int wait(double ms) {
     struct timespec req, rem;
 
     req.tv_sec = floor(ms);
-    req.tv_nsec = fmod(ms, 1) * 1000000000L;
+    req.tv_nsec = fmod(ms, 1) * 1e9;
 
     return nanosleep(&req , &rem);
 }
