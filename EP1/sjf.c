@@ -54,7 +54,7 @@ void schedulerSJF(ProcArray pQueue){
     // Sleep until the first process arrives at the cpu
     sleepFor(curr.t0);
     debugger(ARRIVAL_EVENT, curr, 0);
-    pPQ->insert(pPQ, procdup(curr));
+    pPQ->insert(pPQ, &curr);
     while(pQueue->nextP < pQueue->i || !pPQ->isEmpty(pPQ)){
         double tNow = timer->passed(timer);
         int i;
@@ -66,16 +66,17 @@ void schedulerSJF(ProcArray pQueue){
         // Insert all the arrived processes into the MinPQ
         for(i = pQueue->nextP; i < pQueue->i &&  pQueue->v[i].t0 <= tNow; i++){
             debugger(ARRIVAL_EVENT, pQueue->v[i], 0);
-            pPQ->insert(pPQ, procdup(pQueue->v[i]));
+            pPQ->insert(pPQ, &pQueue->v[i]);
         }
         pQueue->nextP = i;
-        if(pPQ->isEmpty(pPQ))   continue;
-        // Run the min dt process
-        curr = pPQ->delMin(pPQ);
-        pthread_create(&curr.pid, NULL, &execProcess, &curr);
-        pthread_join(curr.pid, NULL);
-        debugger(END_EVENT, curr, outLine++);
-        write_outfile("%s %lf %lf\n",curr.name, timer->passed(timer), timer->passed(timer) - curr.t0);
+        if(!pPQ->isEmpty(pPQ)){
+            // Run the min dt process
+            curr = *pPQ->delMin(pPQ);
+            pthread_create(&curr.pid, NULL, &execProcess, &curr);
+            pthread_join(curr.pid, NULL);
+            debugger(END_EVENT, curr, outLine++);
+            write_outfile("%s %lf %lf\n",curr.name, timer->passed(timer), timer->passed(timer) - curr.t0);
+        }
     }
     // In SJF there's no context switch...
     write_outfile("%d\n",0);

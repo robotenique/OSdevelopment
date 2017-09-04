@@ -19,8 +19,8 @@ void pqclass_Init(MinPQ self);
 bool isEmpty(MinPQ);
 int size(MinPQ);
 const Process min(MinPQ);
-void insert(MinPQ, Process);
-Process delMin(MinPQ);
+void insert(MinPQ, Process*);
+Process* delMin(MinPQ);
 void resize(MinPQ , int);
 void swap(MinPQ, int, int);
 bool greater(MinPQ, int, int);
@@ -44,9 +44,8 @@ void sink(MinPQ, int);
 MinPQ new_MinPQ(int (*comp)(Process a, Process b)) {
     pqclass *self = emalloc(sizeof(pqclass));
     pqclass_Init(self);
-    self->maxAlloc = 0;
     self->compare = comp;
-    self->pq = emalloc(2*sizeof(Process));
+    self->pq = emalloc(2*sizeof(Process*));
     self->n = 0;
     self->length = 2;
     return self;
@@ -84,9 +83,11 @@ void destroy_MinPQ(MinPQ self){
     self->min = NULL;
     self->delMin = NULL;
     self->insert = NULL;
-    for(int i = 1; i <= self->maxAlloc; i++)
-        if(self->pq[i].name != NULL)
-                free(self->pq[i].name);    
+    for(int i = 1; i <= self->n; i++){
+        if(self->pq[i] != NULL)
+                free(self->pq[i]->name);
+        free(self->pq[i]);
+    }
     free(self->pq);
     free(self);
 }
@@ -128,7 +129,7 @@ int size(MinPQ self){
 const Process min(MinPQ self){
     if(self->isEmpty(self))
         die("Priority queue underflow!");
-    return self->pq[1];
+    return procdup(*self->pq[1]);
 }
 /*
  * Function: insert
@@ -139,11 +140,10 @@ const Process min(MinPQ self){
  *
  * @return
  */
-void insert(MinPQ self, Process p){
+void insert(MinPQ self, Process *p){
     if(self->n == self->length - 1)
         resize(self, 2*self->length);
     self->n += 1;
-    self->maxAlloc += 1;
     self->pq[self->n] = p;
     swim(self, self->n);
 }
@@ -157,10 +157,11 @@ void insert(MinPQ self, Process p){
  *
  * @return the process with the minimum Priority
  */
-Process delMin(MinPQ self){
+Process *delMin(MinPQ self){
     if(self->isEmpty(self))
         die("Priority queue underflow!");
-    Process min = self->pq[1];
+    Process *min = self->pq[1];
+    self->pq[1] = NULL;
     swap(self, 1, self->n);
     self->n = self->n - 1;
     sink(self, 1);
@@ -182,10 +183,8 @@ Process delMin(MinPQ self){
  * @return
  */
 void resize(MinPQ self, int capacity){
-    Process *temp = emalloc(capacity*sizeof(Process));
-    for (int i = 1; i <= self->n; temp[i] = procdup(self->pq[i]), i++);
-    for(int i = 1; i <= self->maxAlloc; i++)
-        free(self->pq[i].name);
+    Process **temp = emalloc(capacity*sizeof(Process*));
+    for (int i = 1; i <= self->n; temp[i] = self->pq[i], i++);
     free(self->pq);
     self->pq = temp;
     self->length = capacity;
@@ -204,7 +203,7 @@ void resize(MinPQ self, int capacity){
  *          false otherwise.
  */
 bool greater(MinPQ self, int i, int j){
-    int compRes = self->compare(self->pq[i], self->pq[j]);
+    int compRes = self->compare(*self->pq[i], *self->pq[j]);
     return compRes > 0;
 }
 /*
@@ -219,7 +218,7 @@ bool greater(MinPQ self, int i, int j){
  * @return
  */
 void swap(MinPQ self, int i, int j){
-    Process tmp = self->pq[i];
+    Process *tmp = self->pq[i];
     self->pq[i] = self->pq[j];
     self->pq[j] = tmp;
 }

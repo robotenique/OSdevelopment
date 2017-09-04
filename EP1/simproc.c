@@ -51,29 +51,6 @@ int main(int argc, char const *argv[]) {
         default:
             die("The scheduler algorithm id specified is invalid!");
     }
-
-    //debug(readyJobs);
-    /*
-    // create a minPQ
-    MinPQ pq = new_MinPQ(&comparator);
-    for(int i = 0; i <= 1220; i++){
-        // testing the minPQ
-        Process ptest;
-        char temp[20] = "";
-        sprintf(temp, "Processo t%02i", i);
-        ptest.nLine = i;
-        ptest.t0 = 5*i;
-        ptest.dt = -0.0045*(i*i) + 9*i; // parabola >>SUAVE<<
-        ptest.deadline = 45;
-        ptest.name = estrdup(temp);
-        // insert into pq
-        pq->insert(pq, ptest);
-    }
-    for(int i = 0; i <= 1200; i++)
-        pq->delMin(pq);
-
-    destroy_MinPQ(pq);
-    */
     destroy_ProcArray(readyJobs);
     close_outfile();
     free(infile);
@@ -212,7 +189,7 @@ void resizeProcArray(ProcArray self, int capacity){
  */
 void destroy_ProcArray(ProcArray self) {
     for(int i = 0; i < self->i; i++){
-        if(self->v[i].name != NULL)
+        if(&self->v[i] != NULL)
                 free(self->v[i].name);
     }
     free(self->v);
