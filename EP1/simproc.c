@@ -16,6 +16,7 @@
 #include "minPQ.h"
 #include "roundrobin.h"
 #include "sjf.h"
+#include "priorityScheduler.h"
 
 int comparator(Process, Process);
 int cmp_ProcArray(const void *, const void *);
@@ -45,7 +46,7 @@ int main(int argc, char const *argv[]) {
             schedulerRoundRobin(readyJobs, outfile);
             break;
         case 3:
-            //schedulerPriority(readyJobs, outfile);
+            schedulerPriority(readyJobs, outfile);
             break;
         default:
             die("The scheduler algorithm id specified is invalid!");
@@ -75,7 +76,7 @@ int main(int argc, char const *argv[]) {
     */
     destroy_ProcArray(readyJobs);
     close_outfile();
-    
+
     return 0;
 }
 /*
@@ -147,7 +148,7 @@ ProcArray create_ProcArray(char *filename) {
 
     int lNumber = 0;
     while(fgets(buff, 255, fp) != NULL)
-        insertProcArray(temp, buff, lNumber++);
+        insertProcArray(temp, buff, ++lNumber);
     qsort(temp->v, temp->i, sizeof(Process), cmp_ProcArray);
     fclose(fp);
     return temp;
