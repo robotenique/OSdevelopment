@@ -45,19 +45,26 @@ double applyLogSigmoid(double priority){
 double calcQuanta(double priority) {
     if(SIGMOID)
         return applyLogSigmoid(priority);
-    double L = (priority - avg)/sqrt(var);
-    double scale = 2.5*fmin(4.0, fabs(L));
-    return QUANTUM_VAL*(11.0 - scale);
+    double L;
+    if (!var)
+        L = 0;
+    else
+        L = (priority - avg)/sqrt(var);
+    double scale = 2.25*fmin(4.0, fabs(L));
+    printf("L = %g / scale = %g\n", L, scale);
+    return floor(QUANTUM_VAL*(scale + 1));
 }
 
 void *runPScheduler(void *arg) {
     Node *n = (Node *)arg;
     double w;
 
-    while ((w = fmin(n->p->dt, calcQuanta(quantum[n->p->nLine])))) {
+    while (n->p->dt) {
         pthread_mutex_lock(&(n->mtx));
         debugger(RUN_EVENT, *(n->p), 0);
-        //printf("Quanta = %g\n", w);
+        w = fmin(n->p->dt, calcQuanta(quantum[n->p->nLine]));
+        printf("Avg = %g / SD = %g\n", avg, sqrt(var));
+        printf("Priority = %g / Quanta = %g\n", quantum[n->p->nLine], w);
         sleepFor(w);
         n->p->dt -= w;
         debugger(EXIT_EVENT, *(n->p), 0);
@@ -133,6 +140,7 @@ static void wakeup_next(Queue q, Stack *s){
         queue_remove(q);
         removeFromStats(quantum[mem->p->nLine]);
     }
+    queue_debug(q);
 
     // Start/restart the next process
     if ((n = queue_first(q)))

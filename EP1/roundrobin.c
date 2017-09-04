@@ -64,13 +64,6 @@ void *run(void *arg) {
 }
 
 // TODO: Remove this debug =======================================
-void queue_debug(Queue q) {
-    printf("%p ", NULL);
-    for (Node *n = q->next; n->p != NULL; n = n->next)
-        printf("%s ", n->p->name);
-    printf("%p\n", NULL);
-}
-
 void print_stack(Stack *s) {
     for (int i = 0; i < s->i; i++)
         printf("%s ", s->v[i].p->name);
