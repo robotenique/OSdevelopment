@@ -163,13 +163,14 @@ void schedulerRoundRobin(ProcArray readyJobs) {
             // Wait in idle mode if queue is empty
             *wt = tmp->p->t0 - timer->passed(timer);
             //printf("Esperando processos chegarem...\n");
+            ranThreads[0] = &idleThread;
             pthread_create(&idleThread, NULL, &iWait, (void *)wt);
         }
         pthread_mutex_lock(&gmtx);
         wakeup_next(q, s);
     }
     // Freeing all threads...
-    for(int i = 1; i < sz; i++)
+    for(int i = 0; i < sz; i++)
         if(ranThreads[i] != NULL)
             pthread_join(*ranThreads[i],NULL);
     free(ranThreads);

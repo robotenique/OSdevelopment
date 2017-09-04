@@ -170,13 +170,14 @@ void schedulerPriority(ProcArray pQueue){
             // Wait in idle mode if queue is empty
             double wt = tmp->p->t0 - timer->passed(timer);
             //printf("Esperando processos chegarem...\n");
+            ranThreads[0] = &idleThread;
             pthread_create(&idleThread, NULL, &iWait, &wt);
         }
         pthread_mutex_lock(&gmtx);
         wakeup_next(runningP, pool);
     }
     // Freeing all threads...
-    for(int i = 1; i < sz; i++)
+    for(int i = 0; i < sz; i++)
         if(ranThreads[i] != NULL)
             pthread_join(*ranThreads[i],NULL);
     free(ranThreads);
