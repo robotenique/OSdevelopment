@@ -70,7 +70,7 @@ void schedulerSJF(ProcArray pQueue, char *outfile){
         pthread_create(&curr.pid, NULL, &execProcess, &curr);
         pthread_join(curr.pid, NULL);
         debugger(END_EVENT, curr, outLine++);
-        fprintf(out, "%s %lf %lf\n",curr.name, timer->passed(timer), timer->passed(timer) - curr.t0);
+        write_outfile("%s %lf %lf\n",curr.name, timer->passed(timer), timer->passed(timer) - curr.t0);
     }
     // In SJF there's no context switch...
     fprintf(out, "%d\n",0);

@@ -97,6 +97,7 @@ void *emalloc(size_t size);
  * @return a pointer to the opened file
  */
 FILE *efopen(const char *filename, const char *mode);
+
 /*
  * Function: estrdup
  * --------------------------------------------------------

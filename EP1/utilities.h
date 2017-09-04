@@ -12,12 +12,12 @@
 #define _UTILITIES_H_
 
 #define NANO_CONVERT 1e-9
-// TODO: CHANGE TO enum
 typedef enum {ARRIVAL_EVENT, RUN_EVENT, EXIT_EVENT, END_EVENT, CONTEXT_EVENT} EVENTS;
 #include <math.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <time.h>
 #include "error.h"
 #include "process.h"
@@ -32,6 +32,7 @@ struct timer_s{
 };
 typedef struct timer_s* Timer;
 
+bool DEBUG_MODE;
 
 /*
  * Function: new_Timer
@@ -43,6 +44,7 @@ typedef struct timer_s* Timer;
  * @return  a new timer
  */
 Timer new_Timer();
+
 /*
  * Function: destroy_Timer
  * --------------------------------------------------------
@@ -53,6 +55,7 @@ Timer new_Timer();
  * @return
  */
 void destroy_Timer(Timer);
+
 /*
  * Function: sleepFor
  * --------------------------------------------------------
@@ -63,6 +66,7 @@ void destroy_Timer(Timer);
  * @return
  */
 void sleepFor(double);
+
 /*
  * Function: debugger
  * --------------------------------------------------------
@@ -78,5 +82,39 @@ void sleepFor(double);
  * @return
  */
 void debugger(int, Process, int);
+
+/*
+ * Function: open_outfile
+ * --------------------------------------------------------
+ * Open outfile to print statistics about processes
+ *
+ * @args name : name of the file
+ *
+ * @return
+ */
+void open_outfile(const char*);
+
+/*
+ * Function: close_outfile
+ * --------------------------------------------------------
+ * Close outfile
+ *
+ * @args
+ *
+ * @return
+ */
+void close_outfile();
+
+/*
+ * Function: write_outfile
+ * --------------------------------------------------------
+ * Write a formated string to outfile
+ *
+ * @args fmt : formated string
+ *       ... : args to format string
+ *
+ * @return
+ */
+void write_outfile(const char*, ...);
 
 #endif

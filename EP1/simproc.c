@@ -10,9 +10,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "error.h"
+#include "utilities.h"
 #include "process.h"
 #include "minPQ.h"
-#include "error.h"
 #include "roundrobin.h"
 #include "sjf.h"
 
@@ -33,6 +34,7 @@ int main(int argc, char const *argv[]) {
     char *outfile = estrdup(argv[3]);
     if(argc >= 5 && !strcmp(argv[4], "d"))
         DEBUG_MODE = true;
+    open_outfile(outfile);
     ProcArray readyJobs = create_ProcArray(infile);
     readyJobs->nextP = 0;
     switch (schedType) {
@@ -72,7 +74,8 @@ int main(int argc, char const *argv[]) {
     destroy_MinPQ(pq);
     */
     destroy_ProcArray(readyJobs);
-
+    close_outfile();
+    
     return 0;
 }
 /*

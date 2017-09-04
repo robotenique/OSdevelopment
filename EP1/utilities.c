@@ -1,6 +1,9 @@
 #define _GNU_SOURCE
 #include "utilities.h"
 
+static FILE *outfile;
+static int ctx_changes = 0;
+
 /*
  * Function: val
  * --------------------------------------------------------
@@ -80,8 +83,26 @@ void debugger(int EVENT_CODE, Process p, int arg){
                 fprintf(stderr, "** %s (linha output = %d) finalizou no sistema! **\n",p.name, arg);
                 break;
             case CONTEXT_EVENT:
-                fprintf(stderr, "// Houve uma mudança de contexto! Total = %d //\n", arg);
+                fprintf(stderr, "// Houve uma mudança de contexto! Total = %d //\n", ++ctx_changes);
                 break;
         }
+    }
+}
+
+void open_outfile(const char* name) {
+    outfile = efopen(name, "w");
+}
+
+void close_outfile() {
+    fclose(outfile);
+}
+
+void write_outfile(const char* fmt, ...) {
+    if (fmt) {
+        va_list arglist;
+
+        va_start(arglist, fmt);
+        vfprintf(outfile, fmt, arglist);
+        va_end(arglist);
     }
 }

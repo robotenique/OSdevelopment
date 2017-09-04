@@ -31,5 +31,12 @@ struct pstruct{
 };
 
 typedef struct pstruct *ProcArray;
-bool DEBUG_MODE;
+
+typedef struct node_t {
+    Process *p;
+    pthread_mutex_t mtx;
+    pthread_t t;
+    struct node_t *next, *prev;
+} Node;
+
 #endif
