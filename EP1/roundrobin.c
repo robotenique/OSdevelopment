@@ -179,6 +179,7 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     free(s);
     free(wt);
     destroy_Timer(timer);
+    write_outfile("%d\n", get_ctx_changes());
     // TODO: remove deadline statistics later
     int counter = 0;
     double avgDelay = 0;

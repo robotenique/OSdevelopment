@@ -89,6 +89,10 @@ void debugger(int EVENT_CODE, Process p, int arg){
     }
 }
 
+int get_ctx_changes() {
+    return ctx_changes;
+}
+
 void open_outfile(const char* name) {
     outfile = efopen(name, "w");
 }

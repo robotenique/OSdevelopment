@@ -79,7 +79,7 @@ void schedulerSJF(ProcArray pQueue){
         }
     }
     // In SJF there's no context switch...
-    write_outfile("%d\n",0);
+    write_outfile("%d\n", get_ctx_changes());
     destroy_Timer(timer);
     destroy_MinPQ(pPQ);
 

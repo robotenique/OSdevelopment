@@ -187,6 +187,8 @@ void schedulerPriority(ProcArray pQueue){
     free(quantum);
     destroy_Timer(timer);
 
+    write_outfile("%d\n", get_ctx_changes());
+
     // Deadline statistics TODO: remove this from the final code!
     int counter = 0;
     double avgDelay = 0;

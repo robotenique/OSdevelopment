@@ -133,4 +133,6 @@ void write_outfile(const char*, ...);
  */
 Process procdup(Process);
 
+int get_ctx_changes();
+
 #endif
