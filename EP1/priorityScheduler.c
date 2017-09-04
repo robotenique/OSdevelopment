@@ -21,6 +21,7 @@ static double var = 0;
 static double avg = 0;
 static int count = 0;
 static bool SIGMOID = false;
+static pthread_t **ranThreads;
 // deadline related
 static deadlineC *deadArray;
 
@@ -33,6 +34,7 @@ static void *iWait(void *t) {
     pthread_mutex_unlock(&gmtx);
     return NULL;
 }
+
 double applyLogSigmoid(double priority){
     double qMult = -67*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 20)
     //qMult = -33*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 10)
@@ -69,8 +71,6 @@ void *runPScheduler(void *arg) {
 
     return NULL;
 }
-
-
 
 double calculatePriority(Process p){
     double priority = 5000;
@@ -122,6 +122,7 @@ static void wakeup_next(Queue q, Stack *s){
         queue_add(q, n);
         debugger(ARRIVAL_EVENT, *(n->p), 0);
         stack_remove(s);
+        ranThreads[n->p->nLine] = &(n->t);
         pthread_create(&(n->t), NULL, &runPScheduler, (void *)n);
         n = stack_top(s);
     }
@@ -139,6 +140,7 @@ static void wakeup_next(Queue q, Stack *s){
     if (mem != n && mem)
         debugger(CONTEXT_EVENT, *(mem->p), 0);
 }
+
 void schedulerPriority(ProcArray pQueue){
     int sz = pQueue->i + 1;
     // TODO: choose between one model... But test each of them
@@ -147,8 +149,9 @@ void schedulerPriority(ProcArray pQueue){
     Queue runningP = new_queue();
     pthread_t idleThread;
     Node *tmp;
-    quantum = emalloc(sizeof(double)*pQueue->i);
-    deadArray = emalloc(sizeof(deadlineC)*pQueue->i);
+    quantum = emalloc(sizeof(double)*sz);
+    deadArray = emalloc(sizeof(deadlineC)*sz);
+    ranThreads = emalloc(sizeof(pthread_t*)*sz);
     timer = new_Timer();
     // Transfer processes to stack
     for (int i = pQueue->i - 1; i >= 0; i--)
@@ -172,6 +175,17 @@ void schedulerPriority(ProcArray pQueue){
         pthread_mutex_lock(&gmtx);
         wakeup_next(runningP, pool);
     }
+    // Freeing all threads...
+    for(int i = 1; i < sz; i++)
+        if(ranThreads[i] != NULL)
+            pthread_join(*ranThreads[i],NULL);
+    free(ranThreads);
+    free(runningP);
+    free(pool->v);
+    free(pool);
+    free(quantum);
+    destroy_Timer(timer);
+
     // Deadline statistics TODO: remove this from the final code!
     int counter = 0;
     double avgDelay = 0;
@@ -204,4 +218,5 @@ void schedulerPriority(ProcArray pQueue){
     printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
     printf("Desvio padrão de atraso = %lf ||%%\n",var);
+    free(deadArray);
 }
