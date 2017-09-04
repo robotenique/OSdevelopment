@@ -16,6 +16,9 @@
 
 
 typedef struct pqclass {
+    // The last position from which we assigned a process.
+    // Used in the destruction process.
+    unsigned int maxAlloc;
     unsigned int n; // Last index in the PQ
     unsigned int length; // Absolute size of the array
     Process *pq; // the process queue itself

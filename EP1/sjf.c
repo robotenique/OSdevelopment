@@ -17,8 +17,11 @@
 #include "minPQ.h"
 #include "utilities.h"
 
+static deadlineC *deadArray;
+static Timer timer;
 int cmpSJF(Process, Process);
 void *execProcess(void *proc);
+Process procdup(Process p);
 
 /*
  * Function: schedulerSJF
@@ -40,16 +43,18 @@ void *execProcess(void *proc);
  *
  * @return
  */
-void schedulerSJF(ProcArray pQueue, char *outfile){
-    FILE* out = efopen (outfile, "w");
+void schedulerSJF(ProcArray pQueue){
+    int sz = pQueue->i + 1;
+    deadArray = emalloc(sizeof(deadlineC)*sz);
+
     int outLine = 1;
     MinPQ pPQ = new_MinPQ(&cmpSJF);
     Process curr = pQueue->v[pQueue->nextP++];
-    Timer timer = new_Timer();
+    timer = new_Timer();
     // Sleep until the first process arrives at the cpu
     sleepFor(curr.t0);
     debugger(ARRIVAL_EVENT, curr, 0);
-    pPQ->insert(pPQ, curr);
+    pPQ->insert(pPQ, procdup(curr));
     while(pQueue->nextP < pQueue->i || !pPQ->isEmpty(pPQ)){
         double tNow = timer->passed(timer);
         int i;
@@ -61,7 +66,7 @@ void schedulerSJF(ProcArray pQueue, char *outfile){
         // Insert all the arrived processes into the MinPQ
         for(i = pQueue->nextP; i < pQueue->i &&  pQueue->v[i].t0 <= tNow; i++){
             debugger(ARRIVAL_EVENT, pQueue->v[i], 0);
-            pPQ->insert(pPQ, pQueue->v[i]);
+            pPQ->insert(pPQ, procdup(pQueue->v[i]));
         }
         pQueue->nextP = i;
         if(pPQ->isEmpty(pPQ))   continue;
@@ -73,10 +78,45 @@ void schedulerSJF(ProcArray pQueue, char *outfile){
         write_outfile("%s %lf %lf\n",curr.name, timer->passed(timer), timer->passed(timer) - curr.t0);
     }
     // In SJF there's no context switch...
-    fprintf(out, "%d\n",0);
-    fclose(out);
-    destroy_MinPQ(pPQ);
+    write_outfile("%d\n",0);
     destroy_Timer(timer);
+    destroy_MinPQ(pPQ);
+
+    // TODO: remove deadline statistics later
+    int counter = 0;
+    double avgDelay = 0;
+    printf("\n\n");
+    for (int i = 1; i < sz; i++) {
+        deadlineC dc = deadArray[i];
+        printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
+        if(dc.realFinished > dc.deadline){
+            avgDelay += dc.realFinished - dc.deadline;
+            counter++;
+        }
+    }
+    avgDelay /= counter;
+    double var = 0;
+    for (int i = 1; i < sz; i++) {
+        deadlineC dc = deadArray[i];
+        if(dc.realFinished > dc.deadline)
+            var += pow((dc.realFinished - dc.deadline) - avgDelay, 2);
+    }
+    var /= counter;
+    var = sqrtl(var);
+    if(counter == 0){
+        var = 0;
+        avgDelay = 0;
+    }
+    double percentage = (double)counter;
+    percentage /= sz - 1;
+    percentage = 1 - percentage;
+    percentage *= 100;
+    printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
+    printf("Média de atraso = %lf\n",avgDelay);
+    printf("Desvio padrão de atraso = %lf ||%%\n",var);
+    free(deadArray);
+    // --------------------------------------------------------------------------------------------
+
 }
 
 /*
@@ -111,5 +151,6 @@ void *execProcess(void *proc){
     debugger(RUN_EVENT, p, 0);
     sleepFor(p.dt);
     debugger(EXIT_EVENT, p, 0);
+    deadArray[p.nLine] = (deadlineC){timer->passed(timer),p.deadline};
     pthread_exit(NULL);
 }

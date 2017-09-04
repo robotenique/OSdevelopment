@@ -34,6 +34,12 @@ typedef struct timer_s* Timer;
 
 bool DEBUG_MODE;
 
+// to calculate the deadline!
+typedef struct deadlineC{
+    double realFinished;
+    double deadline;
+}deadlineC;
+
 /*
  * Function: new_Timer
  * --------------------------------------------------------
@@ -116,5 +122,15 @@ void close_outfile();
  * @return
  */
 void write_outfile(const char*, ...);
+/*
+ * Function: procdup
+ * --------------------------------------------------------
+ * Duplicate a process and return it
+ *
+ * @args p : the process
+ *
+ * @return a copy of the process
+ */
+Process procdup(Process);
 
 #endif

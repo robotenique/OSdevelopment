@@ -9,8 +9,9 @@
 #include "deque.h"
 #include "stack.h"
 
+static deadlineC *deadArray;
 void wakeup_next(Queue, Stack*);
-
+static pthread_t **ranThreads;
 int finished = 0;
 pthread_mutex_t gmtx;
 Timer timer;
@@ -55,6 +56,7 @@ void *run(void *arg) {
     }
 
     finished++;
+    deadArray[n->p->nLine] = (deadlineC){timer->passed(timer), n->p->deadline};
     debugger(END_EVENT, *(n->p), finished);
     write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
 
@@ -96,6 +98,7 @@ void wakeup_next(Queue q, Stack *s) {
         queue_add(q, n);
         debugger(ARRIVAL_EVENT, *(n->p), 0);
         stack_remove(s);
+        ranThreads[n->p->nLine] = &(n->t);
         pthread_create(&(n->t), NULL, &run, (void *)n);
         n = stack_top(s);
     }
@@ -123,7 +126,10 @@ void wakeup_next(Queue q, Stack *s) {
  *
  * @return
  */
-void schedulerRoundRobin(ProcArray readyJobs, char *outfile) {
+void schedulerRoundRobin(ProcArray readyJobs) {
+    int sz = readyJobs->i + 1;
+    ranThreads = emalloc(sizeof(pthread_t*)*sz);
+    deadArray = emalloc(sizeof(deadlineC)*sz);
     Stack *s = new_stack(readyJobs->i);
     Queue q = new_queue();
     pthread_t idleThread;
@@ -162,10 +168,49 @@ void schedulerRoundRobin(ProcArray readyJobs, char *outfile) {
         pthread_mutex_lock(&gmtx);
         wakeup_next(q, s);
     }
-
+    // Freeing all threads...
+    for(int i = 1; i < sz; i++)
+        if(ranThreads[i] != NULL)
+            pthread_join(*ranThreads[i],NULL);
+    free(ranThreads);
     free(q);
     free(s->v);
     free(s);
     free(wt);
-    pthread_exit(NULL);
+    destroy_Timer(timer);
+    // TODO: remove deadline statistics later
+    int counter = 0;
+    double avgDelay = 0;
+    printf("\n\n");
+    for (int i = 1; i < sz; i++) {
+        deadlineC dc = deadArray[i];
+        printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
+        if(dc.realFinished > dc.deadline){
+            avgDelay += dc.realFinished - dc.deadline;
+            counter++;
+        }
+    }
+    avgDelay /= counter;
+    double var = 0;
+    for (int i = 1; i < sz; i++) {
+        deadlineC dc = deadArray[i];
+        if(dc.realFinished > dc.deadline)
+            var += pow((dc.realFinished - dc.deadline) - avgDelay, 2);
+    }
+    var /= counter;
+    var = sqrtl(var);
+    if(counter == 0){
+        var = 0;
+        avgDelay = 0;
+    }
+    double percentage = (double)counter;
+    percentage /= sz - 1;
+    percentage = 1 - percentage;
+    percentage *= 100;
+    printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
+    printf("Média de atraso = %lf\n",avgDelay);
+    printf("Desvio padrão de atraso = %lf ||%%\n",var);
+    free(deadArray);
+    // --------------------------------------------------------------------------------------------
+
 }

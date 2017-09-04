@@ -5,6 +5,6 @@
 #include "process.h"
 
 
-void schedulerPriority(ProcArray, char*);
+void schedulerPriority(ProcArray);
 
 #endif

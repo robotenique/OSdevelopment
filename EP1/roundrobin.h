@@ -4,6 +4,6 @@
 #include <time.h>
 #include "process.h"
 
-void schedulerRoundRobin(ProcArray, char*);
+void schedulerRoundRobin(ProcArray);
 
 #endif

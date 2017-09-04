@@ -11,6 +11,7 @@
 */
 
 #include "minPQ.h"
+#include "utilities.h"
 
 /* -- Function signatures --- */
 void pqclass_Init(MinPQ self);
@@ -43,6 +44,7 @@ void sink(MinPQ, int);
 MinPQ new_MinPQ(int (*comp)(Process a, Process b)) {
     pqclass *self = emalloc(sizeof(pqclass));
     pqclass_Init(self);
+    self->maxAlloc = 0;
     self->compare = comp;
     self->pq = emalloc(2*sizeof(Process));
     self->n = 0;
@@ -82,6 +84,9 @@ void destroy_MinPQ(MinPQ self){
     self->min = NULL;
     self->delMin = NULL;
     self->insert = NULL;
+    for(int i = 1; i <= self->maxAlloc; i++)
+        if(self->pq[i].name != NULL)
+                free(self->pq[i].name);    
     free(self->pq);
     free(self);
 }
@@ -138,6 +143,7 @@ void insert(MinPQ self, Process p){
     if(self->n == self->length - 1)
         resize(self, 2*self->length);
     self->n += 1;
+    self->maxAlloc += 1;
     self->pq[self->n] = p;
     swim(self, self->n);
 }
@@ -177,7 +183,10 @@ Process delMin(MinPQ self){
  */
 void resize(MinPQ self, int capacity){
     Process *temp = emalloc(capacity*sizeof(Process));
-    for (int i = 1; i <= self->n; temp[i] = self->pq[i], i++);
+    for (int i = 1; i <= self->n; temp[i] = procdup(self->pq[i]), i++);
+    for(int i = 1; i <= self->maxAlloc; i++)
+        free(self->pq[i].name);
+    free(self->pq);
     self->pq = temp;
     self->length = capacity;
 }

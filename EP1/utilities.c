@@ -106,3 +106,14 @@ void write_outfile(const char* fmt, ...) {
         va_end(arglist);
     }
 }
+
+Process procdup(Process p){
+    Process temp;
+    temp.deadline = p.deadline;
+    temp.dt = p.dt;
+    temp.name = estrdup(p.name);
+    temp.nLine = p.nLine;
+    temp.pid = p.pid;
+    temp.t0 = p.t0;
+    return temp;
+}

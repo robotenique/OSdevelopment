@@ -20,13 +20,9 @@ static int finished = 0;
 static double var = 0;
 static double avg = 0;
 static int count = 0;
-// Deadline related
-typedef struct deadlineC{
-    double realFinished;
-    double deadline;
-}deadlineC;
-static deadlineC *deadArray;
 static bool SIGMOID = false;
+// deadline related
+static deadlineC *deadArray;
 
 
 
@@ -59,7 +55,7 @@ void *runPScheduler(void *arg) {
     while ((w = fmin(n->p->dt, calcQuanta(quantum[n->p->nLine])))) {
         pthread_mutex_lock(&(n->mtx));
         debugger(RUN_EVENT, *(n->p), 0);
-        printf("Quanta = %g\n", w);
+        //printf("Quanta = %g\n", w);
         sleepFor(w);
         n->p->dt -= w;
         debugger(EXIT_EVENT, *(n->p), 0);
@@ -143,7 +139,8 @@ static void wakeup_next(Queue q, Stack *s){
     if (mem != n && mem)
         debugger(CONTEXT_EVENT, *(mem->p), 0);
 }
-void schedulerPriority(ProcArray pQueue, char *outfile){
+void schedulerPriority(ProcArray pQueue){
+    int sz = pQueue->i + 1;
     // TODO: choose between one model... But test each of them
     SIGMOID = false;
     Stack *pool = new_stack(pQueue->i);
@@ -178,7 +175,8 @@ void schedulerPriority(ProcArray pQueue, char *outfile){
     // Deadline statistics TODO: remove this from the final code!
     int counter = 0;
     double avgDelay = 0;
-    for (int i = 1; i < pQueue->i + 1; i++) {
+    printf("\n\n");
+    for (int i = 1; i < sz; i++) {
         deadlineC dc = deadArray[i];
         printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
         if(dc.realFinished > dc.deadline){
@@ -188,7 +186,7 @@ void schedulerPriority(ProcArray pQueue, char *outfile){
     }
     avgDelay /= counter;
     double var = 0;
-    for (int i = 1; i < pQueue->i + 1; i++) {
+    for (int i = 1; i < sz; i++) {
         deadlineC dc = deadArray[i];
         if(dc.realFinished > dc.deadline)
             var += pow((dc.realFinished - dc.deadline) - avgDelay, 2);
@@ -199,7 +197,11 @@ void schedulerPriority(ProcArray pQueue, char *outfile){
         var = 0;
         avgDelay = 0;
     }
-    printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",100.0*(1-(double)counter/(double)pQueue->i));
+    double percentage = (double)counter;
+    percentage /= sz - 1;
+    percentage = 1 - percentage;
+    percentage *= 100;
+    printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
     printf("Desvio padrão de atraso = %lf ||%%\n",var);
 }

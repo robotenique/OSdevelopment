@@ -40,13 +40,13 @@ int main(int argc, char const *argv[]) {
     readyJobs->nextP = 0;
     switch (schedType) {
         case 1:
-            schedulerSJF(readyJobs, outfile);
+            schedulerSJF(readyJobs);
             break;
         case 2:
-            schedulerRoundRobin(readyJobs, outfile);
+            schedulerRoundRobin(readyJobs);
             break;
         case 3:
-            schedulerPriority(readyJobs, outfile);
+            schedulerPriority(readyJobs);
             break;
         default:
             die("The scheduler algorithm id specified is invalid!");
@@ -76,7 +76,8 @@ int main(int argc, char const *argv[]) {
     */
     destroy_ProcArray(readyJobs);
     close_outfile();
-
+    free(infile);
+    free(outfile);
     return 0;
 }
 /*
@@ -210,6 +211,10 @@ void resizeProcArray(ProcArray self, int capacity){
  * @return
  */
 void destroy_ProcArray(ProcArray self) {
+    for(int i = 0; i < self->i; i++){
+        if(self->v[i].name != NULL)
+                free(self->v[i].name);
+    }
     free(self->v);
     free(self);
 }

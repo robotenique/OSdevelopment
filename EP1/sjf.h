@@ -4,6 +4,6 @@
 #include <time.h>
 #include "process.h"
 
-void schedulerSJF(ProcArray, char*);
+void schedulerSJF(ProcArray);
 
 #endif
