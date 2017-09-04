@@ -49,7 +49,7 @@ void *runPScheduler(void *arg) {
     while ((w = fmin(n->p->dt, calcQuanta(quantum[n->p->nLine])))) {
         pthread_mutex_lock(&(n->mtx));
         debugger(RUN_EVENT, *(n->p), 0);
-        //printf("Quanta = %g\n", w);
+        printf("Quanta = %g\n", w);
         sleepFor(w);
         n->p->dt -= w;
         debugger(EXIT_EVENT, *(n->p), 0);
