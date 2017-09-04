@@ -8,11 +8,11 @@ def main():
         return
     files = int(argv[1])
     lines = int(argv[2])
-    maxt0 = int(argv[3])
-    maxdt = int(argv[4])
-    maxr = int(argv[5])
+    maxt0 = float(argv[3])
+    maxdt = float(argv[4])
+    maxr = float(argv[5])
     for j in range(files):
-        with open(f"trace{j}.in", "w+") as f:
+        with open(f"trace{j}", "w+") as f:
             t0s = []
             for i in range(lines):
                 t0s.append(maxt0*random())
