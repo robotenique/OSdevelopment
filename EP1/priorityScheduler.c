@@ -12,6 +12,7 @@
 #define QUANTUM_VAL 1.0
 
 
+
 static Timer timer;
 static pthread_mutex_t gmtx;
 static double *quantum;
@@ -25,6 +26,7 @@ typedef struct deadlineC{
     double deadline;
 }deadlineC;
 static deadlineC *deadArray;
+static bool SIGMOID = false;
 
 
 
@@ -35,8 +37,16 @@ static void *iWait(void *t) {
     pthread_mutex_unlock(&gmtx);
     return NULL;
 }
+double applyLogSigmoid(double priority){
+    double qMult = -67*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 20)
+    //qMult = -33*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 10)
+    qMult = qMult < 1 ? 1 : qMult;
+    return qMult;
+}
 
 double calcQuanta(double priority) {
+    if(SIGMOID)
+        return applyLogSigmoid(priority);
     double L = (priority - avg)/sqrt(var);
     double scale = 2.5*fmin(4.0, fabs(L));
     return QUANTUM_VAL*(11.0 - scale);
@@ -63,6 +73,8 @@ void *runPScheduler(void *arg) {
 
     return NULL;
 }
+
+
 
 double calculatePriority(Process p){
     double priority = 5000;
@@ -132,6 +144,8 @@ static void wakeup_next(Queue q, Stack *s){
         debugger(CONTEXT_EVENT, *(mem->p), 0);
 }
 void schedulerPriority(ProcArray pQueue, char *outfile){
+    // TODO: choose between one model... But test each of them
+    SIGMOID = false;
     Stack *pool = new_stack(pQueue->i);
     Queue runningP = new_queue();
     pthread_t idleThread;
@@ -185,7 +199,7 @@ void schedulerPriority(ProcArray pQueue, char *outfile){
         var = 0;
         avgDelay = 0;
     }
-    printf("Processos que acabaram dentro da deadline = %lf%%\n",100.0*(1-(double)counter/(double)pQueue->i));
+    printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",100.0*(1-(double)counter/(double)pQueue->i));
     printf("Média de atraso = %lf\n",avgDelay);
-    printf("Desvio padrão de atraso = %lf\n",var);
+    printf("Desvio padrão de atraso = %lf ||%%\n",var);
 }
