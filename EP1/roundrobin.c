@@ -46,6 +46,9 @@ void *run(void *arg) {
     Node *n = (Node *)arg;
     double w;
 
+    if(!(n->p->dt))
+        pthread_mutex_unlock(&gmtx);
+
     while ((w = fmin(n->p->dt, 1.0))) {
         pthread_mutex_lock(&(n->mtx));
         debugger(RUN_EVENT, *(n->p), 0);
@@ -128,6 +131,7 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     pthread_t idleThread;
     Node *tmp;
     double *wt = (double*)emalloc(sizeof(double));
+    bool notIdle = true;
 
     // Initiate timer
     timer = new_Timer();
@@ -157,13 +161,15 @@ void schedulerRoundRobin(ProcArray readyJobs) {
             *wt = tmp->p->t0 - timer->passed(timer);
             //printf("Esperando processos chegarem...\n");
             ranThreads[0] = &idleThread;
+            notIdle = false;
             pthread_create(&idleThread, NULL, &iWait, (void *)wt);
         }
         pthread_mutex_lock(&gmtx);
         wakeup_next(q, s);
     }
+
     // Freeing all threads...
-    for(int i = 0; i < sz; i++)
+    for(int i = notIdle; i < sz; i++)
         if(ranThreads[i] != NULL)
             pthread_join(*ranThreads[i],NULL);
     free(ranThreads);
@@ -173,6 +179,7 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     free(wt);
     destroy_Timer(timer);
     write_outfile("%d\n", get_ctx_changes());
+
     // TODO: remove deadline statistics later
     int counter = 0;
     double avgDelay = 0;
@@ -205,6 +212,7 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
     printf("Desvio padrão de atraso = %lf ||%%\n",var);
+    
     free(deadArray);
     // --------------------------------------------------------------------------------------------
 

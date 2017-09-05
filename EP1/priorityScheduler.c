@@ -52,12 +52,15 @@ double calcQuanta(double priority) {
         L = (priority - avg)/sqrt(var);
     double scale = 2.25*fmin(4.0, fabs(L));
     printf("L = %g / scale = %g\n", L, scale);
-    return floor(QUANTUM_VAL*(scale + 1));
+    return QUANTUM_VAL*(scale + 1);
 }
 
 void *runPScheduler(void *arg) {
     Node *n = (Node *)arg;
     double w;
+
+    if(!(n->p->dt))
+        pthread_mutex_unlock(&gmtx);
 
     while (n->p->dt) {
         pthread_mutex_lock(&(n->mtx));
@@ -102,6 +105,8 @@ void addToStats(double priority) {
     var = (count*(var + pow(avg, 2)) + pow(priority, 2))/(count + 1);
     avg = (avg*count + priority)/(count + 1);
     var -= pow(avg, 2);
+    if (isnan(var))
+        var = 0;
     count++;
 }
 
@@ -152,7 +157,7 @@ static void wakeup_next(Queue q, Stack *s){
 void schedulerPriority(ProcArray pQueue){
     int sz = pQueue->i + 1;
     // TODO: choose between one model... But test each of them
-    SIGMOID = false;
+    SIGMOID = true;
     Stack *pool = new_stack(pQueue->i);
     Queue runningP = new_queue();
     pthread_t idleThread;
@@ -161,16 +166,22 @@ void schedulerPriority(ProcArray pQueue){
     deadArray = emalloc(sizeof(deadlineC)*sz);
     ranThreads = emalloc(sizeof(pthread_t*)*sz);
     timer = new_Timer();
+    bool notIdle = true;
+
     // Transfer processes to stack
     for (int i = pQueue->i - 1; i >= 0; i--)
         pool->v[pQueue->i - i - 1].p = &(pQueue->v[i]);
+
     pthread_mutex_init(&gmtx, NULL);
     pthread_mutex_lock(&gmtx);
+
     for (int i = 0; i < pQueue->i; i++) {
         pthread_mutex_init(&(pool->v[i].mtx), NULL);
         pthread_mutex_lock(&(pool->v[i].mtx));
     }
+
     wakeup_next(runningP, pool);
+
     while (finished < pQueue->i) {
         if (!queue_first(runningP)) {
             if (!(tmp = stack_top(pool)))
@@ -179,13 +190,15 @@ void schedulerPriority(ProcArray pQueue){
             double wt = tmp->p->t0 - timer->passed(timer);
             //printf("Esperando processos chegarem...\n");
             ranThreads[0] = &idleThread;
+            notIdle = false;
             pthread_create(&idleThread, NULL, &iWait, &wt);
         }
         pthread_mutex_lock(&gmtx);
         wakeup_next(runningP, pool);
     }
+
     // Freeing all threads...
-    for(int i = 0; i < sz; i++)
+    for(int i = notIdle; i < sz; i++)
         if(ranThreads[i] != NULL)
             pthread_join(*ranThreads[i],NULL);
     free(ranThreads);
@@ -229,5 +242,6 @@ void schedulerPriority(ProcArray pQueue){
     printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
     printf("Desvio padrão de atraso = %lf ||%%\n",var);
+
     free(deadArray);
 }
