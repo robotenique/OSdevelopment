@@ -30,7 +30,7 @@ static deadlineC *deadArray;
 static void *iWait(void *t) {
     double *dt = (double *)t;
     sleepFor(*dt);
-    printf("Esperei por %gs\n", *dt);
+    //printf("Esperei por %gs\n", *dt);
     pthread_mutex_unlock(&gmtx);
     return NULL;
 }

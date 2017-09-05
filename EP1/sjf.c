@@ -114,7 +114,8 @@ void schedulerSJF(ProcArray pQueue){
     percentage *= 100;
     printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
-    printf("Desvio padrão de atraso = %lf ||%%\n",var);
+    printf("Desvio padrão de atraso = %lf \n",var);
+    printf("Mudanças de contexto = %d\n||%%", get_ctx_changes());
     free(deadArray);
     // --------------------------------------------------------------------------------------------
 
