@@ -12,6 +12,9 @@
 #define IDLE_STATE 0
 #define RUNNING_STATE 1
 
+//TODO: change everything to PTHREAD  lib
+//TODO: fix the output file, and the line
+//TODO: fix the debug INFO = context changes
 
 typedef struct output{
     char *name;
