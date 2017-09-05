@@ -85,7 +85,7 @@ void print_stack(Stack *s) {
  */
 void wakeup_next(Queue q, Stack *s) {
     Node *n = stack_top(s);
-    Node *mem;
+    Node *mem = NULL;
     Node *notEmpty = queue_first(q);
 
     while (n && n->p->t0 <= timer->passed(timer)) {

@@ -72,6 +72,7 @@ void schedulerSJF(ProcArray pQueue){
         if(!pPQ->isEmpty(pPQ)){
             // Run the min dt process
             curr = *pPQ->delMin(pPQ);
+            debugger(CONTEXT_EVENT, NULL, 0);
             pthread_create(&curr.pid, NULL, &execProcess, &curr);
             pthread_join(curr.pid, NULL);
             debugger(END_EVENT, &curr, outLine++);
