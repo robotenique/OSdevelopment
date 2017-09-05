@@ -53,7 +53,7 @@ void schedulerSJF(ProcArray pQueue){
     timer = new_Timer();
     // Sleep until the first process arrives at the cpu
     sleepFor(curr.t0);
-    debugger(ARRIVAL_EVENT, curr, 0);
+    debugger(ARRIVAL_EVENT, &curr, 0);
     pPQ->insert(pPQ, &curr);
     while(pQueue->nextP < pQueue->i || !pPQ->isEmpty(pPQ)){
         double tNow = timer->passed(timer);
@@ -65,7 +65,7 @@ void schedulerSJF(ProcArray pQueue){
         }
         // Insert all the arrived processes into the MinPQ
         for(i = pQueue->nextP; i < pQueue->i &&  pQueue->v[i].t0 <= tNow; i++){
-            debugger(ARRIVAL_EVENT, pQueue->v[i], 0);
+            debugger(ARRIVAL_EVENT, &(pQueue->v[i]), 0);
             pPQ->insert(pPQ, &pQueue->v[i]);
         }
         pQueue->nextP = i;
@@ -74,7 +74,7 @@ void schedulerSJF(ProcArray pQueue){
             curr = *pPQ->delMin(pPQ);
             pthread_create(&curr.pid, NULL, &execProcess, &curr);
             pthread_join(curr.pid, NULL);
-            debugger(END_EVENT, curr, outLine++);
+            debugger(END_EVENT, &curr, outLine++);
             write_outfile("%s %lf %lf\n",curr.name, timer->passed(timer), timer->passed(timer) - curr.t0);
         }
     }
@@ -149,10 +149,10 @@ int cmpSJF(Process a, Process b){
  * @return
  */
 void *execProcess(void *proc){
-    Process p = (*(Process *)proc);
+    Process *p = (Process *)proc;
     debugger(RUN_EVENT, p, 0);
-    sleepFor(p.dt);
+    sleepFor(p->dt);
     debugger(EXIT_EVENT, p, 0);
-    deadArray[p.nLine] = (deadlineC){timer->passed(timer),p.deadline};
+    deadArray[p->nLine] = (deadlineC){timer->passed(timer), p->deadline};
     pthread_exit(NULL);
 }

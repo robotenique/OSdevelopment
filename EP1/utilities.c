@@ -67,20 +67,20 @@ void sleepFor(double dt){
     nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/NANO_CONVERT)}, NULL);
 }
 
-void debugger(int EVENT_CODE, Process p, int arg){
+void debugger(int EVENT_CODE, Process *p, int arg){
     if(DEBUG_MODE){
         switch (EVENT_CODE) {
             case ARRIVAL_EVENT:
-                fprintf(stderr, "** %s (linha trace = %d) chegou no sistema! **\n",p.name, p.nLine);
+                fprintf(stderr, "** %s (linha trace = %d) chegou no sistema! **\n",p->name, p->nLine);
                 break;
             case RUN_EVENT:
-                fprintf(stderr, "--> %s entrou na CPU %d!\n",p.name, sched_getcpu());
+                fprintf(stderr, "--> %s entrou na CPU %d!\n",p->name, sched_getcpu());
                 break;
             case EXIT_EVENT:
-                fprintf(stderr, "<-- %s saiu da CPU %d!\n",p.name, sched_getcpu());
+                fprintf(stderr, "<-- %s saiu da CPU %d!\n",p->name, sched_getcpu());
                 break;
             case END_EVENT:
-                fprintf(stderr, "** %s (linha output = %d) finalizou no sistema! **\n",p.name, arg);
+                fprintf(stderr, "** %s (linha output = %d) finalizou no sistema! **\n",p->name, arg);
                 break;
             case CONTEXT_EVENT:
                 fprintf(stderr, "// Houve uma mudança de contexto! Total = %d //\n", ++ctx_changes);

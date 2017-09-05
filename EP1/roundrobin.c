@@ -46,21 +46,19 @@ void *run(void *arg) {
     Node *n = (Node *)arg;
     double w;
 
-    if(!(n->p->dt))
-        pthread_mutex_unlock(&gmtx);
-
-    while ((w = fmin(n->p->dt, 1.0))) {
+    do {
         pthread_mutex_lock(&(n->mtx));
-        debugger(RUN_EVENT, *(n->p), 0);
+        debugger(RUN_EVENT, n->p, 0);
+        w = fmin(n->p->dt, 1.0);
         sleepFor(w);
         n->p->dt -= w;
-        debugger(EXIT_EVENT, *(n->p), 0);
+        debugger(EXIT_EVENT, n->p, 0);
         pthread_mutex_unlock(&gmtx);
-    }
+    } while (n->p->dt);
 
     finished++;
     deadArray[n->p->nLine] = (deadlineC){timer->passed(timer), n->p->deadline};
-    debugger(END_EVENT, *(n->p), finished);
+    debugger(END_EVENT, n->p, finished);
     write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
 
     return NULL;
@@ -88,11 +86,12 @@ void print_stack(Stack *s) {
 void wakeup_next(Queue q, Stack *s) {
     Node *n = stack_top(s);
     Node *mem;
+    Node *notEmpty = queue_first(q);
 
     while (n && n->p->t0 <= timer->passed(timer)) {
         // Add new processes to queue if global time > t0
         queue_add(q, n);
-        debugger(ARRIVAL_EVENT, *(n->p), 0);
+        debugger(ARRIVAL_EVENT, n->p, 0);
         stack_remove(s);
         ranThreads[n->p->nLine] = &(n->t);
         pthread_create(&(n->t), NULL, &run, (void *)n);
@@ -100,16 +99,22 @@ void wakeup_next(Queue q, Stack *s) {
     }
 
     // Readd the process to queue or remove it from queue
-    if ((mem = queue_first(q)) && mem->p->dt)
-        queue_readd(q);
-    else
-        queue_remove(q);
+    if (notEmpty) {
+        if ((mem = queue_first(q)) && mem->p->dt)
+            queue_readd(q);
+        else
+            queue_remove(q);
+    }
+
+    queue_debug(q);
 
     // Start/restart the next process
-    if ((n = queue_first(q)))
+    if ((n = queue_first(q))) {
+        printf("%s\n", n->p->name);
         pthread_mutex_unlock(&(n->mtx));
-    if (mem != n && mem)
-        debugger(CONTEXT_EVENT, *(mem->p), 0);
+    }
+    if (mem != n && n)
+        debugger(CONTEXT_EVENT, NULL, 0);
 }
 
 /*
