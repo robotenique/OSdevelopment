@@ -12,6 +12,7 @@
 #define QUANTUM_VAL 1.0
 
 
+// TODO: DON'T LET THE SIMULATOR RUN PROCESSES WITH DT = 0....
 
 static Timer timer;
 static pthread_mutex_t gmtx;
@@ -36,8 +37,8 @@ static void *iWait(void *t) {
 }
 
 double applyLogSigmoid(double priority){
-    double qMult = -67*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 20)
-    //qMult = -33*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 10)
+    //double qMult = -67*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 20)
+    double qMult = -33*log10(pow(1+exp(-priority/25.0),-1)); // (max Quantum Multiplier = 10)
     qMult = qMult < 1 ? 1 : qMult;
     return qMult;
 }
@@ -149,7 +150,7 @@ static void wakeup_next(Queue q, Stack *s){
 void schedulerPriority(ProcArray pQueue){
     int sz = pQueue->i + 1;
     // TODO: choose between one model... But test each of them
-    SIGMOID = true;
+    SIGMOID = false;
     Stack *pool = new_stack(pQueue->i);
     Queue runningP = new_queue();
     pthread_t idleThread;
