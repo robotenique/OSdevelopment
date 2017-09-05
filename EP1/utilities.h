@@ -87,7 +87,7 @@ void sleepFor(double);
  *
  * @return
  */
-void debugger(int, Process, int);
+void debugger(int, Process*, int);
 
 /*
  * Function: open_outfile

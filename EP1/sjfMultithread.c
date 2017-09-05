@@ -72,7 +72,7 @@ void schedulerSJFMultithread(ProcArray pQueue){
 
     // Sleep until the first process arrives at the cpu
     sleepFor(curr.t0);
-    debugger(ARRIVAL_EVENT, curr, 0);
+    debugger(ARRIVAL_EVENT, &curr, 0);
     pPQ->insert(pPQ, &curr);
     pthread_mutex_lock(&schedMutex);
     while(pQueue->nextP < pQueue->i || !pPQ->isEmpty(pPQ)){
@@ -85,7 +85,7 @@ void schedulerSJFMultithread(ProcArray pQueue){
         }
         // Insert all the arrived processes into the MinPQ
         for(i = pQueue->nextP; i < pQueue->i &&  pQueue->v[i].t0 <= tNow; i++){
-            debugger(ARRIVAL_EVENT, pQueue->v[i], 0);
+            debugger(ARRIVAL_EVENT, &pQueue->v[i], 0);
             pPQ->insert(pPQ, &pQueue->v[i]);
         }
         pQueue->nextP = i;
@@ -96,6 +96,7 @@ void schedulerSJFMultithread(ProcArray pQueue){
                     CPU[k] = RUNNING_STATE;
                     pool[k] = pPQ->delMin(pPQ);
                     idleCPU--;
+                    debugger(CONTEXT_EVENT, NULL, 0);
                     startProcess(k);
                 }
         sem_post(&mutex);
@@ -181,7 +182,7 @@ void *processRoutine(void *pinf){
     sem_wait(&mutex);
         core = getCore(pthread_self());
         p = pool[core];
-        debugger(RUN_EVENT, *p, core + 1);
+        debugger(RUN_EVENT, p, core + 1);
         pool[core] = NULL;
     sem_post(&mutex);
 
@@ -191,13 +192,13 @@ void *processRoutine(void *pinf){
     }
 
     sem_wait(&mutex);
-        debugger(EXIT_EVENT, *p, getCore(pthread_self()) + 1);
+        debugger(EXIT_EVENT, p, getCore(pthread_self()) + 1);
         core = getCore(pthread_self());
         CPU[core] = IDLE_STATE;
         idleCPU++;
         outInfo[p->nLine] = new_output(p->name, timer->passed(timer), timer->passed(timer) - p->t0);
         deadArray[p->nLine] = (deadlineC){timer->passed(timer), p->deadline};
-        debugger(END_EVENT, *p, getCore(pthread_self()) + 1);
+        debugger(END_EVENT, p, getCore(pthread_self()) + 1);
         pthread_cond_signal(&cond);
     sem_post(&mutex);
     pthread_exit(NULL);
