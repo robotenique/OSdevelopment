@@ -4,6 +4,7 @@ Stack *new_stack(int size) {
     Stack *s = emalloc(sizeof(Stack));
     s->v = emalloc(size*sizeof(Node));
     s->i = size;
+    s->size = size;
     return s;
 }
 

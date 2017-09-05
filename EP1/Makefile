@@ -15,7 +15,7 @@ all: ep1sh simproc
 ep1sh: ep1sh.o error.o buffer.o
 	$(CC) -o $@ $^ -lrt -lreadline
 
-simproc: simproc.o error.o utilities.o minPQ.o roundrobin.o sjf.o priorityScheduler.o sjfMultithread.o stack.o deque.o
+simproc: simproc.o error.o utilities.o minPQ.o roundrobin.o sjf.o priorityScheduler.o sjfMultithread.o roundrobinmt.o stack.o deque.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c %.h

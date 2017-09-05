@@ -6,7 +6,7 @@
 
 typedef struct stack_t {
     Node *v;
-    int i;
+    int i, size;
 } Stack;
 
 /*

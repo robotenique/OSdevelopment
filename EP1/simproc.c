@@ -18,6 +18,7 @@
 #include "sjf.h"
 #include "sjfMultithread.h"
 #include "priorityScheduler.h"
+#include "roundrobinmt.h"
 
 int comparator(Process, Process);
 int cmp_ProcArray(const void *, const void *);
@@ -52,6 +53,9 @@ int main(int argc, char const *argv[]) {
             break;
         case 4:
             schedulerSJFMultithread(readyJobs);
+            break;
+        case 5:
+            schedulerRoundRobinMT(readyJobs);
             break;
         default:
             die("The scheduler algorithm id specified is invalid!");
