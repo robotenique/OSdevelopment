@@ -16,6 +16,7 @@
 #include "minPQ.h"
 #include "roundrobin.h"
 #include "sjf.h"
+#include "sjfMultithread.h"
 #include "priorityScheduler.h"
 
 int comparator(Process, Process);
@@ -47,6 +48,9 @@ int main(int argc, char const *argv[]) {
             break;
         case 3:
             schedulerPriority(readyJobs);
+            break;
+        case 4:
+            schedulerSJFMultithread(readyJobs);
             break;
         default:
             die("The scheduler algorithm id specified is invalid!");
