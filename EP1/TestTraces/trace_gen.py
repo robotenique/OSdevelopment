@@ -25,7 +25,7 @@ def genHC():
                         t0s.sort()
                     for i in range(lines):
                         dt = maxdt*random()
-                        dl = t0s[i] + dt + dt*maxr*random()                
+                        dl = t0s[i] + dt + dt*maxr*random()
                         f.write("{:.0f} {:.1f} {:.1f} processo{}\n".format(t0s[i], dt, dl, i))
 
 
@@ -35,7 +35,7 @@ def main():
             genHC();
         else:
             print("Wrong number of arguments!!")
-            print("./trace_gen <number of files> <lines> <max t0> <max dt> <max deadline/dt ratio>")
+            print("Usage: ./trace_gen <number of files> <lines> <max t0> <max dt> <max deadline/dt ratio>")
         return
     files = int(argv[1])
     lines = int(argv[2])
@@ -50,7 +50,7 @@ def main():
             t0s.sort()
             for i in range(lines):
                 dt = maxdt*random()
-                dl = t0s[i] + dt + dt*maxr*random()                
+                dl = t0s[i] + dt + dt*maxr*random()
                 f.write("{:.0f} {:.1f} {:.1f} processo{}\n".format(t0s[i], dt, dl, i))
 
 if __name__ == "__main__":
