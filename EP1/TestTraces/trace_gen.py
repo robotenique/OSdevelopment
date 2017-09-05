@@ -1,22 +1,23 @@
 from sys import argv
 from random import random
+# TODO: transform the random() into normal distribution
 # Hardcoded distributions to generate
-trace_dist = [[[10, 13, 10, 2, 2],
-           [10, 13, 10, 10, 0.2],
-           [10, 13, 10, 7, 0.7]],
-          [[10, 73, 20, 10, 0.8],
-           [10, 73, 20, 8, 0.5],
-           [10, 73, 20, 40, 0.3]],
-          [[10, 157, 80, 20, 1],
-           [10, 157, 80, 5, 0.8],
-           [10, 157, 80, 10, 0.7]]
+trace_dist = [[[10, 13, 10, 2, 1 , 2, 0],
+           [10, 13, 10, 10, 1, 0.2, 0],
+           [10, 13, 10, 1, 7, 0.7, 0]],
+          [[10, 73, 20, 30, 5,  4, 1],
+           [10, 73, 20, 80, 30, 8, 1],
+           [10, 73, 20, 40, 20, 9, 1]],
+          [[10, 157, 30, 50, 2, 1, 0],
+           [10, 157, 30, 40, 1, 0.8, 0],
+           [10, 157, 30, 80, 40, 0.7, 0]]
          ]
 filename = ['small', 'med', 'long']
 def genHC():
     tc = trace_dist
     for category in range(len(tc)):
         for dist in range(len(tc[category])):
-            files, lines, maxt0, maxdt, maxr = tc[category][dist]
+            files, lines, maxt0, maxdt, mindt, maxr, minr = tc[category][dist]
             for j in range(dist*10, dist*10 + 10):
                 with open(f"{filename[category]}trace{j}", "w+") as f:
                     t0s = list()
@@ -25,7 +26,7 @@ def genHC():
                         t0s.sort()
                     for i in range(lines):
                         dt = maxdt*random()
-                        dl = t0s[i] + dt + dt*maxr*random()
+                        dl = t0s[i] + dt + dt*maxr*random() + minr*dt
                         f.write("{:.0f} {:.1f} {:.1f} processo{}\n".format(t0s[i], dt, dl, i))
 
 
