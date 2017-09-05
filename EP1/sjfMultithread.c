@@ -20,7 +20,7 @@ typedef struct output{
 } OutputData;
 
 static sem_t mutex;
-static sem_t freeCPU;
+
 static OutputData **outInfo;
 static pthread_mutex_t schedMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -66,7 +66,6 @@ void schedulerSJFMultithread(ProcArray pQueue){
     timer = new_Timer();
     sem_init(&mutex, 0, 1);
     idleCPU = numCPU;
-    sem_init(&freeCPU, 0, numCPU);
 
     // Sleep until the first process arrives at the cpu
     sleepFor(curr.t0);
@@ -94,7 +93,6 @@ void schedulerSJFMultithread(ProcArray pQueue){
                     CPU[k] = RUNNING_STATE;
                     pool[k] = pPQ->delMin(pPQ);
                     idleCPU--;
-                    sem_wait(&freeCPU);
                     startProcess(k);
                 }
         sem_post(&mutex);
@@ -183,7 +181,7 @@ void *processRoutine(void *pinf){
         debugger(RUN_EVENT, *p, core + 1);
         pool[core] = NULL;
     sem_post(&mutex);
-    
+
     Timer tnow = new_Timer();
     while(tnow->passed(tnow) < p->dt){
         dumbVar++;
@@ -197,7 +195,6 @@ void *processRoutine(void *pinf){
         outInfo[p->nLine] = new_output(p->name, timer->passed(timer), timer->passed(timer) - p->t0);
         deadArray[p->nLine] = (deadlineC){timer->passed(timer), p->deadline};
         debugger(END_EVENT, *p, getCore(pthread_self()) + 1);
-        sem_post(&freeCPU);
         pthread_cond_signal(&cond);
     sem_post(&mutex);
     pthread_exit(NULL);
