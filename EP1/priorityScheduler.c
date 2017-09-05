@@ -144,7 +144,7 @@ static void wakeup_next(Queue q, Stack *s){
 void schedulerPriority(ProcArray pQueue){
     int sz = pQueue->i + 1;
     // TODO: choose between one model... But test each of them
-    SIGMOID = false;
+    SIGMOID = true;
     Stack *pool = new_stack(pQueue->i);
     Queue runningP = new_queue();
     pthread_t idleThread;
@@ -220,6 +220,7 @@ void schedulerPriority(ProcArray pQueue){
     percentage *= 100;
     printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
-    printf("Desvio padrão de atraso = %lf ||%%\n",var);
+    printf("Desvio padrão de atraso = %lf \n",var);
+    printf("Mudanças de contexto = %d\n||%%", get_ctx_changes());
     free(deadArray);
 }
