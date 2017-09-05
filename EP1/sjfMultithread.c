@@ -39,17 +39,7 @@ int cmpSJFThreaded(Process, Process);
 void startProcess(int);
 void *processRoutine(void *);
 void writeOutput(int);
-
-
-OutputData *new_output(char *name, double tf, double treal, int outN){
-    OutputData *ret = emalloc(sizeof(OutputData));
-    ret->name = estrdup(name);
-    ret->tf = tf;
-    ret->treal = treal;
-    ret->outN = outN;
-    return ret;
-}
-
+OutputData *new_output(char*, double, double, int);
 
 void schedulerSJFMultithread(ProcArray pQueue){
     int sz = pQueue->i + 1;
@@ -161,13 +151,13 @@ void schedulerSJFMultithread(ProcArray pQueue){
 
 }
 
-
 void startProcess(int nCPU){
     if(pthread_create(&coreCPU[nCPU], NULL, processRoutine, NULL)) {
         fprintf(stderr, "Error creating thread! - CPU %d\n", nCPU);
         exit(1);
     }
 }
+
 int getCore(pthread_t id){
     int i;
     for(i = 0; i < numCPU && id != coreCPU[i]; i++);
@@ -208,8 +198,6 @@ void *processRoutine(void *pinf){
     pthread_exit(NULL);
 }
 
-
-
 int cmpSJFThreaded(Process a, Process b){
     if (a.dt < b.dt)
         return -1;
@@ -217,6 +205,7 @@ int cmpSJFThreaded(Process a, Process b){
         return 1;
     return 0;
 }
+
 int cmpOutput(const void *a, const void *b){
     if(!a)
         return -1;
@@ -229,6 +218,15 @@ int cmpOutput(const void *a, const void *b){
     if(o1->outN < o2->outN)
         return -1;
     return 0;
+}
+
+OutputData *new_output(char *name, double tf, double treal, int outN){
+    OutputData *ret = emalloc(sizeof(OutputData));
+    ret->name = estrdup(name);
+    ret->tf = tf;
+    ret->treal = treal;
+    ret->outN = outN;
+    return ret;
 }
 
 void writeOutput(int sz){

@@ -15,7 +15,7 @@ def main():
     sched = int(argv[1])
     with open(argv[3], "w+") as f:
         for i in range(30):
-            name = "{0}/{0}trace{1}".format(argv[2], i)
+            name = "{0}/{0}trace{1}".format(argv[2], str(i).zfill(2))
             args = [sched, name, "saida.out"]
             cmd = get_runCommand(*args)
             splits = sb.check_output(cmd).split()[-18:]

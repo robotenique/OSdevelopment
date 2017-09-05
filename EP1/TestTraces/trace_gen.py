@@ -1,16 +1,21 @@
 from sys import argv
-from random import random
-# TODO: transform the random() into normal distribution
-# Hardcoded distributions to generate
-trace_dist = [[[10, 13, 10, 2, 1 , 2, 0],
-           [10, 13, 10, 10, 1, 0.2, 0],
-           [10, 13, 10, 1, 7, 0.7, 0]],
-          [[10, 73, 20, 30, 5,  4, 1],
-           [10, 73, 20, 80, 30, 8, 1],
-           [10, 73, 20, 40, 20, 9, 1]],
-          [[10, 157, 30, 50, 2, 1, 0],
-           [10, 157, 30, 40, 1, 0.8, 0],
-           [10, 157, 30, 80, 40, 0.7, 0]]
+from random import random, uniform
+# Hardcoded distributions to generate >:)
+trace_dist = [[
+        #files   lines   maxt0   maxdt    mindt   maxr  minr
+        #----------------------------------------------------
+        #small
+         [10,     7,      10,      8,    0.5,       2,   0.8], # Tempo folgado...
+         [10,     7,      10,     10,      1,     0.2,   0.5], # Bem apertado...
+         [10,     7,      10,      5,      2,     0.7,   0.6]],# Razoável...
+        #medium
+        [[10,     19,     15,     20,    0.5,       2,    1], # Grande variabilidade no dt.. deadline curta
+         [10,     19,     15,     20,      5,       3,  1.5], # Dt's duram mais, porem deadline um pouco melhor
+         [10,     19,     15,     40,      9,       4,    1]],# dts podem durar MUITO, deadline boa
+        #long
+        [[10,     47,     30,     15,    0.5,       3,   0.5], # Grande variabilidade de dt. deadline curta
+         [10,     47,     20,     20,      5,       3,     1], # dt's duram mais. deadline continua curta
+         [10,     47,     15,     30,     10,       5,     2]]# varios proc. em pouco tempo. dT grande, deadline boa.
          ]
 filename = ['small', 'med', 'long']
 def genHC():
@@ -19,21 +24,21 @@ def genHC():
         for dist in range(len(tc[category])):
             files, lines, maxt0, maxdt, mindt, maxr, minr = tc[category][dist]
             for j in range(dist*10, dist*10 + 10):
-                with open(f"{filename[category]}trace{j}", "w+") as f:
+                with open(f"{filename[category]}trace{str(j).zfill(2)}", "w+") as f:
                     t0s = list()
                     for i in range(lines):
                         t0s.append(maxt0*random())
                         t0s.sort()
                     for i in range(lines):
-                        dt = maxdt*random()
+                        dt = uniform(mindt, maxdt)
                         dl = t0s[i] + dt + dt*maxr*random() + minr*dt
-                        f.write("{:.0f} {:.1f} {:.1f} processo{}\n".format(t0s[i], dt, dl, i))
+                        f.write("{:.1f} {:.1f} {:.1f} processo{}\n".format(t0s[i], dt, dl, i))
 
 
 def main():
     if (len(argv) < 6):
         if(len(argv) == 2 and argv[1] == '--giveall'):
-            genHC();
+            genHC()
         else:
             print("Wrong number of arguments!!")
             print("Usage: ./trace_gen <number of files> <lines> <max t0> <max dt> <max deadline/dt ratio>")
