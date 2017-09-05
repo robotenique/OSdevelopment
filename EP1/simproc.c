@@ -35,7 +35,7 @@ int main(int argc, char const *argv[]) {
     char *infile = estrdup(argv[2]);
     char *outfile = estrdup(argv[3]);
     if(argc >= 5 && !strcmp(argv[4], "d"))
-        DEBUG_MODE = true;   
+        DEBUG_MODE = true;
 
     open_outfile(outfile);
     ProcArray readyJobs = create_ProcArray(infile);
@@ -194,7 +194,7 @@ void resizeProcArray(ProcArray self, int capacity){
  */
 void destroy_ProcArray(ProcArray self) {
     for(int i = 0; i < self->i; i++){
-        if(&self->v[i] != NULL)
+        if(&self->v[i] != NULL && self->v[i].name != NULL)
                 free(self->v[i].name);
     }
     free(self->v);

@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include <semaphore.h>
 #include "error.h"
 #include "process.h"
 #include "minPQ.h"
@@ -12,19 +11,18 @@
 #define IDLE_STATE 0
 #define RUNNING_STATE 1
 
-//TODO: change everything to PTHREAD  lib
-//TODO: fix the output file, and the line
-//TODO: fix the debug INFO = context changes
+//TODO: remove USELESS printf all across the EP
 
 typedef struct output{
     char *name;
     double tf;
     double treal;
+    int outN;
 } OutputData;
 
-static sem_t mutex;
 
 static OutputData **outInfo;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t schedMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 static unsigned int *CPU;
@@ -34,6 +32,7 @@ static deadlineC *deadArray;
 static Timer timer;
 static Process **pool;
 static unsigned int idleCPU;
+static int outLine;
 
 
 int cmpSJFThreaded(Process, Process);
@@ -42,11 +41,12 @@ void *processRoutine(void *);
 void writeOutput(int);
 
 
-OutputData *new_output(char *name, double tf, double treal){
+OutputData *new_output(char *name, double tf, double treal, int outN){
     OutputData *ret = emalloc(sizeof(OutputData));
     ret->name = estrdup(name);
     ret->tf = tf;
     ret->treal = treal;
+    ret->outN = outN;
     return ret;
 }
 
@@ -54,20 +54,19 @@ OutputData *new_output(char *name, double tf, double treal){
 void schedulerSJFMultithread(ProcArray pQueue){
     int sz = pQueue->i + 1;
     numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-    outInfo = emalloc(sizeof(OutputData*)*sz);
+    outInfo = emalloc(sizeof(OutputData*)*pQueue->i);
     deadArray = emalloc(sizeof(deadlineC)*sz);
     coreCPU = emalloc(sizeof(pthread_t)*numCPU);
     CPU = emalloc(sizeof(unsigned int)*numCPU);
     pool = emalloc(sizeof(Process *)*numCPU);
-    printf("NUMERO DE CORES = %ld\n", numCPU);
     for (int i = 0; i < numCPU; i++)
         CPU[i] = IDLE_STATE;
-
-    //int outLine = 1;
+    for(int i = 0; i < sz - 1; i++)
+        outInfo[i] = NULL;
+    outLine = 0;
     MinPQ pPQ = new_MinPQ(&cmpSJFThreaded);
     Process curr = pQueue->v[pQueue->nextP++];
     timer = new_Timer();
-    sem_init(&mutex, 0, 1);
     idleCPU = numCPU;
 
     // Sleep until the first process arrives at the cpu
@@ -89,7 +88,7 @@ void schedulerSJFMultithread(ProcArray pQueue){
             pPQ->insert(pPQ, &pQueue->v[i]);
         }
         pQueue->nextP = i;
-        sem_wait(&mutex);
+        pthread_mutex_lock(&mutex);
             // run all processes that we have in the available CPUS
             for(int k = 0; k < numCPU && !pPQ->isEmpty(pPQ); k++)
                 if(CPU[k] == IDLE_STATE){
@@ -99,7 +98,7 @@ void schedulerSJFMultithread(ProcArray pQueue){
                     debugger(CONTEXT_EVENT, NULL, 0);
                     startProcess(k);
                 }
-        sem_post(&mutex);
+        pthread_mutex_unlock(&mutex);
 
         /* Only proceed the scheduling process if there's a CPU available.
          * Since we are simulating processes in different CPUs, the schedulerSJF
@@ -114,7 +113,7 @@ void schedulerSJFMultithread(ProcArray pQueue){
     for(int c = 0; c < numCPU; c++)
         if(CPU[c] != IDLE_STATE)
             pthread_join(coreCPU[c],NULL);
-    writeOutput(sz);
+    writeOutput(sz - 1);
     write_outfile("%d\n", get_ctx_changes());
     destroy_Timer(timer);
     destroy_MinPQ(pPQ);
@@ -154,10 +153,11 @@ void schedulerSJFMultithread(ProcArray pQueue){
     printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
     printf("Desvio padrão de atraso = %lf \n",var);
-    printf("Mudanças de contexto = %d\n||%%", get_ctx_changes());
+    printf("Mudanças de contexto = %d\n", get_ctx_changes());
+    printf("NUMERO DE CORES = %ld\n||%%", numCPU);
+
     free(deadArray);
     // --------------------------------------------------------------------------------------------
-
 
 }
 
@@ -179,28 +179,32 @@ void *processRoutine(void *pinf){
     int core;
     Process *p;
 
-    sem_wait(&mutex);
+    pthread_mutex_lock(&mutex);
         core = getCore(pthread_self());
         p = pool[core];
         debugger(RUN_EVENT, p, core + 1);
         pool[core] = NULL;
-    sem_post(&mutex);
+    pthread_mutex_unlock(&mutex);
 
     Timer tnow = new_Timer();
     while(tnow->passed(tnow) < p->dt){
         dumbVar++;
     }
+    destroy_Timer(tnow);
 
-    sem_wait(&mutex);
+    pthread_mutex_lock(&mutex);
         debugger(EXIT_EVENT, p, getCore(pthread_self()) + 1);
         core = getCore(pthread_self());
         CPU[core] = IDLE_STATE;
         idleCPU++;
-        outInfo[p->nLine] = new_output(p->name, timer->passed(timer), timer->passed(timer) - p->t0);
+        ++outLine;
+        outInfo[p->nLine - 1] = new_output(p->name, timer->passed(timer), timer->passed(timer) - p->t0, outLine);
         deadArray[p->nLine] = (deadlineC){timer->passed(timer), p->deadline};
-        debugger(END_EVENT, p, getCore(pthread_self()) + 1);
+        debugger(END_EVENT, p, outLine);
         pthread_cond_signal(&cond);
-    sem_post(&mutex);
+    pthread_mutex_unlock(&mutex);
+    // Release the resources used by the thread to prevent memory leaks
+    pthread_detach(pthread_self());
     pthread_exit(NULL);
 }
 
@@ -213,9 +217,23 @@ int cmpSJFThreaded(Process a, Process b){
         return 1;
     return 0;
 }
+int cmpOutput(const void *a, const void *b){
+    if(!a)
+        return -1;
+    if(!b)
+        return 1;
+    OutputData *o1 = *(OutputData **)a;
+    OutputData *o2 =  *(OutputData **)b;
+    if(o1->outN > o2->outN)
+        return 1;
+    if(o1->outN < o2->outN)
+        return -1;
+    return 0;
+}
 
 void writeOutput(int sz){
-    for (int i = 1; i < sz; i++) {
+    qsort(outInfo, sz, sizeof(OutputData*), &cmpOutput);
+    for (int i = 0; i < sz; i++) {
         OutputData *out = outInfo[i];
         write_outfile("%s %lf %lf\n",out->name, out->tf, out->treal);
         free(out->name);

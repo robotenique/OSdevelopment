@@ -47,7 +47,7 @@ void schedulerSJF(ProcArray pQueue){
     int sz = pQueue->i + 1;
     deadArray = emalloc(sizeof(deadlineC)*sz);
 
-    int outLine = 1;
+    int outLine = 0;
     MinPQ pPQ = new_MinPQ(&cmpSJF);
     Process curr = pQueue->v[pQueue->nextP++];
     timer = new_Timer();
@@ -75,7 +75,7 @@ void schedulerSJF(ProcArray pQueue){
             debugger(CONTEXT_EVENT, NULL, 0);
             pthread_create(&curr.pid, NULL, &execProcess, &curr);
             pthread_join(curr.pid, NULL);
-            debugger(END_EVENT, &curr, outLine++);
+            debugger(END_EVENT, &curr, ++outLine);
             write_outfile("%s %lf %lf\n",curr.name, timer->passed(timer), timer->passed(timer) - curr.t0);
         }
     }
