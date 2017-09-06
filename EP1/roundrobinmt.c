@@ -12,19 +12,22 @@
 #define IDLE_STATE 0
 #define RUNNING_STATE 1
 
+typedef struct post_node_t {
+    Node *n;
+    bool ready;
+} PNode;
+
 static deadlineC *deadArray;
 void wakeup_nextMT(Queue, Stack*);
 static pthread_t **ranThreads;
 static int finished = 0;
 static pthread_mutex_t gmtx;
-static pthread_mutex_t pmtx;
 static pthread_mutex_t mtx;
 static pthread_cond_t gcond;
-static int idleCPU;
 static Timer timer;
-static unsigned int *CPU;
 static int numCPU;
-static int post = 0;
+static PNode **post;
+static int *inverse;
 
 /*
  * Function: runMT
@@ -44,18 +47,17 @@ void *runMT(void *arg) {
 
         pthread_mutex_lock(&mtx);
         debugger(RUN_EVENT, n->p, 0);
-        idleCPU--;
         w = fmin(n->p->dt, 1.0);
         pthread_mutex_unlock(&mtx);
 
         sleepFor(w);
         n->p->dt -= w;
 
-        pthread_mutex_lock(&pmtx);
-        printf("HEY%s\n", n->p->name);
+        //printf("%s acabou\n", n->p->name);
+        //printf("HEY%s\n", n->p->name);
+
         pthread_mutex_lock(&mtx);
-        idleCPU++;
-        post = n->p->nLine;
+        post[inverse[n->p->nLine - 1]]->ready = true;
         debugger(EXIT_EVENT, n->p, 0);
         pthread_mutex_unlock(&mtx);
 
@@ -68,68 +70,6 @@ void *runMT(void *arg) {
     write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
 
     return NULL;
-}
-
-// TODO: Remove this debug =======================================
-void print_stack2(Stack *s) {
-    for (int i = 0; i < s->i; i++)
-        printf("%s ", s->v[i].p->name);
-    printf("\n");
-}
-//================================================================
-
-
-
-/*
- * Function: wakeup_nextMT
- * --------------------------------------------------------
- * Manages the process queue, adding and removing it's
- * processes and waking up the next process
- *
- * @args q : Process queue
- *       s : Process stack
- *
- * @return
- */
-void wakeup_nextMT(Queue q, Stack *s) {
-    Node *n = stack_top(s);
-
-    print_stack2(s);
-
-    //printf("%p\n", timer);
-
-    while (n && n->p->t0 <= timer->passed(timer)) {
-        // Add new processes to queue if global time > t0
-        queue_add(q, n);
-        debugger(ARRIVAL_EVENT, n->p, 0);
-        stack_remove(s);
-        ranThreads[n->p->nLine] = &(n->t);
-        pthread_create(&(n->t), NULL, &runMT, (void *)n);
-        n = stack_top(s);
-    }
-
-    if (post) {
-        n = &(s->v[s->size - post]);
-        if (n->p->dt)
-            queue_add(q, n);
-        post = 0;
-        if ((n = queue_first(q))) {
-            queue_remove(q);
-            idleCPU--;
-            pthread_mutex_unlock(&(n->mtx));
-            debugger(CONTEXT_EVENT, NULL, 0);
-        }
-        pthread_mutex_unlock(&pmtx);
-    }
-    else if ((n = queue_first(q)) && idleCPU) {
-        pthread_mutex_lock(&pmtx);
-        queue_remove(q);
-        idleCPU--;
-        pthread_mutex_unlock(&(n->mtx));
-        debugger(CONTEXT_EVENT, NULL, 0);
-        pthread_mutex_unlock(&pmtx);
-
-    }
 }
 
 /*
@@ -149,23 +89,30 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     Stack *s = new_stack(readyJobs->i);
     Queue q = new_queue();
     numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-    idleCPU = numCPU;
-    CPU = emalloc(sizeof(unsigned int)*numCPU);
     Node *tmp;
-    //bool notIdle = true;
+    int runningPro = 0;
+
+    post = emalloc(numCPU*sizeof(PNode*));
+    for (int i = 0; i < numCPU; i++) {
+        post[i] = emalloc(sizeof(PNode));
+        post[i]->ready = true;
+        post[i]->n = NULL;
+    }
+    inverse = emalloc(readyJobs->i*sizeof(int));
 
     // Initiate timer
     timer = new_Timer();
 
     // Transfer processes to stack
-    for (int i = readyJobs->i - 1; i >= 0; i--)
+    for (int i = readyJobs->i - 1; i >= 0; i--) {
+        inverse[i] = -1;
         s->v[readyJobs->i - i - 1].p = &(readyJobs->v[i]);
+    }
 
     // Initiate the global mutex
     pthread_mutex_init(&gmtx, NULL);
     pthread_mutex_lock(&gmtx);
     pthread_cond_init(&gcond, NULL);
-    pthread_mutex_init(&pmtx, NULL);
     pthread_mutex_init(&mtx, NULL);
 
     // Initiate all stack's mutexes
@@ -174,16 +121,12 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
         pthread_mutex_lock(&(s->v[i].mtx));
     }
 
-    // Wake up the first process of the queue (if there is one)
-    //wakeup_nextMT(q, s);
-
-    while ((tmp = stack_top(s))) {
-        if (!queue_first(q) && idleCPU == numCPU) {
+    while ((tmp = stack_top(s)) || runningPro || queue_first(q)) {
+        if (!queue_first(q) && !runningPro) {
             // Wait in idle mode if queue is empty
             double wt = tmp->p->t0 - timer->passed(timer);
             sleepFor(wt);
         }
-        print_stack2(s);
 
         while (tmp && tmp->p->t0 <= timer->passed(timer)) {
             // Add new processes to queue if global time > t0
@@ -195,34 +138,31 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
             tmp = stack_top(s);
         }
 
-        //printf("HEY4\n");
-
         pthread_mutex_lock(&mtx);
-        if (post) {
-            tmp = &(s->v[s->size - post]);
-            if (tmp->p->dt)
-            queue_add(q, tmp);
-            post = 0;
-            //printf("HEY3\n");
-            pthread_mutex_unlock(&pmtx);
+        runningPro = 0;
+        for (int i = 0; i < numCPU; i++) {
+            if (post[i]->ready && post[i]->n) {
+                if (post[i]->n->p->dt)
+                    queue_add(q, post[i]->n);
+                post[i]->n = NULL;
+            }
         }
-
-        //printf("HEY5\n");
-
-        while ((tmp = queue_first(q)) && idleCPU) {
-            //printf("HEY2\n");
-            queue_remove(q);
-            pthread_mutex_unlock(&(tmp->mtx));
-            debugger(CONTEXT_EVENT, NULL, 0);
+        for (int i = 0; i < numCPU; i++) {
+            if (post[i]->ready && (tmp = queue_first(q))) {
+                post[i]->n = tmp;
+                post[i]->ready = false;
+                inverse[tmp->p->nLine - 1] = i;
+                debugger(CONTEXT_EVENT, NULL, 0);
+                queue_remove(q);
+                pthread_mutex_unlock(&(tmp->mtx));
+            }
+            if (post[i]->n)
+                runningPro++;
         }
         pthread_mutex_unlock(&mtx);
 
-        //queue_debug(q);
-
-        if (!idleCPU || !queue_first(q)) {
-            printf("HEY\n");
+        if (runningPro)
             pthread_cond_wait(&gcond, &gmtx);
-        }
     }
 
     // Freeing all threads...
@@ -233,7 +173,10 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     free(q);
     free(s->v);
     free(s);
-    free(CPU);
+    free(inverse);
+    for (int i = 0; i < numCPU; i++)
+        free(post[i]);
+    free(post);
     destroy_Timer(timer);
     write_outfile("%d\n", get_ctx_changes());
 
