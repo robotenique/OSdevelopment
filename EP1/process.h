@@ -36,7 +36,13 @@ typedef struct node_t {
     Process *p;
     pthread_mutex_t mtx;
     pthread_t t;
+    int CPU;
     struct node_t *next, *prev;
 } Node;
+
+typedef struct post_node_t {
+    Node *n;
+    bool ready;
+} PNode;
 
 #endif
