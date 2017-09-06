@@ -29,6 +29,10 @@ static int numCPU;
 static PNode **post;
 static int *inverse;
 
+// TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
+static bool* firstTime;
+
+
 /*
  * Function: runMT
  * --------------------------------------------------------
@@ -41,16 +45,29 @@ static int *inverse;
 void *runMT(void *arg) {
     Node *n = (Node *)arg;
     double w;
-
+    deadlineC deadarr;
     do {
+        int dumbVar = 0; // just to consume CPU...
+
         pthread_mutex_lock(&(n->mtx));
 
         pthread_mutex_lock(&mtx);
-        debugger(RUN_EVENT, n->p, 0);
+        debugger(RUN_EVENT, n->p, 0); // TODO: display the correct number of the CPU
+        if(firstTime[n->p->nLine]){
+            // The first time this process has run, it will save the waitTime...
+            firstTime[n->p->nLine] = false;
+            deadarr.waitTime = timer->passed(timer) - n->p->t0;
+        }
         w = fmin(n->p->dt, 1.0);
         pthread_mutex_unlock(&mtx);
 
-        sleepFor(w);
+        Timer tnow = new_Timer();
+        while(tnow->passed(tnow) < w){
+            dumbVar++;
+        }
+        destroy_Timer(tnow);
+
+        // sleepFor(w); LETS CONSUME A LITTLE MORE CPU...
         n->p->dt -= w;
 
         //printf("%s acabou\n", n->p->name);
@@ -65,7 +82,9 @@ void *runMT(void *arg) {
     } while (n->p->dt);
 
     finished++;
-    deadArray[n->p->nLine] = (deadlineC){timer->passed(timer), n->p->deadline};
+    deadarr.realFinished = timer->passed(timer);
+    deadarr.deadline = n->p->deadline;
+    deadArray[n->p->nLine] = deadarr;
     debugger(END_EVENT, n->p, finished);
     write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
 
@@ -86,6 +105,8 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     int sz = readyJobs->i + 1;
     ranThreads = emalloc(sizeof(pthread_t*)*sz);
     deadArray = emalloc(sizeof(deadlineC)*sz);
+    firstTime = emalloc(sizeof(bool)*sz);
+    for(int i = 0; i < sz; firstTime[i] = true,  i++);
     Stack *s = new_stack(readyJobs->i);
     Queue q = new_queue();
     numCPU = sysconf(_SC_NPROCESSORS_ONLN);
@@ -183,10 +204,12 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     // TODO: remove deadline statistics later
     int counter = 0;
     double avgDelay = 0;
+    double avgWaittime = 0.0;
     printf("\n\n");
     for (int i = 1; i < sz; i++) {
         deadlineC dc = deadArray[i];
         printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
+        avgWaittime += dc.waitTime;
         if(dc.realFinished > dc.deadline){
             avgDelay += dc.realFinished - dc.deadline;
             counter++;
@@ -209,10 +232,12 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     percentage /= sz - 1;
     percentage = 1 - percentage;
     percentage *= 100;
+    avgWaittime /= sz -1;
     printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
     printf("Desvio padrão de atraso = %lf \n",var);
-    printf("Mudanças de contexto = %d\n||%%", get_ctx_changes());
+    printf("Mudanças de contexto = %d\n", get_ctx_changes());
+    printf("Tempo de espera médio = %lf||%%\n", avgWaittime);
 
     free(deadArray);
     // --------------------------------------------------------------------------------------------
