@@ -40,7 +40,7 @@ def main():
             stats = list(map(lambda k : repr(k.replace("\n","")), stats))
             stats = list(map(lambda sL : ''.join((i for i in sL if i.isdigit() or i=='.')), stats))
             stats = list(map(lambda sL : float(sL), list(filter(None, stats))))
-            f.write("{} {} {} {}\n".format(*stats))
+            f.write("{} {} {} {} {}\n".format(*stats))
             print(f"{name} completed!!")
 
 if __name__ == '__main__':
