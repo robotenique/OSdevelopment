@@ -182,6 +182,7 @@ static void *run(void *arg) {
 
     return NULL;
 }
+
 /*
  * Function: calculatePriority
  * --------------------------------------------------------
@@ -221,7 +222,24 @@ static double calculatePriority(Process p){
     return priority;
 }
 
-
+/*
+ * Function: calcQuanta
+ * --------------------------------------------------------
+ * Calculate how much quanta should be given to a process
+ * based on its priority and the average and variance of
+ * all running processes priorities. It assumes that the
+ * priorities follow a normal distribution (which I'm not
+ * sure), and, even if they doesn't, its a good dinamic
+ * measuring system. This gives from 1 to 10 quanta.
+ * TODO: Remove this
+ * One can also change the way it claculates it using the
+ * global variable SIGMOID, so it'll use apllyLogSigmoid
+ * for the calculation.
+ *
+ * @args priority : process priority
+ *
+ * @return how much quanta the process will have this turn
+ */
 static double calcQuanta(double priority) {
     if(SIGMOID)
         return applyLogSigmoid(priority);
@@ -230,7 +248,6 @@ static double calcQuanta(double priority) {
     printf("L = %g / scale = %g\n", L, scale);
     return QUANTUM_VAL*(scale + 1);
 }
-
 
 /*
  * Function: applyLogSigmoid
@@ -251,6 +268,16 @@ static double applyLogSigmoid(double priority){
     return qMult;
 }
 
+/*
+ * Function: addToStats
+ * --------------------------------------------------------
+ * Add the new priority to global average and variance of
+ * running processes
+ *
+ * @args priority : new process priority
+ *
+ * @return
+ */
 static void addToStats(double priority) {
     var = (count*(var + pow(avg, 2)) + pow(priority, 2))/(count + 1);
     avg = (avg*count + priority)/(count + 1);
@@ -260,6 +287,16 @@ static void addToStats(double priority) {
     count++;
 }
 
+/*
+ * Function: removeFromStats
+ * --------------------------------------------------------
+ * Remove the priority of a finished process from global
+ * average and variance of running processes
+ *
+ * @args priority : finished process priority
+ *
+ * @return
+ */
 static void removeFromStats(double priority) {
     if (count == 1) {
         var = 0;
@@ -276,7 +313,7 @@ static void removeFromStats(double priority) {
 /*
  * Function: iWait
  * --------------------------------------------------------
- * Wait for a given time the scheduler
+ * Sleep scheduler for a given time
  *
  * @args  t :  a double *, the time in seconds to wait
  *
@@ -290,6 +327,16 @@ static void *iWait(void *t) {
     return NULL;
 }
 
+/*
+ * Function: wakeup_next
+ * --------------------------------------------------------
+ * Add new processes to queue and wake up processes from queue
+ *
+ * @args queue : process queue
+ *       stack : not-iet-arrived process stack
+ *
+ * @return
+ */
 static void wakeup_next(Queue q, Stack *s){
     Node *n = stack_top(s);
     Node *mem = NULL;
