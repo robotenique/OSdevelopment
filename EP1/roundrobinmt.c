@@ -9,8 +9,7 @@
 #include "utilities.h"
 #include "deque.h"
 #include "stack.h"
-#define IDLE_STATE 0
-#define RUNNING_STATE 1
+#define QUANTUM_VAL 1.0
 
 typedef struct post_node_t {
     Node *n;
@@ -60,7 +59,7 @@ void *runMT(void *arg) {
             firstTime[n->p->nLine] = false;
             deadarr.waitTime = timer->passed(timer) - n->p->t0;
         }
-        w = fmin(n->p->dt, 1.0);
+        w = fmin(n->p->dt, QUANTUM_VAL);
         pthread_mutex_unlock(&mtx);
 
         Timer tnow = new_Timer();
@@ -123,7 +122,7 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     }
     inverse = emalloc(readyJobs->i*sizeof(int));
 
-    // Initiate timer
+    // Initiate global timer
     timer = new_Timer();
 
     // Transfer processes to stack
