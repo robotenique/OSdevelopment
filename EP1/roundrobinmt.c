@@ -47,12 +47,14 @@ void *runMT(void *arg) {
     double w;
     deadlineC deadarr;
     do {
+        int core;
         int dumbVar = 0; // just to consume CPU...
 
         pthread_mutex_lock(&(n->mtx));
 
         pthread_mutex_lock(&mtx);
-        debugger(RUN_EVENT, n->p, 0); // TODO: display the correct number of the CPU
+        core = inverse[n->p->nLine - 1] + 1; // TODO: is this correct?
+        debugger(RUN_EVENT, n->p, core); // TODO: display the correct number of the CPU
         if(firstTime[n->p->nLine]){
             // The first time this process has run, it will save the waitTime...
             firstTime[n->p->nLine] = false;
@@ -75,7 +77,7 @@ void *runMT(void *arg) {
 
         pthread_mutex_lock(&mtx);
         post[inverse[n->p->nLine - 1]]->ready = true;
-        debugger(EXIT_EVENT, n->p, 0);
+        debugger(EXIT_EVENT, n->p, core);
         pthread_mutex_unlock(&mtx);
 
         pthread_cond_signal(&gcond);
@@ -172,7 +174,7 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
             if (post[i]->ready && (tmp = queue_first(q))) {
                 post[i]->n = tmp;
                 post[i]->ready = false;
-                inverse[tmp->p->nLine - 1] = i;
+                inverse[tmp->p->nLine - 1] = i; // TODO :  quer dizer que o processo vai rodar no core i + 1?
                 debugger(CONTEXT_EVENT, NULL, 0);
                 queue_remove(q);
                 pthread_mutex_unlock(&(tmp->mtx));
