@@ -16,19 +16,20 @@ def printList(l):
     print("")
 
 def main():
-    if (len(argv) < 3):
+    if (len(argv) < 4):
         print("Wrong number of arguments!!")
-        print("Usage: ./statistics_gen <scheduler> <folder> <outfile>")
+        print("Usage: ./statistics_gen <scheduler> <folder> <outfile> <SIGMOIDPLZ / optional>")
         return
     sched = int(argv[1])
     if(argv[3] == "saida.out"):
         print("PLEASE, A DIFFERENT FILENAME!")
         exit()
+    optArg =  argv[len(argv) - 1] if argv[len(argv) - 1] == "SIGMOIDPLZ" else ""
     with open(argv[3], "w+") as f:
         for i in range(NUM_FILES):
             name = "{0}/{0}trace{1}".format(argv[2], str(i).zfill(2))
             args = [sched, name, "saida.out"]
-            cmd = get_runCommand(*args)
+            cmd = get_runCommand(*args, optional=optArg)
             splits = sb.check_output(cmd).decode("utf-8")
             lines = list(filter(None, splits.split("%||")))
             lines = list(map(lambda s : s.strip(), lines))
