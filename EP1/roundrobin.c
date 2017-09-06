@@ -8,6 +8,7 @@
 #include "utilities.h"
 #include "deque.h"
 #include "stack.h"
+#define CPU_CORE 1
 
 static deadlineC *deadArray;
 void wakeup_next(Queue, Stack*);
@@ -52,7 +53,7 @@ void *run(void *arg) {
     deadlineC deadarr;
     do {
         pthread_mutex_lock(&(n->mtx));
-        debugger(RUN_EVENT, n->p, 1);
+        debugger(RUN_EVENT, n->p, CPU_CORE);
         if(firstTime[n->p->nLine]){
             // The first time this process has run, it will save the waitTime...
             firstTime[n->p->nLine] = false;
@@ -61,7 +62,7 @@ void *run(void *arg) {
         w = fmin(n->p->dt, 1.0);
         sleepFor(w);
         n->p->dt -= w;
-        debugger(EXIT_EVENT, n->p, 1);
+        debugger(EXIT_EVENT, n->p, CPU_CORE);
         pthread_mutex_unlock(&gmtx);
     } while (n->p->dt);
 

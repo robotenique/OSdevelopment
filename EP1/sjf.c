@@ -23,7 +23,6 @@ static deadlineC *deadArray;
 static Timer timer;
 int cmpSJF(Process, Process);
 void *execProcess(void *proc);
-Process procdup(Process p);
 
 /*
  * Function: schedulerSJF

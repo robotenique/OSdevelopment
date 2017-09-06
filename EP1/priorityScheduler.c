@@ -10,6 +10,7 @@
 #include "stack.h"
 
 #define QUANTUM_VAL 1.0
+#define CPU_CORE 1
 
 
 // TODO: DON'T LET THE SIMULATOR RUN PROCESSES WITH DT = 0....
@@ -64,7 +65,7 @@ void *runPScheduler(void *arg) {
     deadlineC deadarr;
     do {
         pthread_mutex_lock(&(n->mtx));
-        debugger(RUN_EVENT, n->p, 0);
+        debugger(RUN_EVENT, n->p, CPU_CORE);
         if(firstTime[n->p->nLine]){
             // The first time this process has run, it will save the waitTime...
             firstTime[n->p->nLine] = false;
@@ -75,7 +76,7 @@ void *runPScheduler(void *arg) {
         printf("Priority = %g / Quanta = %g\n", quantum[n->p->nLine], w);
         sleepFor(w);
         n->p->dt -= w;
-        debugger(EXIT_EVENT, n->p, 0);
+        debugger(EXIT_EVENT, n->p, CPU_CORE);
         pthread_mutex_unlock(&gmtx);
     } while (n->p->dt);
 
