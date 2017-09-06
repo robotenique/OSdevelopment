@@ -27,6 +27,10 @@ static bool* firstTime;
 // deadline related
 static deadlineC *deadArray;
 
+// TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
+static bool* firstTime;
+
+
 /*
  * Function: runMT
  * --------------------------------------------------------
@@ -40,18 +44,26 @@ void *runMT(void *arg) {
     Node *n = (Node *)arg;
     double w;
     deadlineC deadarr;
-
     do {
+        int dumbVar = 0; // just to consume CPU...
+
         pthread_mutex_lock(&(n->mtx));
 
-        debugger(RUN_EVENT, n->p, 0);
+        debugger(RUN_EVENT, n->p, n->CPU + 1);
         if(firstTime[n->p->nLine]){
             // The first time this process has run, it will save the waitTime...
             firstTime[n->p->nLine] = false;
             deadarr.waitTime = timer->passed(timer) - n->p->t0;
         }
         w = fmin(n->p->dt, 1.0);
-        sleepFor(w);
+
+        // LETS CONSUME A LITTLE MORE CPU...
+        Timer tnow = new_Timer();
+        while(tnow->passed(tnow) < w){
+            dumbVar++;
+        }
+        destroy_Timer(tnow);
+
         n->p->dt -= w;
 
         //printf("%s acabou\n", n->p->name);
@@ -216,6 +228,7 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     printf("Desvio padrão de atraso = %lf \n",var);
     printf("Mudanças de contexto = %d\n", get_ctx_changes());
     printf("Tempo de espera médio = %lf||%%\n", avgWaittime);
+
     free(deadArray);
 
 }

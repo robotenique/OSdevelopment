@@ -60,6 +60,7 @@ void *runPSMT(void *arg) {
 
     deadlineC deadarr;
     do {
+        int dumbVar = 0; // just to consume CPU...
         pthread_mutex_lock(&(n->mtx));
 
         debugger(RUN_EVENT, n->p, 0);
@@ -71,7 +72,14 @@ void *runPSMT(void *arg) {
         w = fmin(n->p->dt, calcQuanta2(quantum[n->p->nLine]));
         printf("Avg = %g / SD = %g\n", avg, sqrt(var));
         printf("Priority = %g / Quanta = %g\n", quantum[n->p->nLine], w);
-        sleepFor(w);
+
+        // LETS CONSUME A LITTLE MORE CPU...
+        Timer tnow = new_Timer();
+        while(tnow->passed(tnow) < w){
+            dumbVar++;
+        }
+        destroy_Timer(tnow);
+
         n->p->dt -= w;
 
         pthread_mutex_lock(&mtx);
