@@ -36,6 +36,8 @@
 *.x86_64
 *.hex
 *.in
+ep1sh
+simproc
 
 # Debug files
 *.dSYM/

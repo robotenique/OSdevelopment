@@ -38,23 +38,23 @@ static deadlineC *deadArray;
 
 
 
-double applyLogSigmoid2(double priority){
+static double applyLogSigmoid(double priority){
     //double qMult = -67*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 20)
     double qMult = -33*log10(pow(1+exp(-priority/25.0),-1)); // (max Quantum Multiplier = 10)
     qMult = qMult < 1 ? 1 : qMult;
     return qMult;
 }
 
-double calcQuanta2(double priority) {
+static double calcQuanta(double priority) {
     if(SIGMOID)
-        return applyLogSigmoid2(priority);
+        return applyLogSigmoid(priority);
     double L = (!var)? 0 : (priority - avg)/sqrt(var);
     double scale = 2.25*fmin(4.0, fabs(L));
     printf("L = %g / scale = %g\n", L, scale);
     return QUANTUM_VAL*(scale + 1);
 }
 
-void *runPSMT(void *arg) {
+static void *run(void *arg) {
     Node *n = (Node *)arg;
     double w;
 
@@ -69,7 +69,7 @@ void *runPSMT(void *arg) {
             firstTime[n->p->nLine] = false;
             deadarr.waitTime = timer->passed(timer) - n->p->t0;
         }
-        w = fmin(n->p->dt, calcQuanta2(quantum[n->p->nLine]));
+        w = fmin(n->p->dt, calcQuanta(quantum[n->p->nLine]));
         printf("Avg = %g / SD = %g\n", avg, sqrt(var));
         printf("Priority = %g / Quanta = %g\n", quantum[n->p->nLine], w);
 
@@ -100,7 +100,7 @@ void *runPSMT(void *arg) {
     return NULL;
 }
 
-double calculatePriority2(Process *p){
+static double calculatePriority(Process *p){
     double priority = 5000;
     double t0 = p->t0;
     double dt = p->dt;
@@ -114,7 +114,7 @@ double calculatePriority2(Process *p){
     return priority;
 }
 
-void addToStats2(double priority) {
+static void addToStats(double priority) {
     var = (count*(var + pow(avg, 2)) + pow(priority, 2))/(count + 1);
     avg = (avg*count + priority)/(count + 1);
     var -= pow(avg, 2);
@@ -123,7 +123,7 @@ void addToStats2(double priority) {
     count++;
 }
 
-void removeFromStats2(double priority) {
+static void removeFromStats(double priority) {
     if (count == 1) {
         var = 0;
         avg = 0;
@@ -183,13 +183,13 @@ void schedulerPriorityMT(ProcArray pQueue){
 
         while (tmp && tmp->p->t0 <= timer->passed(timer)) {
             // Add new processes to queue if global time > t0
-            quantum[tmp->p->nLine] = calculatePriority2(tmp->p);
-            addToStats2(quantum[tmp->p->nLine]);
+            quantum[tmp->p->nLine] = calculatePriority(tmp->p);
+            addToStats(quantum[tmp->p->nLine]);
             queue_add(waitingP, tmp);
             debugger(ARRIVAL_EVENT, tmp->p, 0);
             stack_remove(pool);
             ranThreads[tmp->p->nLine] = &(tmp->t);
-            pthread_create(&(tmp->t), NULL, &runPSMT, (void *)tmp);
+            pthread_create(&(tmp->t), NULL, &run, (void *)tmp);
             tmp = stack_top(pool);
         }
 
@@ -200,7 +200,7 @@ void schedulerPriorityMT(ProcArray pQueue){
                 if (post[i].n->p->dt)
                     queue_add(waitingP, post[i].n);
                 else
-                    removeFromStats2(quantum[post[i].n->p->nLine]);
+                    removeFromStats(quantum[post[i].n->p->nLine]);
                 post[i].n = NULL;
             }
         }

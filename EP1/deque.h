@@ -51,15 +51,6 @@ void queue_add(Queue, Node*);
  */
 int queue_remove(Queue);
 
-/*
- * Function: queue_readd
- * --------------------------------------------------------
- * Readds the first Node of the Queue to it
- *
- * @args q : Queue
- *
- * @return
- */
 void queue_readd(Queue);
 
 // TODO : Remove this

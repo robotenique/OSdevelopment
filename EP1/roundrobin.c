@@ -10,11 +10,11 @@
 #include "stack.h"
 
 static deadlineC *deadArray;
-void wakeup_next(Queue, Stack*);
+static void wakeup_next(Queue, Stack*);
 static pthread_t **ranThreads;
-int finished = 0;
-pthread_mutex_t gmtx;
-Timer timer;
+static int finished = 0;
+static pthread_mutex_t gmtx;
+static Timer timer;
 
 // TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
 static bool* firstTime;
@@ -28,10 +28,9 @@ static bool* firstTime;
  *
  * @return
  */
-void *iWait(void *t) {
+static void *iWait(void *t) {
     double *dt = (double *)t;
     sleepFor(*dt);
-    //printf("Esperei por %gs\n", *dt);
     pthread_mutex_unlock(&gmtx);
     return NULL;
 }
@@ -45,7 +44,7 @@ void *iWait(void *t) {
  *
  * @return
  */
-void *run(void *arg) {
+static void *run(void *arg) {
     Node *n = (Node *)arg;
     double w;
 
@@ -75,14 +74,6 @@ void *run(void *arg) {
     return NULL;
 }
 
-// TODO: Remove this debug =======================================
-void print_stack(Stack *s) {
-    for (int i = 0; i < s->i; i++)
-        printf("%s ", s->v[i].p->name);
-    printf("\n");
-}
-//================================================================
-
 /*
  * Function: wakeup_next
  * --------------------------------------------------------
@@ -94,7 +85,7 @@ void print_stack(Stack *s) {
  *
  * @return
  */
-void wakeup_next(Queue q, Stack *s) {
+static void wakeup_next(Queue q, Stack *s) {
     Node *n = stack_top(s);
     Node *mem = NULL;
     Node *notEmpty = queue_first(q);
@@ -134,7 +125,6 @@ void wakeup_next(Queue q, Stack *s) {
  * Simulates a Round Robin scheduler
  *
  * @args readyJobs : List of processes received
- *       outfile : Name of the log file
  *
  * @return
  */
@@ -177,7 +167,6 @@ void schedulerRoundRobin(ProcArray readyJobs) {
                 break;
             // Wait in idle mode if queue is empty
             *wt = tmp->p->t0 - timer->passed(timer);
-            //printf("Esperando processos chegarem...\n");
             ranThreads[0] = &idleThread;
             notIdle = false;
             pthread_create(&idleThread, NULL, &iWait, (void *)wt);

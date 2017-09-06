@@ -26,8 +26,6 @@ static bool* firstTime;
 // deadline related
 static deadlineC *deadArray;
 
-// TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
-static bool* firstTime;
 
 
 /*
@@ -39,7 +37,7 @@ static bool* firstTime;
  *
  * @return
  */
-void *runMT(void *arg) {
+static void *run(void *arg) {
     Node *n = (Node *)arg;
     double w;
     deadlineC deadarr;
@@ -55,7 +53,6 @@ void *runMT(void *arg) {
             deadarr.waitTime = timer->passed(timer) - n->p->t0;
         }
         w = fmin(n->p->dt, QUANTUM_VAL);
-        pthread_mutex_unlock(&mtx);
 
         // LETS CONSUME A LITTLE MORE CPU...
         Timer tnow = new_Timer();
@@ -65,9 +62,6 @@ void *runMT(void *arg) {
         destroy_Timer(tnow);
 
         n->p->dt -= w;
-
-        //printf("%s acabou\n", n->p->name);
-        //printf("HEY%s\n", n->p->name);
 
         pthread_mutex_lock(&mtx);
         post[n->CPU].ready = true;
@@ -93,7 +87,6 @@ void *runMT(void *arg) {
  * Simulates a Round Robin scheduler
  *
  * @args readyJobs : List of processes received
- *       outfile : Name of the log file
  *
  * @return
  */
@@ -148,12 +141,13 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
             debugger(ARRIVAL_EVENT, tmp->p, 0);
             stack_remove(pool);
             ranThreads[tmp->p->nLine] = &(tmp->t);
-            pthread_create(&(tmp->t), NULL, &runMT, (void *)tmp);
+            pthread_create(&(tmp->t), NULL, &run, (void *)tmp);
             tmp = stack_top(pool);
         }
 
         pthread_mutex_lock(&mtx);
         runningPro = 0;
+        // Remove all ready processes from post and put them at the queue
         for (int i = 0; i < numCPU; i++) {
             if (post[i].ready && post[i].n) {
                 if (post[i].n->p->dt)
@@ -161,6 +155,7 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
                 post[i].n = NULL;
             }
         }
+        // Wake up processes from queue
         for (int i = 0; i < numCPU; i++) {
             if (post[i].ready && (tmp = queue_first(waitingP))) {
                 post[i].n = tmp;
@@ -176,6 +171,7 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
         pthread_mutex_unlock(&mtx);
 
         if (runningPro)
+            // Wait for some running process to finish
             pthread_cond_wait(&gcond, &gmtx);
     }
 

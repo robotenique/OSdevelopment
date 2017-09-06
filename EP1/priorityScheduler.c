@@ -41,14 +41,14 @@ static void *iWait(void *t) {
     return NULL;
 }
 
-double applyLogSigmoid(double priority){
+static double applyLogSigmoid(double priority){
     //double qMult = -67*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 20)
     double qMult = -33*log10(pow(1+exp(-priority/25.0),-1)); // (max Quantum Multiplier = 10)
     qMult = qMult < 1 ? 1 : qMult;
     return qMult;
 }
 
-double calcQuanta(double priority) {
+static double calcQuanta(double priority) {
     if(SIGMOID)
         return applyLogSigmoid(priority);
     double L = (!var)? 0 : (priority - avg)/sqrt(var);
@@ -57,7 +57,7 @@ double calcQuanta(double priority) {
     return QUANTUM_VAL*(scale + 1);
 }
 
-void *runPScheduler(void *arg) {
+static void *run(void *arg) {
     Node *n = (Node *)arg;
     double w;
 
@@ -89,7 +89,7 @@ void *runPScheduler(void *arg) {
     return NULL;
 }
 
-double calculatePriority(Process p){
+static double calculatePriority(Process p){
     double priority = 5000;
     double t0 = p.t0;
     double dt = p.dt;
@@ -103,7 +103,7 @@ double calculatePriority(Process p){
     return priority;
 }
 
-void addToStats(double priority) {
+static void addToStats(double priority) {
     var = (count*(var + pow(avg, 2)) + pow(priority, 2))/(count + 1);
     avg = (avg*count + priority)/(count + 1);
     var -= pow(avg, 2);
@@ -112,7 +112,7 @@ void addToStats(double priority) {
     count++;
 }
 
-void removeFromStats(double priority) {
+static void removeFromStats(double priority) {
     if (count == 1) {
         var = 0;
         avg = 0;
@@ -138,7 +138,7 @@ static void wakeup_next(Queue q, Stack *s){
         debugger(ARRIVAL_EVENT, n->p, 0);
         stack_remove(s);
         ranThreads[n->p->nLine] = &(n->t);
-        pthread_create(&(n->t), NULL, &runPScheduler, (void *)n);
+        pthread_create(&(n->t), NULL, &run, (void *)n);
         n = stack_top(s);
     }
     // Readd the process to queue or remove it from queue
