@@ -208,12 +208,12 @@ void schedulerPriority(ProcArray pQueue){
  *
  * @return  returned value
  */
-static double applyLogSigmoid(double priority){
-    //double qMult = -67*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 20)
-    double qMult = -33*log10(pow(1+exp(-priority/25.0),-1)); // (max Quantum Multiplier = 10)
-    qMult = qMult < 1 ? 1 : qMult;
-    return qMult;
-}
+ static double applyLogSigmoid(double priority){
+     double qMult = -33*log10(pow(1+exp(-priority/25.0),-1)); // (max Quantum Multiplier = 10)
+     // Don't use something less than 1 quantum multiplier, to be fair with everyone
+     qMult = qMult < 1 ? 1 : qMult;
+     return qMult;
+ }
 
 /*
  * Function: calcQuanta
@@ -322,6 +322,10 @@ static double calculatePriority(Process *p){
     double t0 = p->t0;
     double dt = p->dt;
     double punc = p->deadline - p->dt;
+    /* These constants were calculated using machine learning
+     * with gradient descent on a base of values that we estipulated.
+     * The graph of this function can be visualized in the documents.
+    */
     double d = 0.207715732988;
     double c = 0.21137699282;
     double b = 2.06241892813;
