@@ -63,7 +63,7 @@ void *runPSMT(void *arg) {
         int dumbVar = 0; // just to consume CPU...
         pthread_mutex_lock(&(n->mtx));
 
-        debugger(RUN_EVENT, n->p, 0);
+        debugger(RUN_EVENT, n->p, n->CPU + 1);
         if(firstTime[n->p->nLine]){
             // The first time this process has run, it will save the waitTime...
             firstTime[n->p->nLine] = false;
@@ -84,7 +84,7 @@ void *runPSMT(void *arg) {
 
         pthread_mutex_lock(&mtx);
         post[n->CPU].ready = true;
-        debugger(EXIT_EVENT, n->p, 0);
+        debugger(EXIT_EVENT, n->p, n->CPU + 1);
         pthread_mutex_unlock(&mtx);
 
         pthread_cond_signal(&gcond);
@@ -232,6 +232,7 @@ void schedulerPriorityMT(ProcArray pQueue){
     free(pool);
     free(quantum);
     free(post);
+    free(firstTime);
     destroy_Timer(timer);
 
     write_outfile("%d\n", get_ctx_changes());

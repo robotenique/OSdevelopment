@@ -3,7 +3,7 @@
 # TODO: Remove the '-g' flag when the work is done!
 #
 CC=gcc
-CFLAGS = -Wall -pedantic -g -std=gnu11
+CFLAGS = -Wall -pedantic -O2 -std=gnu11
 LDFLAGS = -lrt -lm -pthread
 
 .PHONY: clean

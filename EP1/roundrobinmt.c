@@ -188,6 +188,7 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     free(pool->v);
     free(pool);
     free(post);
+    free(firstTime);
     destroy_Timer(timer);
     write_outfile("%d\n", get_ctx_changes());
 
