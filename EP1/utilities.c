@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "utilities.h"
 
 static FILE *outfile;
@@ -63,7 +62,6 @@ void destroy_Timer(Timer self){
 }
 
 void sleepFor(double dt){
-    //printf("         sleep %ld (sec) , %ld (nsec)\n",(long)floor(dt),(long)((dt-floor(dt))/NANO_CONVERT));
     nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/NANO_CONVERT)}, NULL);
 }
 
@@ -76,14 +74,10 @@ void debugger(int EVENT_CODE, Process *p, int arg){
             case RUN_EVENT:
                 if(arg)
                     fprintf(stderr, "--> %s entrou na CPU %d!\n",p->name, arg);
-                else
-                    fprintf(stderr, "--> %s entrou na CPU %d!\n",p->name, sched_getcpu());
                 break;
             case EXIT_EVENT:
                 if(arg)
                     fprintf(stderr, "<-- %s saiu da CPU %d!\n",p->name, arg);
-                else
-                    fprintf(stderr, "<-- %s saiu da CPU %d!\n",p->name, sched_getcpu());
                 break;
             case END_EVENT:
                 fprintf(stderr, "** %s (linha output = %d) finalizou no sistema! **\n",p->name, arg);

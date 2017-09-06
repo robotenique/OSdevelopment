@@ -18,7 +18,6 @@ def main():
 
     print('Theta found: ')
     print('%s %s %s %s\n' % (regr.coef_[0], regr.coef_[1],regr.coef_[2], regr.coef_[3]))
-    #theta learned = 0.195797846404 1.14970377455 0.0370065601353
     print("Predição P(t0, dt, Punctuality, Punctuality²):")
     predict([0, 3, 0.5, 0.5**2],regr)
     predict([10, 30, 4, 4**2],regr)

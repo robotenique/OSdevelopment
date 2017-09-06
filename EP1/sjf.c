@@ -23,15 +23,14 @@ static deadlineC *deadArray;
 static Timer timer;
 int cmpSJF(Process, Process);
 void *execProcess(void *proc);
-Process procdup(Process p);
 
 /*
  * Function: schedulerSJF
  * --------------------------------------------------------
  * Receives an array of processes to run (the pQueue), and the name
  * of the file to write the informations.
- * The algorithm uses a MinPQ to sort by dt. It gets all the processes
- * in the pool which have arrived, then put then into the MinPQ.
+ * The algorithm uses a MinPQ to sort by dt. It gets all processes
+ * in the pool that have arrived, then put then into the MinPQ.
  * Then, run the min dt process of the MinPQ. After this, checks again
  * the pool to see if another processes has arrived. If true, add the
  * new processes into the MinPQ, and procedes the algorithm (run the

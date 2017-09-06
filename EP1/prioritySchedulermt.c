@@ -19,7 +19,7 @@ static Timer timer;
 static pthread_mutex_t gmtx;
 static pthread_cond_t gcond;
 static pthread_mutex_t mtx;
-static double *quantum;
+static double *priority;
 static int finished = 0;
 static double var = 0;
 static double avg = 0;
@@ -69,9 +69,9 @@ static void *run(void *arg) {
             firstTime[n->p->nLine] = false;
             deadarr.waitTime = timer->passed(timer) - n->p->t0;
         }
-        w = fmin(n->p->dt, calcQuanta(quantum[n->p->nLine]));
+        w = fmin(n->p->dt, calcQuanta(priority[n->p->nLine]));
         printf("Avg = %g / SD = %g\n", avg, sqrt(var));
-        printf("Priority = %g / Quanta = %g\n", quantum[n->p->nLine], w);
+        printf("Priority = %g / Quanta = %g\n", priority[n->p->nLine], w);
 
         // LETS CONSUME A LITTLE MORE CPU...
         Timer tnow = new_Timer();
@@ -144,7 +144,7 @@ void schedulerPriorityMT(ProcArray pQueue){
     Stack *pool = new_stack(pQueue->i);
     Queue waitingP = new_queue();
     Node *tmp;
-    quantum = emalloc(sizeof(double)*sz);
+    priority = emalloc(sizeof(double)*sz);
     deadArray = emalloc(sizeof(deadlineC)*sz);
     ranThreads = emalloc(sizeof(pthread_t*)*sz);
     firstTime = emalloc(sizeof(bool)*sz);
@@ -183,8 +183,8 @@ void schedulerPriorityMT(ProcArray pQueue){
 
         while (tmp && tmp->p->t0 <= timer->passed(timer)) {
             // Add new processes to queue if global time > t0
-            quantum[tmp->p->nLine] = calculatePriority(tmp->p);
-            addToStats(quantum[tmp->p->nLine]);
+            priority[tmp->p->nLine] = calculatePriority(tmp->p);
+            addToStats(priority[tmp->p->nLine]);
             queue_add(waitingP, tmp);
             debugger(ARRIVAL_EVENT, tmp->p, 0);
             stack_remove(pool);
@@ -200,7 +200,7 @@ void schedulerPriorityMT(ProcArray pQueue){
                 if (post[i].n->p->dt)
                     queue_add(waitingP, post[i].n);
                 else
-                    removeFromStats(quantum[post[i].n->p->nLine]);
+                    removeFromStats(priority[post[i].n->p->nLine]);
                 post[i].n = NULL;
             }
         }
@@ -230,7 +230,7 @@ void schedulerPriorityMT(ProcArray pQueue){
     free(waitingP);
     free(pool->v);
     free(pool);
-    free(quantum);
+    free(priority);
     free(post);
     free(firstTime);
     destroy_Timer(timer);
