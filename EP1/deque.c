@@ -1,3 +1,13 @@
+/*
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * Double linked queue implementation.
+ */
+
 #include "deque.h"
 
 Queue new_queue() {

@@ -1,0 +1,2 @@
+Para criar os executáveis é necessário somente executar o comando "make"
+na linha de comando.

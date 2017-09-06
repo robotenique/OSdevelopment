@@ -7,6 +7,7 @@
  *
  * Header for some process structs and global variables.
  */
+
 #ifndef _PROCESS_H_
 #define _PROCESS_H_
 #include <pthread.h>
@@ -40,9 +41,9 @@ typedef struct node_t {
     struct node_t *next, *prev;
 } Node;
 
-typedef struct post_node_t {
+typedef struct core_t {
     Node *n;
     bool ready;
-} PNode;
+} Core;
 
 #endif

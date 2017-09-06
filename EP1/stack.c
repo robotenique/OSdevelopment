@@ -1,3 +1,13 @@
+/*
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * Node stack implementation.
+ */
+
 #include "stack.h"
 
 Stack *new_stack(int size) {

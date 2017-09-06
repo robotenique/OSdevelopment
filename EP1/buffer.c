@@ -1,3 +1,13 @@
+/*
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * String buffer implementation.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

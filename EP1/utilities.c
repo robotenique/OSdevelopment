@@ -1,3 +1,13 @@
+/*
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * Some util functions for timing, output and simple calculations.
+ */
+
 #include "utilities.h"
 
 static FILE *outfile;

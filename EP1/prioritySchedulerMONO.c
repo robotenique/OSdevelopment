@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <unistd.h>
 #include "process.h"
 #include "error.h"
 #include "utilities.h"
@@ -11,134 +10,90 @@
 #include "stack.h"
 
 #define QUANTUM_VAL 1.0
+#define CPU_CORE 1
 
 
 // TODO: DON'T LET THE SIMULATOR RUN PROCESSES WITH DT = 0....
 
-static Timer timer;
-static pthread_mutex_t gmtx;
-static pthread_cond_t gcond;
-static pthread_mutex_t mtx;
-static double *priority;
-static int finished = 0;
+static Timer timer; // global timer
+static pthread_t **ranThreads; // Storages the threads that we run
+static pthread_mutex_t gmtx; // global mutex
+static double *priority; // array with the priority of each process
+static int finished = 0; // number of finished processes
 static double var = 0;
 static double avg = 0;
 static int count = 0;
-static bool SIGMOID = false;
-static pthread_t **ranThreads;
-static PNode *post;
-static int numCPU;
 
 // TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
 static bool* firstTime;
 // deadline related
 static deadlineC *deadArray;
+static bool SIGMOID = false;
 
-static void removeFromStats(double);
+static void *iWait(void *);
 static double applyLogSigmoid(double);
 static double calcQuanta(double);
-static void *run(void*);
-static double calculatePriority(Process*);
-static void addToStats(double);
+static void *run(void *);
+static double calculatePriority(Process p);
+static void addToStats(double priority);
 static void removeFromStats(double);
+static void wakeup_next(Queue, Stack *);
 
-void schedulerPriorityMT(ProcArray pQueue){
-    int sz = pQueue->i + 1;
+void schedulerPriority(ProcArray pQueue){
+    Node *tmp;
+    pthread_t idleThread;
+    int sz = pQueue->i + 1; // size auxiliar variable
     // TODO: choose between one model... But test each of them
     SIGMOID = sigval;
-    printf("RODANDO COM SIGMOID? %d\n",SIGMOID);
-    Stack *pool = new_stack(pQueue->i);
-    Queue waitingP = new_queue();
-    Node *tmp;
-    priority = emalloc(sizeof(double)*sz);
-    deadArray = emalloc(sizeof(deadlineC)*sz);
+    Stack *pool = new_stack(pQueue->i); // Pool for arriving processes
+    Queue runningP = new_queue(); // Queue of processes to run at the moment
+    priority = emalloc(sizeof(double)*sz); // Array with the priority of each process
     ranThreads = emalloc(sizeof(pthread_t*)*sz);
     firstTime = emalloc(sizeof(bool)*sz);
-    numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-    int runningPro = 0;
     for(int i = 0; i < sz; firstTime[i] = true,  i++);
-
-    post = emalloc(numCPU*sizeof(PNode));
-    for (int i = 0; i < numCPU; i++) {
-        post[i].ready = true;
-        post[i].n = NULL;
-    }
+    deadArray = emalloc(sizeof(deadlineC)*sz);
 
     timer = new_Timer();
+    bool notIdle = true;
 
-    // Transfer processes to stack
+    // Transfer processes to stack pool
     for (int i = pQueue->i - 1; i >= 0; i--)
         pool->v[pQueue->i - i - 1].p = &(pQueue->v[i]);
 
     pthread_mutex_init(&gmtx, NULL);
     pthread_mutex_lock(&gmtx);
-    pthread_cond_init(&gcond, NULL);
-    pthread_mutex_init(&mtx, NULL);
 
+    // Initiate all the mutexes
     for (int i = 0; i < pQueue->i; i++) {
         pthread_mutex_init(&(pool->v[i].mtx), NULL);
         pthread_mutex_lock(&(pool->v[i].mtx));
     }
 
-    while ((tmp = stack_top(pool)) || runningPro || queue_first(waitingP)) {
-        if (!queue_first(waitingP) && !runningPro) {
+    wakeup_next(runningP, pool);
+
+    while (finished < pQueue->i) {
+        if (!queue_first(runningP)) {
+            if (!(tmp = stack_top(pool)))
+                break;
             // Wait in idle mode if queue is empty
             double wt = tmp->p->t0 - timer->passed(timer);
-            sleepFor(wt);
+            ranThreads[0] = &idleThread;
+            notIdle = false;
+            pthread_create(&idleThread, NULL, &iWait, &wt);
         }
-
-        while (tmp && tmp->p->t0 <= timer->passed(timer)) {
-            // Add new processes to queue if global time > t0
-            priority[tmp->p->nLine] = calculatePriority(tmp->p);
-            addToStats(priority[tmp->p->nLine]);
-            queue_add(waitingP, tmp);
-            debugger(ARRIVAL_EVENT, tmp->p, 0);
-            stack_remove(pool);
-            ranThreads[tmp->p->nLine] = &(tmp->t);
-            pthread_create(&(tmp->t), NULL, &run, (void *)tmp);
-            tmp = stack_top(pool);
-        }
-
-        pthread_mutex_lock(&mtx);
-        runningPro = 0;
-        for (int i = 0; i < numCPU; i++) {
-            if (post[i].ready && post[i].n) {
-                if (post[i].n->p->dt)
-                    queue_add(waitingP, post[i].n);
-                else
-                    removeFromStats(priority[post[i].n->p->nLine]);
-                post[i].n = NULL;
-            }
-        }
-        for (int i = 0; i < numCPU; i++) {
-            if (post[i].ready && (tmp = queue_first(waitingP))) {
-                post[i].n = tmp;
-                post[i].ready = false;
-                tmp->CPU = i;
-                debugger(CONTEXT_EVENT, NULL, 0);
-                queue_remove(waitingP);
-                pthread_mutex_unlock(&(tmp->mtx));
-            }
-            if (post[i].n)
-                runningPro++;
-        }
-        pthread_mutex_unlock(&mtx);
-
-        if (runningPro)
-            pthread_cond_wait(&gcond, &gmtx);
+        pthread_mutex_lock(&gmtx);
+        wakeup_next(runningP, pool);
     }
 
     // Freeing all threads...
-    for(int i = 1; i < sz; i++)
+    for(int i = notIdle; i < sz; i++)
         if(ranThreads[i] != NULL)
             pthread_join(*ranThreads[i],NULL);
     free(ranThreads);
-    free(waitingP);
+    free(runningP);
     free(pool->v);
     free(pool);
     free(priority);
-    free(post);
-    free(firstTime);
     destroy_Timer(timer);
 
     write_outfile("%d\n", get_ctx_changes());
@@ -184,22 +139,87 @@ void schedulerPriorityMT(ProcArray pQueue){
 }
 
 /*
- * Function: applyLogSigmoid
+ * Function: run
  * --------------------------------------------------------
- * Receives a priority, and apply a sigmoid of the priority, then
- * apply a negative log function to the result. This will give
- * a quantum multiplier, from 1 to 10, according to the
- * priority received.
+ * The function that each process run. The processes will run
+ * this for the quanta calculated for the processes, base on
+ * the priority previously calculated.
+ * When it has slept for this calculated time, it will unlock
+ * the thread, for other processes to run.
  *
- * @args  priority :  the priority of the process
+ * @args arg : the node of the process
  *
- * @return  returned value
+ * @return
  */
-static double applyLogSigmoid(double priority){
-    //double qMult = -67*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 20)
-    double qMult = -33*log10(pow(1+exp(-priority/25.0),-1)); // (max Quantum Multiplier = 10)
-    qMult = qMult < 1 ? 1 : qMult;
-    return qMult;
+static void *run(void *arg) {
+    Node *n = (Node *)arg;
+    double w;
+
+    deadlineC deadarr;
+    do {
+        pthread_mutex_lock(&(n->mtx));
+        debugger(RUN_EVENT, n->p, CPU_CORE);
+        if(firstTime[n->p->nLine]){
+            firstTime[n->p->nLine] = false;
+            deadarr.waitTime = timer->passed(timer) - n->p->t0;
+        }
+        // It will always run the minimum to complete, to not waste cpu time
+        w = fmin(n->p->dt, calcQuanta(priority[n->p->nLine]));
+        printf("Avg = %g / SD = %g\n", avg, sqrt(var));
+        printf("Priority = %g / Quanta = %g\n", priority[n->p->nLine], w);
+        sleepFor(w);
+        n->p->dt -= w;
+        debugger(EXIT_EVENT, n->p, CPU_CORE);
+        pthread_mutex_unlock(&gmtx);
+    } while (n->p->dt);
+
+    finished++;
+    deadarr.realFinished = timer->passed(timer);
+    deadarr.deadline = n->p->deadline;
+    deadArray[n->p->nLine] = deadarr;
+    debugger(END_EVENT, n->p, finished);
+    write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
+
+    return NULL;
+}
+
+/*
+ * Function: calculatePriority
+ * --------------------------------------------------------
+ * Calculate the priority of a given process. The function to
+ * calculate the priority of the process depends on the t0
+ * of the process, the dt of the processes, and on a new value
+ * called 'punctuality', which is how much time more we have to
+ * complete the process until the deadline, or the "tightness"
+ * of this interval. As we choose this to be a very important factor,
+ * the priority depends linearly and quadratically on this factor.
+
+ * @args  p :  a process
+ *
+ * @return  a double representing the priority of the process. The
+ *          lower this number, the more priority it will have to run.
+ */
+static double calculatePriority(Process p){
+    // Initialize the priority with a high value
+    double priority = 5000;
+    double t0 = p.t0;
+    double dt = p.dt;
+    double punc = p.deadline - p.dt;
+    /* These constants were calculated using machine learning
+     * and gradient descent on a base of values that we estipulated.
+     * The graph of this function can be visualized in the documents.
+    */
+    double d = 0.207715732988;
+    double c = 0.21137699282;
+    double b = 2.06241892813;
+    double a = 0.00213475762298;
+    /* If a process has punc < 0, it's impossible to complete it
+     * before it's deadline, so we give it the lowest priority to
+     * run (the 5000 that we initialized)
+     */
+    if(punc > 0)
+        priority = a*pow(punc, 2) + b*punc + c*dt + d*t0;
+    return priority;
 }
 
 /*
@@ -230,92 +250,22 @@ static double calcQuanta(double priority) {
 }
 
 /*
- * Function: run
+ * Function: applyLogSigmoid
  * --------------------------------------------------------
- * The function that each process run. The processes will run
- * this for the quanta calculated for the processes, base on
- * the priority previously calculated.
- * When it has slept for this calculated time, it will unlock
- * the thread, for other processes to run.
+ * Receives a priority, and apply a sigmoid of the priority, then
+ * apply a negative log function to the result. This will give
+ * a quantum multiplier, from 1 to 10, according to the
+ * priority received.
  *
- * @args arg : the node of the process
+ * @args  priority :  the priority of the process
  *
- * @return
+ * @return  returned value
  */
-static void *run(void *arg) {
-    Node *n = (Node *)arg;
-    double w;
-
-    deadlineC deadarr;
-    do {
-        int dumbVar = 0; // just to consume CPU...
-        pthread_mutex_lock(&(n->mtx));
-
-        debugger(RUN_EVENT, n->p, n->CPU + 1);
-        if(firstTime[n->p->nLine]){
-            // The first time this process has run, it will save the waitTime...
-            firstTime[n->p->nLine] = false;
-            deadarr.waitTime = timer->passed(timer) - n->p->t0;
-        }
-        w = fmin(n->p->dt, calcQuanta(priority[n->p->nLine]));
-        printf("Avg = %g / SD = %g\n", avg, sqrt(var));
-        printf("Priority = %g / Quanta = %g\n", priority[n->p->nLine], w);
-
-        // LETS CONSUME A LITTLE MORE CPU...
-        Timer tnow = new_Timer();
-        while(tnow->passed(tnow) < w){
-            dumbVar++;
-        }
-        destroy_Timer(tnow);
-
-        n->p->dt -= w;
-
-        pthread_mutex_lock(&mtx);
-        post[n->CPU].ready = true;
-        debugger(EXIT_EVENT, n->p, n->CPU + 1);
-        pthread_mutex_unlock(&mtx);
-
-        pthread_cond_signal(&gcond);
-    } while (n->p->dt);
-
-    finished++;
-    deadarr.realFinished = timer->passed(timer);
-    deadarr.deadline = n->p->deadline;
-    deadArray[n->p->nLine] = deadarr;
-    debugger(END_EVENT, n->p, finished);
-    write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
-
-    return NULL;
-}
-
-/*
- * Function: calculatePriority
- * --------------------------------------------------------
- * Calculate the priority of a given process. The function to
- * calculate the priority of the process depends on the t0
- * of the process, the dt of the processes, and on a new value
- * called 'punctuality', which is how much time more we have to
- * complete the process until the deadline, or the "tightness"
- * of this interval. As we choose this to be a very important factor,
- * the priority depends linearly and quadratically on this factor.
-
- * @args  p :  a process
- *
- * @return  a double representing the priority of the process. The
- *          lower this number, the more priority it will have to run.
- */
-static double calculatePriority(Process *p){
-    double priority = 5000;
-    double t0 = p->t0;
-    double dt = p->dt;
-    double punc = p->deadline - p->dt;
-    double d = 0.207715732988;
-    double c = 0.21137699282;
-    double b = 2.06241892813;
-    double a = 0.00213475762298;
-    if(punc > 0)
-        priority = a*pow(punc, 2) + b*punc + c*dt + d*t0;
-    return priority;
+static double applyLogSigmoid(double priority){
+    double qMult = -33*log10(pow(1+exp(-priority/25.0),-1)); // (max Quantum Multiplier = 10)
+    // Don't use something less than 1 quantum multiplier, to be fair with everyone
+    qMult = qMult < 1 ? 1 : qMult;
+    return qMult;
 }
 
 /*
@@ -358,4 +308,64 @@ static void removeFromStats(double priority) {
         var -= pow(avg, 2);
     }
     count--;
+}
+
+/*
+ * Function: iWait
+ * --------------------------------------------------------
+ * Sleep scheduler for a given time
+ *
+ * @args  t :  a double *, the time in seconds to wait
+ *
+ * @return
+ */
+static void *iWait(void *t) {
+    double *dt = (double *)t;
+    sleepFor(*dt);
+    //printf("Esperei por %gs\n", *dt);
+    pthread_mutex_unlock(&gmtx);
+    return NULL;
+}
+
+/*
+ * Function: wakeup_next
+ * --------------------------------------------------------
+ * Add new processes to queue and wake up processes from queue
+ *
+ * @args queue : process queue
+ *       stack : not-iet-arrived process stack
+ *
+ * @return
+ */
+static void wakeup_next(Queue q, Stack *s){
+    Node *n = stack_top(s);
+    Node *mem = NULL;
+    Node *notEmpty = queue_first(q);
+    while (n && n->p->t0 <= timer->passed(timer)) {
+        // set priority of process in quantum array
+        priority[n->p->nLine] = calculatePriority(*(n->p));
+        addToStats(priority[n->p->nLine]);
+        // Add new processes to queue if global time > t0
+        queue_add(q, n);
+        debugger(ARRIVAL_EVENT, n->p, 0);
+        stack_remove(s);
+        ranThreads[n->p->nLine] = &(n->t);
+        pthread_create(&(n->t), NULL, &run, (void *)n);
+        n = stack_top(s);
+    }
+    // Readd the process to queue or remove it from queue
+    if (notEmpty) {
+        if ((mem = queue_first(q)) && mem->p->dt)
+            queue_readd(q);
+        else if (mem){
+            queue_remove(q);
+            removeFromStats(priority[mem->p->nLine]);
+        }
+    }
+
+    // Start/restart the next process
+    if ((n = queue_first(q)))
+        pthread_mutex_unlock(&(n->mtx));
+    if (mem != n && n)
+        debugger(CONTEXT_EVENT, NULL, 0);
 }

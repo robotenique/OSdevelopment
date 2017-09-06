@@ -9,13 +9,13 @@ LDFLAGS = -lrt -lm -pthread
 .PHONY: clean
 
 
-all: ep1sh simproc
+all: ep1sh ep1
 
 
 ep1sh: ep1sh.o error.o buffer.o
 	$(CC) -o $@ $^ -lrt -lreadline
 
-simproc: simproc.o error.o utilities.o minPQ.o roundrobin.o sjf.o priorityScheduler.o sjfMultithread.o roundrobinmt.o prioritySchedulermt.o stack.o deque.o
+ep1: ep1.o error.o utilities.o minPQ.o roundrobin.o sjf.o priorityScheduler.o stack.o deque.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c %.h
@@ -27,4 +27,4 @@ simproc: simproc.o error.o utilities.o minPQ.o roundrobin.o sjf.o prioritySchedu
 
 
 clean:
-	rm -f *.o *~ *.out ep1sh simproc
+	rm -f *.o *~ *.out ep1sh ep1
