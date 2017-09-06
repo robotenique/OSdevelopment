@@ -9,53 +9,69 @@
 #include "utilities.h"
 #include "deque.h"
 #include "stack.h"
+
 #define QUANTUM_VAL 1.0
 
-//void wakeup_nextMT(Queue, Stack*);
-static pthread_t **ranThreads;
-static int finished = 0;
-static pthread_mutex_t gmtx;
-static pthread_mutex_t mtx;
-static pthread_cond_t gcond;
+
+// TODO: DON'T LET THE SIMULATOR RUN PROCESSES WITH DT = 0....
+
 static Timer timer;
-static int numCPU;
+static pthread_mutex_t gmtx;
+static pthread_cond_t gcond;
+static pthread_mutex_t mtx;
+static double *quantum;
+static int finished = 0;
+static double var = 0;
+static double avg = 0;
+static int count = 0;
+static bool SIGMOID = false;
+static pthread_t **ranThreads;
 static PNode *post;
+static int numCPU;
 
 // TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
 static bool* firstTime;
 // deadline related
 static deadlineC *deadArray;
 
-// TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
-static bool* firstTime;
 
 
-/*
- * Function: runMT
- * --------------------------------------------------------
- * Thread function that simulates a process running
- *
- * @args arg : The process node
- *
- * @return
- */
-void *runMT(void *arg) {
+
+
+double applyLogSigmoid2(double priority){
+    //double qMult = -67*log10(pow(1+exp(-priority/47.0),-1)); // (max Quantum Multiplier = 20)
+    double qMult = -33*log10(pow(1+exp(-priority/25.0),-1)); // (max Quantum Multiplier = 10)
+    qMult = qMult < 1 ? 1 : qMult;
+    return qMult;
+}
+
+double calcQuanta2(double priority) {
+    if(SIGMOID)
+        return applyLogSigmoid2(priority);
+    double L = (!var)? 0 : (priority - avg)/sqrt(var);
+    double scale = 2.25*fmin(4.0, fabs(L));
+    printf("L = %g / scale = %g\n", L, scale);
+    return QUANTUM_VAL*(scale + 1);
+}
+
+void *runPSMT(void *arg) {
     Node *n = (Node *)arg;
     double w;
+
     deadlineC deadarr;
     do {
         int dumbVar = 0; // just to consume CPU...
-
         pthread_mutex_lock(&(n->mtx));
 
-        debugger(RUN_EVENT, n->p, n->CPU + 1);
+        debugger(RUN_EVENT, n->p, 0);
         if(firstTime[n->p->nLine]){
             // The first time this process has run, it will save the waitTime...
             firstTime[n->p->nLine] = false;
             deadarr.waitTime = timer->passed(timer) - n->p->t0;
         }
-        w = fmin(n->p->dt, QUANTUM_VAL);
-        pthread_mutex_unlock(&mtx);
+        w = fmin(n->p->dt, calcQuanta2(quantum[n->p->nLine]));
+        printf("Avg = %g / SD = %g\n", avg, sqrt(var));
+        printf("Priority = %g / Quanta = %g\n", quantum[n->p->nLine], w);
 
         // LETS CONSUME A LITTLE MORE CPU...
         Timer tnow = new_Timer();
@@ -66,12 +82,9 @@ void *runMT(void *arg) {
 
         n->p->dt -= w;
 
-        //printf("%s acabou\n", n->p->name);
-        //printf("HEY%s\n", n->p->name);
-
         pthread_mutex_lock(&mtx);
         post[n->CPU].ready = true;
-        debugger(EXIT_EVENT, n->p, n->CPU + 1);
+        debugger(EXIT_EVENT, n->p, 0);
         pthread_mutex_unlock(&mtx);
 
         pthread_cond_signal(&gcond);
@@ -87,25 +100,55 @@ void *runMT(void *arg) {
     return NULL;
 }
 
-/*
- * Function: schedulerRoundRobin
- * --------------------------------------------------------
- * Simulates a Round Robin scheduler
- *
- * @args readyJobs : List of processes received
- *       outfile : Name of the log file
- *
- * @return
- */
-void schedulerRoundRobinMT(ProcArray readyJobs) {
-    int sz = readyJobs->i + 1;
-    ranThreads = emalloc(sizeof(pthread_t*)*sz);
-    deadArray = emalloc(sizeof(deadlineC)*sz);
-    firstTime = emalloc(sizeof(bool)*sz);
-    Stack *pool = new_stack(readyJobs->i);
+double calculatePriority2(Process *p){
+    double priority = 5000;
+    double t0 = p->t0;
+    double dt = p->dt;
+    double punc = p->deadline - p->dt;
+    double d = 0.207715732988;
+    double c = 0.21137699282;
+    double b = 2.06241892813;
+    double a = 0.00213475762298;
+    if(punc > 0)
+        priority = a*pow(punc, 2) + b*punc + c*dt + d*t0;
+    return priority;
+}
+
+void addToStats2(double priority) {
+    var = (count*(var + pow(avg, 2)) + pow(priority, 2))/(count + 1);
+    avg = (avg*count + priority)/(count + 1);
+    var -= pow(avg, 2);
+    if (isnan(var))
+        var = 0;
+    count++;
+}
+
+void removeFromStats2(double priority) {
+    if (count == 1) {
+        var = 0;
+        avg = 0;
+    }
+    else {
+        var = (count*(var + pow(avg, 2)) - pow(priority, 2))/(count - 1);
+        avg = (avg*count - priority)/(count - 1);
+        var -= pow(avg, 2);
+    }
+    count--;
+}
+
+void schedulerPriorityMT(ProcArray pQueue){
+    int sz = pQueue->i + 1;
+    // TODO: choose between one model... But test each of them
+    SIGMOID = sigval;
+    printf("RODANDO COM SIGMOID? %d\n",SIGMOID);
+    Stack *pool = new_stack(pQueue->i);
     Queue waitingP = new_queue();
-    numCPU = sysconf(_SC_NPROCESSORS_ONLN);
     Node *tmp;
+    quantum = emalloc(sizeof(double)*sz);
+    deadArray = emalloc(sizeof(deadlineC)*sz);
+    ranThreads = emalloc(sizeof(pthread_t*)*sz);
+    firstTime = emalloc(sizeof(bool)*sz);
+    numCPU = sysconf(_SC_NPROCESSORS_ONLN);
     int runningPro = 0;
     for(int i = 0; i < sz; firstTime[i] = true,  i++);
 
@@ -115,22 +158,18 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
         post[i].n = NULL;
     }
 
-    // Initiate global timer
     timer = new_Timer();
 
     // Transfer processes to stack
-    for (int i = readyJobs->i - 1; i >= 0; i--)
-        pool->v[readyJobs->i - i - 1].p = &(readyJobs->v[i]);
+    for (int i = pQueue->i - 1; i >= 0; i--)
+        pool->v[pQueue->i - i - 1].p = &(pQueue->v[i]);
 
-
-    // Initiate the global mutex
     pthread_mutex_init(&gmtx, NULL);
     pthread_mutex_lock(&gmtx);
     pthread_cond_init(&gcond, NULL);
     pthread_mutex_init(&mtx, NULL);
 
-    // Initiate all stack's mutexes
-    for (int i = 0; i < readyJobs->i; i++) {
+    for (int i = 0; i < pQueue->i; i++) {
         pthread_mutex_init(&(pool->v[i].mtx), NULL);
         pthread_mutex_lock(&(pool->v[i].mtx));
     }
@@ -144,11 +183,13 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
 
         while (tmp && tmp->p->t0 <= timer->passed(timer)) {
             // Add new processes to queue if global time > t0
+            quantum[tmp->p->nLine] = calculatePriority2(tmp->p);
+            addToStats2(quantum[tmp->p->nLine]);
             queue_add(waitingP, tmp);
             debugger(ARRIVAL_EVENT, tmp->p, 0);
             stack_remove(pool);
             ranThreads[tmp->p->nLine] = &(tmp->t);
-            pthread_create(&(tmp->t), NULL, &runMT, (void *)tmp);
+            pthread_create(&(tmp->t), NULL, &runPSMT, (void *)tmp);
             tmp = stack_top(pool);
         }
 
@@ -158,6 +199,8 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
             if (post[i].ready && post[i].n) {
                 if (post[i].n->p->dt)
                     queue_add(waitingP, post[i].n);
+                else
+                    removeFromStats2(quantum[post[i].n->p->nLine]);
                 post[i].n = NULL;
             }
         }
@@ -182,13 +225,15 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     // Freeing all threads...
     for(int i = 1; i < sz; i++)
         if(ranThreads[i] != NULL)
-            pthread_join(*ranThreads[i], NULL);
+            pthread_join(*ranThreads[i],NULL);
     free(ranThreads);
     free(waitingP);
     free(pool->v);
     free(pool);
+    free(quantum);
     free(post);
     destroy_Timer(timer);
+
     write_outfile("%d\n", get_ctx_changes());
 
     // Deadline statistics TODO: remove this from the final code!
@@ -228,7 +273,5 @@ void schedulerRoundRobinMT(ProcArray readyJobs) {
     printf("Desvio padrão de atraso = %lf \n",var);
     printf("Mudanças de contexto = %d\n", get_ctx_changes());
     printf("Tempo de espera médio = %lf||%%\n", avgWaittime);
-
     free(deadArray);
-
 }
