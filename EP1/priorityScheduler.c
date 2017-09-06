@@ -206,7 +206,7 @@ static double calculatePriority(Process p){
     double dt = p.dt;
     double punc = p.deadline - p.dt;
     /* These constants were calculated using machine learning
-     * and gradient descent on a base of values that we estipulated.
+     * with gradient descent on a base of values that we estipulated.
      * The graph of this function can be visualized in the documents.
     */
     double d = 0.207715732988;
@@ -232,7 +232,7 @@ static double calculatePriority(Process p){
  * sure), and, even if they doesn't, its a good dinamic
  * measuring system. This gives from 1 to 10 quanta.
  * TODO: Remove this
- * One can also change the way it claculates it using the
+ * One can also change the way it calculates it using the
  * global variable SIGMOID, so it'll use apllyLogSigmoid
  * for the calculation.
  *
@@ -333,7 +333,7 @@ static void *iWait(void *t) {
  * Add new processes to queue and wake up processes from queue
  *
  * @args queue : process queue
- *       stack : not-iet-arrived process stack
+ *       stack : not-yet-arrived process stack
  *
  * @return
  */
