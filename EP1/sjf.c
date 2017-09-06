@@ -17,6 +17,8 @@
 #include "minPQ.h"
 #include "utilities.h"
 
+#define CPU_CORE 1
+
 static deadlineC *deadArray;
 static Timer timer;
 int cmpSJF(Process, Process);
@@ -87,10 +89,12 @@ void schedulerSJF(ProcArray pQueue){
     // TODO: remove deadline statistics later
     int counter = 0;
     double avgDelay = 0;
+    double avgWaittime = 0.0;
     printf("\n\n");
     for (int i = 1; i < sz; i++) {
         deadlineC dc = deadArray[i];
         printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
+        avgWaittime += dc.waitTime;
         if(dc.realFinished > dc.deadline){
             avgDelay += dc.realFinished - dc.deadline;
             counter++;
@@ -113,10 +117,13 @@ void schedulerSJF(ProcArray pQueue){
     percentage /= sz - 1;
     percentage = 1 - percentage;
     percentage *= 100;
+    avgWaittime /= sz -1;
     printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
     printf("Desvio padrão de atraso = %lf \n",var);
-    printf("Mudanças de contexto = %d\n||%%", get_ctx_changes());
+    printf("Mudanças de contexto = %d\n", get_ctx_changes());
+    printf("Tempo de espera médio = %lf||%%\n", avgWaittime);
+
     free(deadArray);
     // --------------------------------------------------------------------------------------------
 
@@ -151,9 +158,13 @@ int cmpSJF(Process a, Process b){
  */
 void *execProcess(void *proc){
     Process *p = (Process *)proc;
-    debugger(RUN_EVENT, p, 0);
+    deadlineC deadarr;
+    debugger(RUN_EVENT, p, CPU_CORE);
+    deadarr.waitTime = timer->passed(timer) - p->t0;
     sleepFor(p->dt);
-    debugger(EXIT_EVENT, p, 0);
-    deadArray[p->nLine] = (deadlineC){timer->passed(timer), p->deadline};
+    debugger(EXIT_EVENT, p, CPU_CORE);
+    deadarr.realFinished = timer->passed(timer);
+    deadarr.deadline = p->deadline;
+    deadArray[p->nLine] = deadarr;
     pthread_exit(NULL);
 }

@@ -23,8 +23,13 @@ static double avg = 0;
 static int count = 0;
 static bool SIGMOID = false;
 static pthread_t **ranThreads;
+
+// TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
+static bool* firstTime;
 // deadline related
 static deadlineC *deadArray;
+
+
 
 
 
@@ -56,9 +61,15 @@ void *runPScheduler(void *arg) {
     Node *n = (Node *)arg;
     double w;
 
+    deadlineC deadarr;
     do {
         pthread_mutex_lock(&(n->mtx));
         debugger(RUN_EVENT, n->p, 0);
+        if(firstTime[n->p->nLine]){
+            // The first time this process has run, it will save the waitTime...
+            firstTime[n->p->nLine] = false;
+            deadarr.waitTime = timer->passed(timer) - n->p->t0;
+        }
         w = fmin(n->p->dt, calcQuanta(quantum[n->p->nLine]));
         printf("Avg = %g / SD = %g\n", avg, sqrt(var));
         printf("Priority = %g / Quanta = %g\n", quantum[n->p->nLine], w);
@@ -69,7 +80,9 @@ void *runPScheduler(void *arg) {
     } while (n->p->dt);
 
     finished++;
-    deadArray[n->p->nLine] = (deadlineC){timer->passed(timer), n->p->deadline};
+    deadarr.realFinished = timer->passed(timer);
+    deadarr.deadline = n->p->deadline;
+    deadArray[n->p->nLine] = deadarr;
     debugger(END_EVENT, n->p, finished);
     write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
 
@@ -114,7 +127,7 @@ void removeFromStats(double priority) {
 
 static void wakeup_next(Queue q, Stack *s){
     Node *n = stack_top(s);
-    Node *mem;
+    Node *mem = NULL;
     Node *notEmpty = queue_first(q);
     while (n && n->p->t0 <= timer->passed(timer)) {
         // set priority of process in quantum array
@@ -150,7 +163,8 @@ static void wakeup_next(Queue q, Stack *s){
 void schedulerPriority(ProcArray pQueue){
     int sz = pQueue->i + 1;
     // TODO: choose between one model... But test each of them
-    SIGMOID = false;
+    SIGMOID = sigval;
+    printf("RODANDO COM SIGMOID? %d\n",SIGMOID);
     Stack *pool = new_stack(pQueue->i);
     Queue runningP = new_queue();
     pthread_t idleThread;
@@ -158,6 +172,9 @@ void schedulerPriority(ProcArray pQueue){
     quantum = emalloc(sizeof(double)*sz);
     deadArray = emalloc(sizeof(deadlineC)*sz);
     ranThreads = emalloc(sizeof(pthread_t*)*sz);
+    firstTime = emalloc(sizeof(bool)*sz);
+    for(int i = 0; i < sz; firstTime[i] = true,  i++);
+
     timer = new_Timer();
     bool notIdle = true;
 
@@ -206,10 +223,12 @@ void schedulerPriority(ProcArray pQueue){
     // Deadline statistics TODO: remove this from the final code!
     int counter = 0;
     double avgDelay = 0;
+    double avgWaittime = 0.0;
     printf("\n\n");
     for (int i = 1; i < sz; i++) {
         deadlineC dc = deadArray[i];
         printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
+        avgWaittime += dc.waitTime;
         if(dc.realFinished > dc.deadline){
             avgDelay += dc.realFinished - dc.deadline;
             counter++;
@@ -232,9 +251,11 @@ void schedulerPriority(ProcArray pQueue){
     percentage /= sz - 1;
     percentage = 1 - percentage;
     percentage *= 100;
+    avgWaittime /= sz -1;
     printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
     printf("Média de atraso = %lf\n",avgDelay);
     printf("Desvio padrão de atraso = %lf \n",var);
-    printf("Mudanças de contexto = %d\n||%%", get_ctx_changes());
+    printf("Mudanças de contexto = %d\n", get_ctx_changes());
+    printf("Tempo de espera médio = %lf||%%\n", avgWaittime);
     free(deadArray);
 }

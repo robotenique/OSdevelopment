@@ -93,6 +93,8 @@ void debugger(int EVENT_CODE, Process *p, int arg){
                 break;
         }
     }
+    else if(EVENT_CODE == CONTEXT_EVENT)
+        ++ctx_changes;
 }
 
 int get_ctx_changes() {

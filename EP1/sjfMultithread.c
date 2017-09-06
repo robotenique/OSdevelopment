@@ -114,10 +114,12 @@ void schedulerSJFMultithread(ProcArray pQueue){
     // TODO: remove deadline statistics later
     int counter = 0;
     double avgDelay = 0;
+    double avgWaittime = 0.0;
     printf("\n\n");
     for (int i = 1; i < sz; i++) {
         deadlineC dc = deadArray[i];
         printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
+        avgWaittime += dc.waitTime;
         if(dc.realFinished > dc.deadline){
             avgDelay += dc.realFinished - dc.deadline;
             counter++;
@@ -137,6 +139,7 @@ void schedulerSJFMultithread(ProcArray pQueue){
         avgDelay = 0;
     }
     double percentage = (double)counter;
+    avgWaittime /= sz - 1;
     percentage /= sz - 1;
     percentage = 1 - percentage;
     percentage *= 100;
@@ -144,6 +147,7 @@ void schedulerSJFMultithread(ProcArray pQueue){
     printf("Média de atraso = %lf\n",avgDelay);
     printf("Desvio padrão de atraso = %lf \n",var);
     printf("Mudanças de contexto = %d\n", get_ctx_changes());
+    printf("Tempo de espera médio = %lf\n", avgWaittime);
     printf("NUMERO DE CORES = %ld\n||%%", numCPU);
 
     free(deadArray);
@@ -167,12 +171,14 @@ int getCore(pthread_t id){
 void *processRoutine(void *pinf){
     int dumbVar = 0; // just to consume CPU...
     int core;
+    deadlineC deadarr;
     Process *p;
 
     pthread_mutex_lock(&mutex);
         core = getCore(pthread_self());
         p = pool[core];
         debugger(RUN_EVENT, p, core + 1);
+        deadarr.waitTime = timer->passed(timer) - p->t0;
         pool[core] = NULL;
     pthread_mutex_unlock(&mutex);
 
@@ -188,8 +194,10 @@ void *processRoutine(void *pinf){
         CPU[core] = IDLE_STATE;
         idleCPU++;
         ++outLine;
+        deadarr.realFinished = timer->passed(timer);
+        deadarr.deadline = p->deadline;
         outInfo[p->nLine - 1] = new_output(p->name, timer->passed(timer), timer->passed(timer) - p->t0, outLine);
-        deadArray[p->nLine] = (deadlineC){timer->passed(timer), p->deadline};
+        deadArray[p->nLine] = deadarr;
         debugger(END_EVENT, p, outLine);
         pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mutex);
