@@ -27,7 +27,7 @@ void insertProcArray(ProcArray, char *, int);
 void destroy_ProcArray(ProcArray self);
 
 int main(int argc, char const *argv[]) {
-    set_prog_name("simproc");
+    set_prog_name("ep1");
     DEBUG_MODE = false;
     if(argc < 4)
         die("Wrong number of arguments! \n Usage ./simproc <schedulerID> <traceFile> <outputFile> <d(optional)>");

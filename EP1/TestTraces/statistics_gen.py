@@ -4,7 +4,7 @@ import numpy as np
 
 NUM_FILES = 30
 def get_runCommand(schedType, traceFile, outFile, optional=""):
-    cmd = ['../simproc', str(schedType), str(traceFile), str(outFile)]
+    cmd = ['../ep1', str(schedType), str(traceFile), str(outFile)]
     if optional:
         cmd.append(optional)
     return cmd
