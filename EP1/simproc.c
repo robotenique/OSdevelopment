@@ -7,6 +7,7 @@
  *
  * Process scheduler simulator!
 */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,12 +15,9 @@
 #include "utilities.h"
 #include "process.h"
 #include "minPQ.h"
-#include "roundrobin.h"
 #include "sjf.h"
-#include "sjfMultithread.h"
+#include "roundrobin.h"
 #include "priorityScheduler.h"
-#include "roundrobinmt.h"
-#include "prioritySchedulermt.h"
 
 int comparator(Process, Process);
 int cmp_ProcArray(const void *, const void *);
@@ -53,15 +51,6 @@ int main(int argc, char const *argv[]) {
             break;
         case 3:
             schedulerPriority(readyJobs);
-            break;
-        case 4:
-            schedulerSJFMultithread(readyJobs);
-            break;
-        case 5:
-            schedulerRoundRobinMT(readyJobs);
-            break;
-        case 6:
-            schedulerPriorityMT(readyJobs);
             break;
         default:
             die("The scheduler algorithm id specified is invalid!");

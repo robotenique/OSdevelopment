@@ -1,124 +1,45 @@
+/*
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * Round Robin scheduler multithread implementation.
+ */
+
 #include <math.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
+#include "roundrobin.h"
 #include "process.h"
 #include "error.h"
 #include "utilities.h"
 #include "deque.h"
 #include "stack.h"
-#define CPU_CORE 1
 
-static deadlineC *deadArray;
-static void wakeup_next(Queue, Stack*);
+#define QUANTUM_VAL 1.0
+
 static pthread_t **ranThreads;
 static int finished = 0;
 static pthread_mutex_t gmtx;
+static pthread_mutex_t mtx;
+static pthread_cond_t gcond;
 static Timer timer;
+static int numCPU;
+static Core *cores;
 
 // TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
 static bool* firstTime;
+// deadline related
+static deadlineC *deadArray;
 
-/*
- * Function: iWait
- * --------------------------------------------------------
- * Special wait function for idle thread
- *
- * @args
- *
- * @return
- */
-static void *iWait(void *t) {
-    double *dt = (double *)t;
-    sleepFor(*dt);
-    pthread_mutex_unlock(&gmtx);
-    return NULL;
-}
+static void *run(void *arg);
 
-/*
- * Function: run
- * --------------------------------------------------------
- * Thread function that simulates a process running
- *
- * @args arg : The process node
- *
- * @return
- */
-static void *run(void *arg) {
-    Node *n = (Node *)arg;
-    double w;
 
-    deadlineC deadarr;
-    do {
-        pthread_mutex_lock(&(n->mtx));
-        debugger(RUN_EVENT, n->p, CPU_CORE);
-        if(firstTime[n->p->nLine]){
-            // The first time this process has run, it will save the waitTime...
-            firstTime[n->p->nLine] = false;
-            deadarr.waitTime = timer->passed(timer) - n->p->t0;
-        }
-        w = fmin(n->p->dt, 1.0);
-        sleepFor(w);
-        n->p->dt -= w;
-        debugger(EXIT_EVENT, n->p, CPU_CORE);
-        pthread_mutex_unlock(&gmtx);
-    } while (n->p->dt);
-
-    finished++;
-    deadarr.realFinished = timer->passed(timer);
-    deadarr.deadline = n->p->deadline;
-    deadArray[n->p->nLine] = deadarr;
-    debugger(END_EVENT, n->p, finished);
-    write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
-
-    return NULL;
-}
-
-/*
- * Function: wakeup_next
- * --------------------------------------------------------
- * Manages the process queue, adding and removing it's
- * processes and waking up the next process
- *
- * @args q : Process queue
- *       s : Process stack
- *
- * @return
- */
-static void wakeup_next(Queue q, Stack *s) {
-    Node *n = stack_top(s);
-    Node *mem = NULL;
-    Node *notEmpty = queue_first(q);
-
-    while (n && n->p->t0 <= timer->passed(timer)) {
-        // Add new processes to queue if global time > t0
-        queue_add(q, n);
-        debugger(ARRIVAL_EVENT, n->p, 0);
-        stack_remove(s);
-        ranThreads[n->p->nLine] = &(n->t);
-        pthread_create(&(n->t), NULL, &run, (void *)n);
-        n = stack_top(s);
-    }
-
-    // Readd the process to queue or remove it from queue
-    if (notEmpty) {
-        if ((mem = queue_first(q)) && mem->p->dt)
-            queue_readd(q);
-        else
-            queue_remove(q);
-    }
-
-    queue_debug(q);
-
-    // Start/restart the next process
-    if ((n = queue_first(q))) {
-        printf("%s\n", n->p->name);
-        pthread_mutex_unlock(&(n->mtx));
-    }
-    if (mem != n && n)
-        debugger(CONTEXT_EVENT, NULL, 0);
-}
 
 /*
  * Function: schedulerRoundRobin
@@ -134,62 +55,100 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     ranThreads = emalloc(sizeof(pthread_t*)*sz);
     deadArray = emalloc(sizeof(deadlineC)*sz);
     firstTime = emalloc(sizeof(bool)*sz);
-    for(int i = 0; i < sz; firstTime[i] = true,  i++);
-    Stack *s = new_stack(readyJobs->i);
-    Queue q = new_queue();
-    pthread_t idleThread;
+    Stack *pool = new_stack(readyJobs->i);
+    Queue waitingP = new_queue();
+    numCPU = sysconf(_SC_NPROCESSORS_ONLN);
     Node *tmp;
-    double *wt = (double*)emalloc(sizeof(double));
-    bool notIdle = true;
+    int runningPro = 0;
+    for(int i = 0; i < sz; firstTime[i] = true,  i++);
 
-    // Initiate timer
+    cores = emalloc(numCPU*sizeof(Core));
+    for (int i = 0; i < numCPU; i++) {
+        cores[i].ready = true;
+        cores[i].n = NULL;
+    }
+
+    // Initiate global timer
     timer = new_Timer();
 
     // Transfer processes to stack
     for (int i = readyJobs->i - 1; i >= 0; i--)
-        s->v[readyJobs->i - i - 1].p = &(readyJobs->v[i]);
+        pool->v[readyJobs->i - i - 1].p = &(readyJobs->v[i]);
+
 
     // Initiate the global mutex
     pthread_mutex_init(&gmtx, NULL);
     pthread_mutex_lock(&gmtx);
+    pthread_cond_init(&gcond, NULL);
+    pthread_mutex_init(&mtx, NULL);
 
     // Initiate all stack's mutexes
     for (int i = 0; i < readyJobs->i; i++) {
-        pthread_mutex_init(&(s->v[i].mtx), NULL);
-        pthread_mutex_lock(&(s->v[i].mtx));
+        pthread_mutex_init(&(pool->v[i].mtx), NULL);
+        pthread_mutex_lock(&(pool->v[i].mtx));
     }
 
-    // Wake up the first process of the queue (if there is one)
-    wakeup_next(q, s);
-
-    while (finished < readyJobs->i) {
-        if (!queue_first(q)) {
-            if (!(tmp = stack_top(s)))
-                break;
+    while ((tmp = stack_top(pool)) || runningPro || queue_first(waitingP)) {
+        if (!queue_first(waitingP) && !runningPro) {
             // Wait in idle mode if queue is empty
-            *wt = tmp->p->t0 - timer->passed(timer);
-            ranThreads[0] = &idleThread;
-            notIdle = false;
-            pthread_create(&idleThread, NULL, &iWait, (void *)wt);
+            double wt = tmp->p->t0 - timer->passed(timer);
+            sleepFor(wt);
         }
-        pthread_mutex_lock(&gmtx);
-        wakeup_next(q, s);
+
+        while (tmp && tmp->p->t0 <= timer->passed(timer)) {
+            // Add new processes to queue if global time > t0
+            queue_add(waitingP, tmp);
+            debugger(ARRIVAL_EVENT, tmp->p, 0);
+            stack_remove(pool);
+            ranThreads[tmp->p->nLine] = &(tmp->t);
+            pthread_create(&(tmp->t), NULL, &run, (void *)tmp);
+            tmp = stack_top(pool);
+        }
+
+        pthread_mutex_lock(&mtx);
+        runningPro = 0;
+        // Remove all ready processes from cores and put them at the queue
+        for (int i = 0; i < numCPU; i++) {
+            if (cores[i].ready && cores[i].n) {
+                if (cores[i].n->p->dt)
+                    queue_add(waitingP, cores[i].n);
+                cores[i].n = NULL;
+            }
+        }
+        // Wake up processes from queue
+        for (int i = 0; i < numCPU; i++) {
+            if (cores[i].ready && (tmp = queue_first(waitingP))) {
+                cores[i].n = tmp;
+                cores[i].ready = false;
+                tmp->CPU = i;
+                debugger(CONTEXT_EVENT, NULL, 0);
+                queue_remove(waitingP);
+                pthread_mutex_unlock(&(tmp->mtx));
+            }
+            if (cores[i].n)
+                runningPro++;
+        }
+        pthread_mutex_unlock(&mtx);
+
+        if (runningPro)
+            // Wait for some running process to finish
+            pthread_cond_wait(&gcond, &gmtx);
     }
 
     // Freeing all threads...
-    for(int i = notIdle; i < sz; i++)
+    for(int i = 1; i < sz; i++)
         if(ranThreads[i] != NULL)
-            pthread_join(*ranThreads[i],NULL);
+            pthread_join(*ranThreads[i], NULL);
     free(ranThreads);
-    free(q);
-    free(s->v);
-    free(s);
-    free(wt);
+    free(waitingP);
+    free(pool->v);
+    free(pool);
+    free(cores);
     free(firstTime);
     destroy_Timer(timer);
     write_outfile("%d\n", get_ctx_changes());
 
-    // TODO: remove deadline statistics later
+    // Deadline statistics TODO: remove this from the final code!
     int counter = 0;
     double avgDelay = 0;
     double avgWaittime = 0.0;
@@ -228,6 +187,58 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     printf("Tempo de espera médio = %lf||%%\n", avgWaittime);
 
     free(deadArray);
-    // --------------------------------------------------------------------------------------------
 
+}
+
+/*
+ * Function: runMT
+ * --------------------------------------------------------
+ * Thread function that simulates a process running
+ *
+ * @args arg : The process node
+ *
+ * @return
+ */
+static void *run(void *arg) {
+    Node *n = (Node *)arg;
+    double w;
+    deadlineC deadarr;
+    do {
+        int dumbVar = 0; // just to consume CPU...
+
+        pthread_mutex_lock(&(n->mtx));
+
+        debugger(RUN_EVENT, n->p, n->CPU + 1);
+        if(firstTime[n->p->nLine]){
+            // The first time this process has run, it will save the waitTime...
+            firstTime[n->p->nLine] = false;
+            deadarr.waitTime = timer->passed(timer) - n->p->t0;
+        }
+        w = fmin(n->p->dt, QUANTUM_VAL);
+
+        // LETS CONSUME A LITTLE MORE CPU...
+        Timer tnow = new_Timer();
+        while(tnow->passed(tnow) < w){
+            dumbVar++;
+        }
+        destroy_Timer(tnow);
+
+        n->p->dt -= w;
+
+        pthread_mutex_lock(&mtx);
+        cores[n->CPU].ready = true;
+        debugger(EXIT_EVENT, n->p, n->CPU + 1);
+        pthread_mutex_unlock(&mtx);
+
+        pthread_cond_signal(&gcond);
+    } while (n->p->dt);
+
+    finished++;
+    deadarr.realFinished = timer->passed(timer);
+    deadarr.deadline = n->p->deadline;
+    deadArray[n->p->nLine] = deadarr;
+    debugger(END_EVENT, n->p, finished);
+    write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
+
+    return NULL;
 }

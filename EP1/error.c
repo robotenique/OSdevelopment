@@ -1,13 +1,19 @@
 /*
-  error.c
-*/
+ * @author: João Gabriel
+ * @author: Juliano Garcia
+ *
+ * MAC0422
+ * 11/09/17
+ *
+ * Error functions library.
+ */
 
-#include "error.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include "error.h"
 
 static char prog_name[1024] = "";
 static char error_msg[1024];
