@@ -274,8 +274,9 @@ static void *run(void *arg) {
         printf("Avg = %g / SD = %g\n", avg, sqrt(var));
         printf("Priority = %g / Quanta = %g\n", priority[n->p->nLine], w);
 
+        /*
         // LETS CONSUME A LITTLE MORE CPU...
-        /*Timer tnow = new_Timer();
+        Timer tnow = new_Timer();
         while(tnow->passed(tnow) < w){
             dumbVar++;
         }

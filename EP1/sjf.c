@@ -123,7 +123,7 @@ void schedulerSJF(ProcArray pQueue){
                     CPU[k] = RUNNING_STATE;
                     pool[k] = pPQ->delMin(pPQ);
                     idleCPU--;
-                    debugger(CONTEXT_EVENT, NULL, 0);
+                    //debugger(CONTEXT_EVENT, NULL, 0);
                     startProcess(k);
                 }
         pthread_mutex_unlock(&mutex);
@@ -253,8 +253,9 @@ void *processRoutine(void *pinf){
         pool[core] = NULL;
     pthread_mutex_unlock(&mutex);
 
+    /*
     // Run the process itself for a given time
-    /*Timer tnow = new_Timer();
+    Timer tnow = new_Timer();
     while(tnow->passed(tnow) < p->dt){
         dumbVar++;
     }

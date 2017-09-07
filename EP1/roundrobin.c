@@ -216,8 +216,9 @@ static void *run(void *arg) {
         }
         w = fmin(n->p->dt, QUANTUM_VAL);
 
+        /*
         // LETS CONSUME A LITTLE MORE CPU...
-        /*Timer tnow = new_Timer();
+        Timer tnow = new_Timer();
         while(tnow->passed(tnow) < w){
             dumbVar++;
         }
