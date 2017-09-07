@@ -215,13 +215,15 @@ static void *run(void *arg) {
             deadarr.waitTime = timer->passed(timer) - n->p->t0;
         }
         w = fmin(n->p->dt, QUANTUM_VAL);
-
+        sleepFor(w);
+        /*
         // LETS CONSUME A LITTLE MORE CPU...
         Timer tnow = new_Timer();
         while(tnow->passed(tnow) < w){
             dumbVar++;
         }
         destroy_Timer(tnow);
+        */
 
         n->p->dt -= w;
 

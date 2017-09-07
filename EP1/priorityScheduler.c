@@ -273,13 +273,15 @@ static void *run(void *arg) {
         w = fmin(n->p->dt, calcQuanta(priority[n->p->nLine]));
         printf("Avg = %g / SD = %g\n", avg, sqrt(var));
         printf("Priority = %g / Quanta = %g\n", priority[n->p->nLine], w);
-
+        sleepFor(w);
+        /*
         // LETS CONSUME A LITTLE MORE CPU...
         Timer tnow = new_Timer();
         while(tnow->passed(tnow) < w){
             dumbVar++;
         }
         destroy_Timer(tnow);
+        */
 
         n->p->dt -= w;
 
