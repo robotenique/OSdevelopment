@@ -204,7 +204,7 @@ static void *run(void *arg) {
     double w;
     deadlineC deadarr;
     do {
-        int dumbVar = 0; // just to consume CPU...
+        //int dumbVar = 0; // just to consume CPU...
 
         pthread_mutex_lock(&(n->mtx));
 
@@ -217,11 +217,12 @@ static void *run(void *arg) {
         w = fmin(n->p->dt, QUANTUM_VAL);
 
         // LETS CONSUME A LITTLE MORE CPU...
-        Timer tnow = new_Timer();
+        /*Timer tnow = new_Timer();
         while(tnow->passed(tnow) < w){
             dumbVar++;
         }
-        destroy_Timer(tnow);
+        destroy_Timer(tnow);*/
+        sleepFor(w);
 
         n->p->dt -= w;
 

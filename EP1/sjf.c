@@ -239,7 +239,7 @@ int getCore(pthread_t id){
  * @return
  */
 void *processRoutine(void *pinf){
-    int dumbVar = 0; // just to consume CPU...
+    //int dumbVar = 0; // just to consume CPU...
     int core;
     Process *p;
     deadlineC deadarr;
@@ -254,11 +254,12 @@ void *processRoutine(void *pinf){
     pthread_mutex_unlock(&mutex);
 
     // Run the process itself for a given time
-    Timer tnow = new_Timer();
+    /*Timer tnow = new_Timer();
     while(tnow->passed(tnow) < p->dt){
         dumbVar++;
     }
-    destroy_Timer(tnow);
+    destroy_Timer(tnow);*/
+    sleepFor(p->dt);
 
     // Remove the process from the core, and send signal to the scheduler
     pthread_mutex_lock(&mutex);

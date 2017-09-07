@@ -261,7 +261,7 @@ static void *run(void *arg) {
 
     deadlineC deadarr;
     do {
-        int dumbVar = 0; // just to consume CPU...
+        //int dumbVar = 0; // just to consume CPU...
         pthread_mutex_lock(&(n->mtx));
 
         debugger(RUN_EVENT, n->p, n->CPU + 1);
@@ -275,11 +275,12 @@ static void *run(void *arg) {
         printf("Priority = %g / Quanta = %g\n", priority[n->p->nLine], w);
 
         // LETS CONSUME A LITTLE MORE CPU...
-        Timer tnow = new_Timer();
+        /*Timer tnow = new_Timer();
         while(tnow->passed(tnow) < w){
             dumbVar++;
         }
-        destroy_Timer(tnow);
+        destroy_Timer(tnow);*/
+        sleepFor(w);
 
         n->p->dt -= w;
 
