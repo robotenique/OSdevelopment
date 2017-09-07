@@ -1,0 +1,30 @@
+Tópicos da apresentação
+=======================
+
+- Arquitetura do shell
+	-> estruturas de dados: buffer & módulo de erros (from great fmario classes)
+	-> loop principal
+	-> executar processo: execvp + fork
+
+- Escalonadores
+	-> estruturas de dados : fila de prioridade (heap mínimo) (thanks 4 algs 4), deque, stack, timer
+
+	- SJF (Multithread):
+		->  Fila de processos a serem executados
+		->  Processos que chegam são inseridos na fila de prioridade, ordenados por dt
+		->  A medida que há CPUs livres, processos são colocados para rodar paralelamente
+		->  Escalonador não prossegue a execução enquanto não houver CPU livre. (pthread_cond_wait() & pthread_cond_signal())
+		->  Tirando a principal (escalonador), temos X threads para os processos, onde X é a quantidade de
+		    CPUs da máquina que roda um processo.
+
+	- RR (Multithread):
+	
+	- PRR (Multithread):
+		-> Pool de processos a serem executados, fila dos processos em execução
+		-> Cálculo de prioridade: depende de t0, dt, e p (deadline - dt) e p².
+		-> Função obtida através de regressão com algoritmo gradient descent em uma base de valores pré escolhidos
+		-> Gráfico da função
+		-> Modos para, dada a prioridade, calcular o multiplicador dos quanta (max = 10):
+			- Log Sigmoid (Gráfico)
+			- Estatísticas lokas
+		-> Threads : 1 p/ cada processo, são interrompidas

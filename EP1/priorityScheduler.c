@@ -208,12 +208,12 @@ void schedulerPriority(ProcArray pQueue){
  *
  * @return  returned value
  */
- static double applyLogSigmoid(double priority){
+static double applyLogSigmoid(double priority){
      double qMult = -33*log10(pow(1+exp(-priority/25.0),-1)); // (max Quantum Multiplier = 10)
      // Don't use something less than 1 quantum multiplier, to be fair with everyone
      qMult = qMult < 1 ? 1 : qMult;
      return qMult;
- }
+}
 
 /*
  * Function: calcQuanta

@@ -1,8 +1,14 @@
 import subprocess as sb
 from sys import argv
 import numpy as np
+from os import listdir
+from os.path import isfile, join
+import matplotlib.pyplot as plt
 
 NUM_FILES = 30
+NCORES = 32
+
+
 def get_runCommand(schedType, traceFile, outFile, optional=""):
     cmd = ['../ep1', str(schedType), str(traceFile), str(outFile)]
     if optional:
@@ -41,16 +47,68 @@ def genConfidenceInterval(f):
     print(f"Avg = {avg[1]:.2f}  /  Var = {var[1]:.2f}  /  IC = [{CI[1][0]:.2f}, {CI[1][1]:.2f}]")
     print("Wait time:")
     print(f"Avg = {avg[2]:.2f}  /  Var = {var[2]:.2f}  /  IC = [{CI[2][0]:.2f}, {CI[2][1]:.2f}]")
+    return (avg, var, CI)
 
+def plotSpecific(titlePlot, yLabel, appFunction, stats, cat, schedL):
+    schedNames = ["Shortest Job First","Round Robin", "Prioridade", "Prioridade (SIGMOID)"]
+    colors = ["skyblue", "chartreuse", "gold", "tomato"]
+    barWidth = 8 if len(stats) == 4 else 10
+    tickLoc = np.linspace(10 ,50, 4 if len(stats) == 4 else 3)
+    sjf, rr, prrstat, prrsigma = schedL
+    fig, axarr = plt.subplots(figsize=(9, 7))
+    # Deadline graph
+    axarr.set_xlabel("Tipo de escalonador", size=14)
+    axarr.set_ylabel(yLabel, size=14)
+    axarr.set_title(f"{titlePlot} - {NCORES} core{'s' if NCORES == 1 else ''} ({cat})", size=18)
+    y = [appFunction(sched) for sched in [sjf, rr, prrstat, prrsigma]]
+    for l, h, i in zip(tickLoc, y, range(len(y))):
+        axarr.bar(l, h, barWidth, bottom=0.001, align='center', color=colors[i], zorder=3)
+    axarr.set_xticks(tickLoc)
+    axarr.set_xticklabels(schedNames, size=12)
+    plt.tight_layout()
+    plt.show()
+
+def plotCategory(cat, stats, truName):
+    giveMeDEADLINE = lambda sched : sched[0][0][0]
+    giveMeCONTEXT = lambda sched : sched[0][0][1]
+    giveMeWAITTIME = lambda sched : sched[0][0][2]
+    sjf = [x for x in stats if truName+"SJF" in x[len(x) - 1]]
+    rr = [x for x in stats if truName+"RR" in x[len(x) - 1]]
+    prrstat = [x for x in stats if truName+"PRR." in x[len(x) - 1]]
+    prrsigma = [x for x in stats if truName+"PRRSIGMOD" in x[len(x) - 1]]
+    plotSpecific("Cumprimento de deadline", "Deadline cumpridas (%)",
+                  giveMeDEADLINE, stats, cat, [sjf, rr, prrstat, prrsigma])
+    plotSpecific("Mudanças de contexto", "Mudanças de contexto",
+                  giveMeCONTEXT, stats, cat, [sjf, rr, prrstat, prrsigma])
+    plotSpecific("Tempo médio de espera", "Tempo médio (s)",
+                  giveMeWAITTIME, stats, cat, [sjf, rr, prrstat, prrsigma])
+
+
+def genGraphics(folderName):
+    files = [f for f in listdir(folderName) if isfile(join(folderName, f))]
+    stats_dict = {f:genConfidenceInterval(folderName+"/"+f) for f in files}
+    stats_dict["S"] = [stat+(name,) for name, stat in stats_dict.items() if "small" in name]
+    stats_dict["M"] = [stat+(name,) for name, stat in stats_dict.items() if "med" in name]
+    stats_dict["L"] = [stat+(name,) for name, stat in stats_dict.items() if "long" in name]
+    plotCategory('qtd baixa', sorted(stats_dict["S"]), "small")
+    plotCategory('qtd média', sorted(stats_dict["M"]), "med")
+    plotCategory('qtd alta', sorted(stats_dict["L"]), "long")
+
+
+def printUsage():
+    print("Wrong number of arguments!!")
+    print("Usage: ./statistics_gen -i <file>       EXAMPLE: ./statistics_gen.py -graphs results32Cores  :)")
+    print("Usage: ./statistics_gen -graphs <folder>")
+    print("Or:    ./statistics_gen -s <scheduler> <folder> <outfile> <SIGMOIDPLZ / optional>")
+    exit()
 
 def main():
     if (len(argv) < 2):
-        print("Wrong number of arguments!!")
-        print("Usage: ./statistics_gen -i <file>")
-        print("Or:    ./statistics_gen -s <scheduler> <folder> <outfile> <SIGMOIDPLZ / optional>")
-        return
-    if (argv[1] == "-i"):
+        printUsage()
+    if (argv[1] == "-i" and len(argv) == 3):
         genConfidenceInterval(argv[2])
+    if(argv[1] == "-graphs" and len(argv) == 3):
+        genGraphics(argv[2])
     elif (argv[1] == "-s"):
         if (len(argv) < 5):
             print("Wrong number of arguments!!")
@@ -78,6 +136,8 @@ def main():
                 stats = list(map(lambda sL : float(sL), list(filter(None, stats))))
                 f.write("{} {} {} {} {}\n".format(*stats))
                 print(f"{name} completed!!")
+    else:
+        printUsage()
 
 if __name__ == '__main__':
     main()
