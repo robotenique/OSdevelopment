@@ -109,10 +109,12 @@ void schedulerRoundRobin(ProcArray readyJobs) {
         runningPro = 0;
         for (int i = 0; i < numCPU; i++) {
             if (cores[i].n && cores[i].ready) {
+                // Remove ready processes from cores and put them at the queue
                 if (cores[i].n->p->dt)
                     queue_add(waitingP, cores[i].n);
             }
             if (cores[i].ready && (tmp = queue_first(waitingP))) {
+                // Wake up processes from queue
                 if (!(firstTime[tmp->p->nLine]) && tmp != cores[i].n)
                     debugger(CONTEXT_EVENT, NULL, 0);
                 cores[i].n = tmp;
@@ -125,31 +127,6 @@ void schedulerRoundRobin(ProcArray readyJobs) {
                 runningPro++;
             else
                 cores[i].n = NULL;
-        }
-        pthread_mutex_unlock(&mtx);
-
-        pthread_mutex_lock(&mtx);
-        runningPro = 0;
-        // Remove all ready processes from cores and put them at the queue
-        for (int i = 0; i < numCPU; i++) {
-            if (cores[i].ready && cores[i].n) {
-                if (cores[i].n->p->dt)
-                    queue_add(waitingP, cores[i].n);
-                cores[i].n = NULL;
-            }
-        }
-        // Wake up processes from queue
-        for (int i = 0; i < numCPU; i++) {
-            if (cores[i].ready && (tmp = queue_first(waitingP))) {
-                cores[i].n = tmp;
-                cores[i].ready = false;
-                tmp->CPU = i;
-                debugger(CONTEXT_EVENT, NULL, 0);
-                queue_remove(waitingP);
-                pthread_mutex_unlock(&(tmp->mtx));
-            }
-            if (cores[i].n)
-                runningPro++;
         }
         pthread_mutex_unlock(&mtx);
 
