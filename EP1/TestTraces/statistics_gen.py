@@ -41,12 +41,14 @@ def genConfidenceInterval(f):
         var[i] -= n*(avg[i]**2)/(n-1)
         t = 2.042*np.sqrt(var[i]/n)
         CI.append([avg[i] - t, avg[i] + t])
+    print(f"##===================== {f} ========================##")
     print("Completed deadlines:")
     print(f"Avg = {avg[0]:.2f}  /  Var = {var[0]:.2f}  /  IC = [{CI[0][0]:.2f}, {CI[0][1]:.2f}]")
     print("Context changes:")
     print(f"Avg = {avg[1]:.2f}  /  Var = {var[1]:.2f}  /  IC = [{CI[1][0]:.2f}, {CI[1][1]:.2f}]")
     print("Wait time:")
     print(f"Avg = {avg[2]:.2f}  /  Var = {var[2]:.2f}  /  IC = [{CI[2][0]:.2f}, {CI[2][1]:.2f}]")
+    print("-"*len(f"##===================== {f} ========================##")+"\n")
     return (avg, var, CI)
 
 def plotSpecific(titlePlot, yLabel, appFunction, stats, cat, schedL):
