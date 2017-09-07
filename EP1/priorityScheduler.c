@@ -115,25 +115,25 @@ void schedulerPriority(ProcArray pQueue){
         pthread_mutex_lock(&mtx);
         runningPro = 0;
         for (int i = 0; i < numCPU; i++) {
-            if (cores[i].ready && cores[i].n) {
+            if (cores[i].n && cores[i].ready) {
                 if (cores[i].n->p->dt)
                     queue_add(waitingP, cores[i].n);
                 else
                     removeFromStats(priority[cores[i].n->p->nLine]);
-                cores[i].n = NULL;
             }
-        }
-        for (int i = 0; i < numCPU; i++) {
             if (cores[i].ready && (tmp = queue_first(waitingP))) {
+                if (!(firstTime[tmp->p->nLine]) && tmp != cores[i].n)
+                    debugger(CONTEXT_EVENT, NULL, 0);
                 cores[i].n = tmp;
                 cores[i].ready = false;
                 tmp->CPU = i;
-                debugger(CONTEXT_EVENT, NULL, 0);
                 queue_remove(waitingP);
                 pthread_mutex_unlock(&(tmp->mtx));
             }
-            if (cores[i].n)
+            if (!(cores[i].ready))
                 runningPro++;
+            else
+                cores[i].n = NULL;
         }
         pthread_mutex_unlock(&mtx);
 

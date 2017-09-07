@@ -107,6 +107,29 @@ void schedulerRoundRobin(ProcArray readyJobs) {
 
         pthread_mutex_lock(&mtx);
         runningPro = 0;
+        for (int i = 0; i < numCPU; i++) {
+            if (cores[i].n && cores[i].ready) {
+                if (cores[i].n->p->dt)
+                    queue_add(waitingP, cores[i].n);
+            }
+            if (cores[i].ready && (tmp = queue_first(waitingP))) {
+                if (!(firstTime[tmp->p->nLine]) && tmp != cores[i].n)
+                    debugger(CONTEXT_EVENT, NULL, 0);
+                cores[i].n = tmp;
+                cores[i].ready = false;
+                tmp->CPU = i;
+                queue_remove(waitingP);
+                pthread_mutex_unlock(&(tmp->mtx));
+            }
+            if (!(cores[i].ready))
+                runningPro++;
+            else
+                cores[i].n = NULL;
+        }
+        pthread_mutex_unlock(&mtx);
+
+        pthread_mutex_lock(&mtx);
+        runningPro = 0;
         // Remove all ready processes from cores and put them at the queue
         for (int i = 0; i < numCPU; i++) {
             if (cores[i].ready && cores[i].n) {
