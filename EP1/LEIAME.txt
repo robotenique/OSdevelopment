@@ -1,3 +1,5 @@
 Para criar os executáveis é necessário somente executar o comando "make"
 na linha de comando. Ele gerará dois executáveis, ep1sh (o shell) e
 ep1 (o simulador de processos).
+
+No final, para apagar os código objeto, o binário e os arquivos de saida, bast rodar "make clean".

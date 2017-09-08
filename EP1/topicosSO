@@ -18,7 +18,7 @@ Tópicos da apresentação
 		    CPUs da máquina que roda um processo.
 
 	- RR (Multithread):
-	
+
 	- PRR (Multithread):
 		-> Pool de processos a serem executados, fila dos processos em execução
 		-> Cálculo de prioridade: depende de t0, dt, e p (deadline - dt) e p².

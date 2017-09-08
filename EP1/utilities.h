@@ -23,8 +23,6 @@ typedef enum {ARRIVAL_EVENT, RUN_EVENT, EXIT_EVENT, END_EVENT, CONTEXT_EVENT} EV
 #include "process.h"
 #include "minPQ.h"
 
-bool sigval; //TODO: remove all instances of this thing (after statistics, of course >:) )
-
 typedef struct timespec Time;
 struct timer_s{
     Time t;

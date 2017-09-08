@@ -36,8 +36,6 @@ int main(int argc, char const *argv[]) {
     char *outfile = estrdup(argv[3]);
     if(argc >= 5 && !strcmp(argv[4], "d"))
         DEBUG_MODE = true;
-    if((argc == 6 && !strcmp(argv[5], "SIGMOIDPLZ")) || (argc == 5 && !strcmp(argv[4], "SIGMOIDPLZ")))
-        sigval = true;         // TODO: remove this thing :O
 
     open_outfile(outfile);
     ProcArray readyJobs = create_ProcArray(infile);

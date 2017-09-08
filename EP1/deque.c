@@ -47,11 +47,3 @@ void queue_readd(Queue q) {
     queue_remove(q);
     queue_add(q, first);
 }
-
-// TODO : Remove this
-void queue_debug(Queue q) {
-    printf("%p ", NULL);
-    for (Node *n = q->next; n->p != NULL; n = n->next)
-        printf("%s ", n->p->name);
-    printf("%p\n", NULL);
-}

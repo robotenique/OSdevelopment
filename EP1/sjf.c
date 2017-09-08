@@ -44,7 +44,6 @@ static unsigned int idleCPU; // Number of CPU cores in the IDLE_STATE
 static long numCPU;
 static Timer timer; // Global timer
 static int outLine; // Variable with the number of the line to write in the output file
-static deadlineC *deadArray;
 
 
 int cmpSJFThreaded(Process, Process);
@@ -85,7 +84,6 @@ void schedulerSJF(ProcArray pQueue){
     coreCPU = emalloc(sizeof(pthread_t)*numCPU);
     CPU = emalloc(sizeof(unsigned int)*numCPU);
     pool = emalloc(sizeof(Process *)*numCPU);
-    deadArray = emalloc(sizeof(deadlineC)*sz);
     for (int i = 0; i < numCPU; i++)
         CPU[i] = IDLE_STATE;
     for(int i = 0; i < sz - 1; i++)
@@ -153,49 +151,6 @@ void schedulerSJF(ProcArray pQueue){
     free(coreCPU);
     free(CPU);
     free(pool);
-
-    // TODO: remove deadline statistics later
-    int counter = 0;
-    double avgDelay = 0;
-    double avgWaittime = 0.0;
-    printf("\n\n");
-    for (int i = 1; i < sz; i++) {
-        deadlineC dc = deadArray[i];
-        printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
-        avgWaittime += dc.waitTime;
-        if(dc.realFinished > dc.deadline){
-            avgDelay += dc.realFinished - dc.deadline;
-            counter++;
-        }
-    }
-    avgDelay /= counter;
-    double var = 0;
-    for (int i = 1; i < sz; i++) {
-        deadlineC dc = deadArray[i];
-        if(dc.realFinished > dc.deadline)
-            var += pow((dc.realFinished - dc.deadline) - avgDelay, 2);
-    }
-    var /= counter;
-    var = sqrtl(var);
-    if(counter == 0){
-        var = 0;
-        avgDelay = 0;
-    }
-    double percentage = (double)counter;
-    avgWaittime /= sz - 1;
-    percentage /= sz - 1;
-    percentage = 1 - percentage;
-    percentage *= 100;
-    printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
-    printf("Média de atraso = %lf\n",avgDelay);
-    printf("Desvio padrão de atraso = %lf \n",var);
-    printf("Mudanças de contexto = %d\n", get_ctx_changes());
-    printf("Tempo de espera médio = %lf\n", avgWaittime);
-    printf("NUMERO DE CORES = %ld\n||%%", numCPU);
-
-    free(deadArray);
-    // --------------------------------------------------------------------------------------------
-
 }
 
 /*
@@ -242,14 +197,12 @@ void *processRoutine(void *pinf){
     //int dumbVar = 0; // just to consume CPU...
     int core;
     Process *p;
-    deadlineC deadarr;
 
     // Prepare a process
     pthread_mutex_lock(&mutex);
         core = getCore(pthread_self());
         p = pool[core];
         debugger(RUN_EVENT, p, core + 1);
-        deadarr.waitTime = timer->passed(timer) - p->t0;
         pool[core] = NULL;
     pthread_mutex_unlock(&mutex);
 
@@ -269,10 +222,7 @@ void *processRoutine(void *pinf){
         CPU[core] = IDLE_STATE;
         idleCPU++;
         ++outLine;
-        deadarr.realFinished = timer->passed(timer);
-        deadarr.deadline = p->deadline;
         outInfo[p->nLine - 1] = new_output(p->name, timer->passed(timer), timer->passed(timer) - p->t0, outLine);
-        deadArray[p->nLine] = deadarr;
         debugger(END_EVENT, p, outLine);
         pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mutex);

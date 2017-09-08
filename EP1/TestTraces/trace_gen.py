@@ -42,6 +42,7 @@ def main():
         else:
             print("Wrong number of arguments!!")
             print("Usage: ./trace_gen <number of files> <lines> <max t0> <max dt> <max deadline/dt ratio>")
+            print("Usage (to generate all at once): ./trace_gen --giveall")
         return
     files = int(argv[1])
     lines = int(argv[2])

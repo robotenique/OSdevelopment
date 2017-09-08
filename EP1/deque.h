@@ -53,7 +53,4 @@ int queue_remove(Queue);
 
 void queue_readd(Queue);
 
-// TODO : Remove this
-void queue_debug(Queue q);
-
 #endif

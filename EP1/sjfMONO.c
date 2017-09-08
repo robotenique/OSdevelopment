@@ -19,7 +19,6 @@
 
 #define CPU_CORE 1
 
-static deadlineC *deadArray;
 static Timer timer;
 int cmpSJF(Process, Process);
 void *execProcess(void *proc);
@@ -46,8 +45,6 @@ void *execProcess(void *proc);
  */
 void schedulerSJF(ProcArray pQueue){
     int sz = pQueue->i + 1;
-    deadArray = emalloc(sizeof(deadlineC)*sz);
-
     int outLine = 0;
     MinPQ pPQ = new_MinPQ(&cmpSJF);
     Process curr = pQueue->v[pQueue->nextP++];
@@ -84,48 +81,6 @@ void schedulerSJF(ProcArray pQueue){
     write_outfile("%d\n", get_ctx_changes());
     destroy_Timer(timer);
     destroy_MinPQ(pPQ);
-
-    // TODO: remove deadline statistics later
-    int counter = 0;
-    double avgDelay = 0;
-    double avgWaittime = 0.0;
-    printf("\n\n");
-    for (int i = 1; i < sz; i++) {
-        deadlineC dc = deadArray[i];
-        printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
-        avgWaittime += dc.waitTime;
-        if(dc.realFinished > dc.deadline){
-            avgDelay += dc.realFinished - dc.deadline;
-            counter++;
-        }
-    }
-    avgDelay /= counter;
-    double var = 0;
-    for (int i = 1; i < sz; i++) {
-        deadlineC dc = deadArray[i];
-        if(dc.realFinished > dc.deadline)
-            var += pow((dc.realFinished - dc.deadline) - avgDelay, 2);
-    }
-    var /= counter;
-    var = sqrtl(var);
-    if(counter == 0){
-        var = 0;
-        avgDelay = 0;
-    }
-    double percentage = (double)counter;
-    percentage /= sz - 1;
-    percentage = 1 - percentage;
-    percentage *= 100;
-    avgWaittime /= sz -1;
-    printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
-    printf("Média de atraso = %lf\n",avgDelay);
-    printf("Desvio padrão de atraso = %lf \n",var);
-    printf("Mudanças de contexto = %d\n", get_ctx_changes());
-    printf("Tempo de espera médio = %lf||%%\n", avgWaittime);
-
-    free(deadArray);
-    // --------------------------------------------------------------------------------------------
-
 }
 
 /*
@@ -157,13 +112,8 @@ int cmpSJF(Process a, Process b){
  */
 void *execProcess(void *proc){
     Process *p = (Process *)proc;
-    deadlineC deadarr;
     debugger(RUN_EVENT, p, CPU_CORE);
-    deadarr.waitTime = timer->passed(timer) - p->t0;
     sleepFor(p->dt);
     debugger(EXIT_EVENT, p, CPU_CORE);
-    deadarr.realFinished = timer->passed(timer);
-    deadarr.deadline = p->deadline;
-    deadArray[p->nLine] = deadarr;
     pthread_exit(NULL);
 }

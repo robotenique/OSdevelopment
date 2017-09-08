@@ -1,6 +1,5 @@
 #
 # Makefile para EP1 de S.O.
-# TODO: Remove the '-g' flag when the work is done!
 #
 CC=gcc
 CFLAGS = -Wall -pedantic -O2 -std=gnu11

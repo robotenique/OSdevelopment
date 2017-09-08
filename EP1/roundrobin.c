@@ -32,10 +32,7 @@ static Timer timer;
 static int numCPU;
 static Core *cores;
 
-// TODO: REMOVE EVERY MENTION OF THIS BUGGY THING AFTER STATISTICS ARE GENERATED!
 static bool* firstTime;
-// deadline related
-static deadlineC *deadArray;
 
 static void *run(void *arg);
 
@@ -53,7 +50,6 @@ static void *run(void *arg);
 void schedulerRoundRobin(ProcArray readyJobs) {
     int sz = readyJobs->i + 1;
     ranThreads = emalloc(sizeof(pthread_t*)*sz);
-    deadArray = emalloc(sizeof(deadlineC)*sz);
     firstTime = emalloc(sizeof(bool)*sz);
     Stack *pool = new_stack(readyJobs->i);
     Queue waitingP = new_queue();
@@ -147,47 +143,6 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     free(firstTime);
     destroy_Timer(timer);
     write_outfile("%d\n", get_ctx_changes());
-
-    // Deadline statistics TODO: remove this from the final code!
-    int counter = 0;
-    double avgDelay = 0;
-    double avgWaittime = 0.0;
-    printf("\n\n");
-    for (int i = 1; i < sz; i++) {
-        deadlineC dc = deadArray[i];
-        printf("Processo da linha %d : tReal = %lf , deadline = %lf\n", i - 1, dc.realFinished, dc.deadline);
-        avgWaittime += dc.waitTime;
-        if(dc.realFinished > dc.deadline){
-            avgDelay += dc.realFinished - dc.deadline;
-            counter++;
-        }
-    }
-    avgDelay /= counter;
-    double var = 0;
-    for (int i = 1; i < sz; i++) {
-        deadlineC dc = deadArray[i];
-        if(dc.realFinished > dc.deadline)
-            var += pow((dc.realFinished - dc.deadline) - avgDelay, 2);
-    }
-    var /= counter;
-    var = sqrtl(var);
-    if(counter == 0){
-        var = 0;
-        avgDelay = 0;
-    }
-    double percentage = (double)counter;
-    percentage /= sz - 1;
-    percentage = 1 - percentage;
-    percentage *= 100;
-    avgWaittime /= sz -1;
-    printf("%%|| Processos que acabaram dentro da deadline = %.2lf%%\n",percentage);
-    printf("Média de atraso = %lf\n",avgDelay);
-    printf("Desvio padrão de atraso = %lf \n",var);
-    printf("Mudanças de contexto = %d\n", get_ctx_changes());
-    printf("Tempo de espera médio = %lf||%%\n", avgWaittime);
-
-    free(deadArray);
-
 }
 
 /*
@@ -202,7 +157,6 @@ void schedulerRoundRobin(ProcArray readyJobs) {
 static void *run(void *arg) {
     Node *n = (Node *)arg;
     double w;
-    deadlineC deadarr;
     do {
         //int dumbVar = 0; // just to consume CPU...
 
@@ -212,7 +166,6 @@ static void *run(void *arg) {
         if(firstTime[n->p->nLine]){
             // The first time this process has run, it will save the waitTime...
             firstTime[n->p->nLine] = false;
-            deadarr.waitTime = timer->passed(timer) - n->p->t0;
         }
         w = fmin(n->p->dt, QUANTUM_VAL);
 
@@ -236,9 +189,6 @@ static void *run(void *arg) {
     } while (n->p->dt);
 
     finished++;
-    deadarr.realFinished = timer->passed(timer);
-    deadarr.deadline = n->p->deadline;
-    deadArray[n->p->nLine] = deadarr;
     debugger(END_EVENT, n->p, finished);
     write_outfile("%s %lf %lf\n", n->p->name, timer->passed(timer), timer->passed(timer) - n->p->t0);
 
