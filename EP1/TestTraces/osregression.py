@@ -70,12 +70,13 @@ def plotQuantumF():
     b = 20.676305221
     fig = plt.figure(figsize=(10, 10))
     ax = fig.gca()
-    x = np.linspace(0,280,50)
-    y = list(map(lambda x :-67*math.log( 1/(1+math.exp(-x/47)),10), x))
+    ax.grid()
+    x = np.linspace(0,200,50)
+    y = list(map(lambda x :-33*math.log( 1/(1+math.exp(-x/25)),10), x))
     ax.plot(x,y,"r-")
     ax.set_xlabel('Priority')
-    ax.set_xlim(0,300)
-    ax.set_ylim(0,21)
+    ax.set_xlim(0,210)
+    ax.set_ylim(0,11)
     ax.set_ylabel('Quantum multiplier')
 
 
