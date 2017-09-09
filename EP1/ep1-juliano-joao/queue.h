@@ -1,5 +1,5 @@
-#ifndef _DEQUE_H_
-#define _DEQUE_H_
+#ifndef _QUEUE_H_
+#define _QUEUE_H_
 
 #include "process.h"
 #include "error.h"
@@ -50,7 +50,5 @@ void queue_add(Queue, Node*);
  * @return 0 if the Queue is empty and 1 otherwise
  */
 int queue_remove(Queue);
-
-void queue_readd(Queue);
 
 #endif

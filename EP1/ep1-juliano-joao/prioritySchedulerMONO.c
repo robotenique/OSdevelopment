@@ -6,7 +6,7 @@
 #include "process.h"
 #include "error.h"
 #include "utilities.h"
-#include "deque.h"
+#include "queue.h"
 #include "stack.h"
 
 #define QUANTUM_VAL 1.0

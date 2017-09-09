@@ -14,7 +14,7 @@ all: ep1sh ep1
 ep1sh: ep1sh.o error.o buffer.o
 	$(CC) -o $@ $^ -lrt -lreadline
 
-ep1: ep1.o error.o utilities.o minPQ.o roundrobin.o sjf.o priorityScheduler.o stack.o deque.o
+ep1: ep1.o error.o utilities.o minPQ.o roundrobin.o sjf.o priorityScheduler.o stack.o queue.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c %.h

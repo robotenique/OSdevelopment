@@ -8,7 +8,7 @@
  * Double linked queue implementation.
  */
 
-#include "deque.h"
+#include "queue.h"
 
 Queue new_queue() {
     Queue q = (Queue)emalloc(sizeof(Node));
@@ -40,10 +40,4 @@ int queue_remove(Queue q) {
     q->prev = tmp->prev;
     q->prev->next = q;
     return 1;
-}
-
-void queue_readd(Queue q) {
-    Node *first = queue_first(q);
-    queue_remove(q);
-    queue_add(q, first);
 }

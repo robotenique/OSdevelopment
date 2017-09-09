@@ -18,7 +18,7 @@
 #include "process.h"
 #include "error.h"
 #include "utilities.h"
-#include "deque.h"
+#include "queue.h"
 #include "stack.h"
 
 
@@ -54,7 +54,7 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     Queue waitingP = new_queue();
     numCPU = sysconf(_SC_NPROCESSORS_ONLN);
     QUANTUM_VAL = 1.0;
-    
+
     Node *tmp;
     int runningPro = 0;
     for(int i = 0; i < sz; firstTime[i] = true,  i++);
