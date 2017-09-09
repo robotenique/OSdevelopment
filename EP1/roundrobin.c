@@ -111,7 +111,7 @@ void schedulerRoundRobin(ProcArray readyJobs) {
             }
             if (cores[i].ready && (tmp = queue_first(waitingP))) {
                 // Wake up processes from queue
-                if (!(firstTime[tmp->p->nLine]) && tmp != cores[i].n)
+                if (!(firstTime[tmp->p->nLine]))
                     debugger(CONTEXT_EVENT, NULL, 0);
                 cores[i].n = tmp;
                 cores[i].ready = false;

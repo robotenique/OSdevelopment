@@ -66,12 +66,14 @@ void schedulerPriority(ProcArray pQueue){
         cores[i].n = NULL;
     }
 
+    // Initiate global timer
     timer = new_Timer();
 
     // Transfer processes to stack
     for (int i = pQueue->i - 1; i >= 0; i--)
         pool->v[pQueue->i - i - 1].p = &(pQueue->v[i]);
 
+    // Initiate the global mutex
     pthread_mutex_init(&gmtx, NULL);
     pthread_mutex_lock(&gmtx);
     pthread_cond_init(&gcond, NULL);
@@ -105,13 +107,15 @@ void schedulerPriority(ProcArray pQueue){
         runningPro = 0;
         for (int i = 0; i < numCPU; i++) {
             if (cores[i].n && cores[i].ready) {
+                // Remove ready processes from cores and put them at the queue
                 if (cores[i].n->p->dt)
                     queue_add(waitingP, cores[i].n);
                 else
                     removeFromStats(priority[cores[i].n->p->nLine]);
             }
             if (cores[i].ready && (tmp = queue_first(waitingP))) {
-                if (!(firstTime[tmp->p->nLine]) && tmp != cores[i].n)
+                // Wake up processes from queue
+                if (!(firstTime[tmp->p->nLine]))
                     debugger(CONTEXT_EVENT, NULL, 0);
                 cores[i].n = tmp;
                 cores[i].ready = false;
@@ -127,6 +131,7 @@ void schedulerPriority(ProcArray pQueue){
         pthread_mutex_unlock(&mtx);
 
         if (runningPro)
+            // Wait for some running process to finish
             pthread_cond_wait(&gcond, &gmtx);
     }
 
