@@ -53,7 +53,8 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     Stack *pool = new_stack(readyJobs->i);
     Queue waitingP = new_queue();
     numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-    QUANTUM_VAL = 0.17857142857142858*numCPU + 0.2857142857142857;
+    QUANTUM_VAL = 1.0;
+    
     Node *tmp;
     int runningPro = 0;
     for(int i = 0; i < sz; firstTime[i] = true,  i++);

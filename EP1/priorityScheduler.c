@@ -56,7 +56,7 @@ void schedulerPriority(ProcArray pQueue){
     ranThreads = emalloc(sizeof(pthread_t*)*sz);
     firstTime = emalloc(sizeof(bool)*sz);
     numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-    QUANTUM_VAL = 0.17857142857142858*numCPU + 0.2857142857142857;
+    QUANTUM_VAL = 1.0;
     int runningPro = 0;
     for(int i = 0; i < sz; firstTime[i] = true,  i++);
 
