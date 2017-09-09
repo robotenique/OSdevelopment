@@ -21,7 +21,6 @@
 #include "deque.h"
 #include "stack.h"
 
-#define QUANTUM_VAL 1.0
 
 static pthread_t **ranThreads;
 static int finished = 0;
@@ -31,7 +30,7 @@ static pthread_cond_t gcond;
 static Timer timer;
 static int numCPU;
 static Core *cores;
-
+static double QUANTUM_VAL;
 static bool* firstTime;
 
 static void *run(void *arg);
@@ -54,6 +53,7 @@ void schedulerRoundRobin(ProcArray readyJobs) {
     Stack *pool = new_stack(readyJobs->i);
     Queue waitingP = new_queue();
     numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+    QUANTUM_VAL = 0.17857142857142858*numCPU + 0.2857142857142857;
     Node *tmp;
     int runningPro = 0;
     for(int i = 0; i < sz; firstTime[i] = true,  i++);

@@ -21,8 +21,6 @@
 #include "deque.h"
 #include "stack.h"
 
-#define QUANTUM_VAL 1.0
-
 
 static Timer timer;
 static pthread_mutex_t gmtx;
@@ -36,6 +34,7 @@ static int count = 0;
 static pthread_t **ranThreads;
 static Core *cores;
 static int numCPU;
+static double QUANTUM_VAL;
 
 static bool* firstTime;
 
@@ -57,6 +56,7 @@ void schedulerPriority(ProcArray pQueue){
     ranThreads = emalloc(sizeof(pthread_t*)*sz);
     firstTime = emalloc(sizeof(bool)*sz);
     numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+    QUANTUM_VAL = 0.17857142857142858*numCPU + 0.2857142857142857;
     int runningPro = 0;
     for(int i = 0; i < sz; firstTime[i] = true,  i++);
 
