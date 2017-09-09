@@ -6,7 +6,7 @@ from os.path import isfile, join
 import matplotlib.pyplot as plt
 
 NUM_FILES = 30
-NCORES = 32
+NCORES = 4
 
 
 def get_runCommand(schedType, traceFile, outFile, optional=""):
@@ -55,7 +55,7 @@ def plotSpecific(titlePlot, yLabel, appFunction, stats, cat, schedL):
     schedNames = ["Shortest Job First","Round Robin", "Prioridade", "Prioridade (SIGMOID)"]
     colors = ["skyblue", "chartreuse", "gold", "tomato"]
     barWidth = 8 if len(stats) == 4 else 10
-    tickLoc = np.linspace(10 ,50, 4 if len(stats) == 4 else 3)
+    tickLoc = np.linspace(10 ,50, 3)
     sjf, rr, prrstat, prrsigma = schedL
     fig, axarr = plt.subplots(figsize=(9, 7))
     # Deadline graph
