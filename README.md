@@ -1,5 +1,5 @@
 # OSdevelopment
-Development realated to operational systems algorithms and techniques.
+Development related to operational systems algorithms and techniques.
 
 ## 1. **schedulersCPU**
 * **ep1sh.c**:
