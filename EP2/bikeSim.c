@@ -10,11 +10,9 @@
  #include <stdio.h>
  #include "error.h"
  #include "randomizer.h"
-char* translate(bool a){
-    if(a)
-        return estrdup("TRUE");
-    return estrdup("FALSE");
-}
+ #include "bikeStructures.h"
+
+
 int main(int argc, char const *argv[]) {
     set_prog_name("bikeSim");
     /*if(argc < 4)
@@ -22,7 +20,12 @@ int main(int argc, char const *argv[]) {
     u_int roadSz = atoi(argv[1]);
     u_int numBikers = atoi(argv[2]);
     u_int numLaps = atoi(argv[3]);*/
+    u_int roadSz = 250;
+    u_int numBikers = 10;
+    u_int numLaps = 50;
 
+    Velodrome v = new_velodrome(roadSz);
+    
 
 
     return 0;

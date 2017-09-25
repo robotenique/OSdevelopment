@@ -1,6 +1,7 @@
-typedef enum { false, true } bool;
-typedef unsigned int u_int;
+#ifndef __RANDOMIZER_H__
+#define __RANDOMIZER_H__
 
+#include "bikeStructures.h"
 /*
  * Function: randint
  * --------------------------------------------------------
@@ -25,3 +26,5 @@ u_int randint(u_int, u_int);
  * @return  a boolean representing sucess of fail
  */
 bool event(double);
+
+#endif
