@@ -8,13 +8,14 @@ typedef enum { false, true } bool;
 typedef unsigned int u_int;
 
 struct biker {
-    uid_t id;
+    u_int id;
 };
 
 typedef struct biker* Biker;
 
 struct velodrome{
-    Biker **road;
+    u_int **road;
+    u_int lap;
 };
 
 typedef struct velodrome* Velodrome;
