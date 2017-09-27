@@ -34,7 +34,6 @@ bool event(double probability) {
 void initSeed(){
     if(initRandom)
         return;
-    printf("Seed foi inicializada...\n");
     srand((unsigned) time(NULL));
     initRandom = true;
 }
