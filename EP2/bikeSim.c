@@ -25,12 +25,13 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int roadSz = 100;
-    u_int numBikers = 10;
+    u_int roadSz = 80;
+    u_int numBikers = 15;
     u_int numLaps = 50;
     DEBUG_MODE = true;
 
     new_road(roadSz);
+    random_initialize(numBikers);
     debug_road();
 
 
