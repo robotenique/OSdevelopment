@@ -37,7 +37,8 @@
 *.hex
 *.in
 ep1sh
-simproc
+ep1
+bikeSim
 
 # Debug files
 *.dSYM/

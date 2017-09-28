@@ -11,15 +11,15 @@ LDFLAGS = -lrt -lm -pthread
 all: bikeSim
 
 
-bikeSim: bikeSim.o error.o randomizer.o bikeStructures.o
-	$(CC) -o $@ $^ -lrt
+bikeSim: bikeSim.o error.o randomizer.o bikeStructures.o debugger.o
+	$(CC) -o $@ $^
 
 %.o: %.c %.h
-	$(CC) $(CFLAGS) -c $< $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
 
 clean:
