@@ -12,6 +12,7 @@ typedef enum { false, true } bool;
 typedef unsigned int u_int;
 
 typedef unsigned long long int u_lint;
+
 struct biker {
     // TODO: remove color after finishing EP
     // Speed = 2 (90 km/h) , 3 (60 km/h),  6 (30 km/h)
@@ -25,16 +26,27 @@ struct biker {
     bool broken;
 };
 
-struct scoreboard {
-    // TODO: Finish buffer
-    // Every buffer need a mutex
-    //Buffer *scoreList; // x = scoreList[i] -> x.lap
+struct buffer_s{
+    u_int lap, i, size;
+    char **data;
+    pthread_mutex_t mtx;
+    void(*append)(struct buffer_s*, char*);
+};
+
+typedef struct buffer_s* Buffer;
+
+struct scbr_s {
+    // TODO: Every buffer need a mutex
+    Buffer *scores;
     u_int n;
+    u_int num_bikers;
     //add_score(biker)
 };
 
 bool DEBUG_MODE;
+
 typedef struct biker* Biker;
+typedef struct scbr_s* Scoreboard;
 
 typedef struct {
     u_int **road;
@@ -47,7 +59,17 @@ Road speedway;
 Biker *bikers;
 pthread_barrier_t barr;
 
-void new_bikers(u_int);
-void new_road(u_int);
+void new_bikers(u_int numBikers);
+void create_speedway(u_int d);
+
+Scoreboard new_scoreboard(u_int laps, u_int num_bikers);
+void add_info(Buffer b, Biker x);
+void add_score(Scoreboard sb, Biker x);
+
+
+Buffer new_buffer(u_int lap);
+void destroy_buffer(Buffer b);
+void append(Buffer b, char *s);
+
 
 #endif

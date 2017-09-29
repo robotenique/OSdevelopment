@@ -13,6 +13,13 @@
  #include "randomizer.h"
  #include "debugger.h"
 
+void debug_buffer(Buffer b) {
+    printf("LAP = %u, i = %u, SIZE = %u\n", b->lap, b->i, b->size);
+    for (size_t i = 0; i < b->i; i++)
+        printf("%s\n", b->data[i]);
+
+}
+
 
 int main(int argc, char const *argv[]) {
     set_prog_name("bikeSim");
@@ -30,9 +37,13 @@ int main(int argc, char const *argv[]) {
     u_int numLaps = 50;
     DEBUG_MODE = true;
 
-    new_road(roadSz);
+    create_speedway(roadSz);
     random_initialize(numBikers);
+    printf("bikers criados\n");
     debug_road();
+
+
+
 
 
 
