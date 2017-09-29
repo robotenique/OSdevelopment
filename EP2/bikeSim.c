@@ -26,7 +26,7 @@ int main(int argc, char const *argv[]) {
     else
         DEBUG_MODE = false;*/
     u_int roadSz = 80;
-    u_int numBikers = 15;
+    u_int numBikers = 10;
     u_int numLaps = 50;
     DEBUG_MODE = true;
 
