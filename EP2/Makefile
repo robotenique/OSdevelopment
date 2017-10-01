@@ -3,13 +3,15 @@
 #
 CC=gcc
 CFLAGS = -Wall -pedantic -O2 -std=gnu11
-LDFLAGS = -lrt -lm -pthread
+LDFLAGS = -lrt -lm -pthread -g
 
 .PHONY: clean
 
 
 all: bikeSim
 
+dbbikeSim: bikeSim.o error.o randomizer.o bikeStructures.o debugger.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 bikeSim: bikeSim.o error.o randomizer.o bikeStructures.o debugger.o
 	$(CC) -o $@ $^ $(LDFLAGS)

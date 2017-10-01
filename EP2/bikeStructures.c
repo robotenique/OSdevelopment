@@ -62,25 +62,36 @@ void add_score(Scoreboard sb, Biker x) {
 
     if(sb->scores[pos] && sb->scores[pos]->lap != x->lap)
         pos = reallocate_scoreboard(sb, x);
-    if(sb->scores[pos] == NULL) sb->scores[pos] = new_buffer(x->lap, sb->num_bikers);
+    if(sb->scores[pos] == NULL)
+        sb->scores[pos] = new_buffer(x->lap, sb->num_bikers);
     add_info(sb->scores[pos], x);
+    printf("%s\n", sb->scores[pos]->data[0]);
+    debug_buffer(sb->scores[pos]);
     x->lap++;
     if(sb->scores[pos]->i == sb->num_bikers) {
         printf("meh\n"); // TODO: Delete this buffer and print everything...
         debug_buffer(sb->scores[pos]);
-        free(sb->scores[pos]);
+        destroy_buffer(sb->scores[pos]);
         sb->scores[pos] = NULL;
     }
 }
 
 void add_info(Buffer b, Biker x) {
-    int str_sz = snprintf(NULL, 0, "Pos(%u) - Biker %u", b->i, x->id);
+    printf("Got to add_info\n");
+    int str_sz = snprintf(NULL, 0, "Pos(%u) - Biker %u", x->i, x->id);
     if(str_sz < 0)
         die("Can't store biker info to scoreboard.");
-    char *str_tmp = emalloc((str_sz + 1)*sizeof(char));
-    snprintf(str_tmp, str_sz + 1, "Pos(%u) - Biker %u", b->i, x->id);
+    pthread_mutex_lock(&(b->mtx));
+    b->data[b->i] = emalloc((str_sz + 1)*sizeof(char));
+    snprintf(b->data[b->i], str_sz + 1, "Pos(%u) - Biker %u", x->i, x->id);
+    printf("%s\n", b->data[0]);
+    b->i++;
+    pthread_mutex_unlock(&(b->mtx));
+    /*char *str_tmp = emalloc((str_sz + 1)*sizeof(char));
+    snprintf(str_tmp, str_sz + 1, "Pos(%u) - Biker %u", x->i, x->id);
     b->append(b, str_tmp);
     free(str_tmp);
+    printf("Out of add_info\n");*/
 }
 
 void destroy_scoreboard(Scoreboard sb) {
@@ -105,9 +116,11 @@ Buffer new_buffer(u_int lap, u_int num_bikers) {
 }
 
 void append(Buffer b, char *s) {
+    printf("Got to append\n");
     pthread_mutex_lock(&(b->mtx));
-    b->data[b->i] = estrdup(s);
+    b->data[b->i] = s;
     b->i++;
+    printf("Out of append\n");
     pthread_mutex_unlock(&(b->mtx));
 }
 
@@ -133,16 +146,20 @@ void* biker_loop(void *arg) {
         i = self->i;
         j = self->j;
         if (exists(i, j+1)) {
+            printf("%d Lock %d %d (Same up)\n", self->id, i, j+1);
             pthread_mutex_lock(&(speedway.mtxs[i][j+1]));
             if (speedway.road[i][j+1] != -1)
                 up = true;
+            printf("%d Unlock %d %d (Same up)\n", self->id, i, j+1);
             pthread_mutex_unlock(&(speedway.mtxs[i][j+1]));
         }
         if (!up) {
             u_int im = (i+1)%speedway.length;
             if (exists(im, j-1)) {
+                printf("%d Lock %d %d (Down)\n", self->id, im, j-1);
                 pthread_mutex_lock(&(speedway.mtxs[im][j-1]));
                 if (speedway.road[im][j-1] == -1) {
+                    printf("%d Lock %d %d (Self)\n", self->id, i, j);
                     pthread_mutex_lock(&(speedway.mtxs[i][j]));
                     printf("Down %d %d %d %s\uf206%s\n", self->id, im, j, self->color, RESET);
                     speedway.road[im][j-1] = self->id;
@@ -150,13 +167,17 @@ void* biker_loop(void *arg) {
                     self->i = im;
                     self->j = j-1;
                     moved = true;
+                    printf("%d Unlock %d %d (Self)\n", self->id, i, j);
                     pthread_mutex_unlock(&(speedway.mtxs[i][j]));
                 }
+                printf("%d Unlock %d %d (Down)\n", self->id, im, j-1);
                 pthread_mutex_unlock(&(speedway.mtxs[im][j-1]));
             }
             if (!moved && exists(im, j)) {
+                printf("%d Lock %d %d (Mid)\n", self->id, im, j);
                 pthread_mutex_lock(&(speedway.mtxs[im][j]));
                 if (speedway.road[im][j] == -1) {
+                    printf("%d Lock %d %d (Self)\n", self->id, i, j);
                     pthread_mutex_lock(&(speedway.mtxs[i][j]));
                     printf("Mid %d %d %d %s\uf206%s\n", self->id, im, j, self->color, RESET);
                     speedway.road[im][j] = self->id;
@@ -164,13 +185,17 @@ void* biker_loop(void *arg) {
                     self->i = im;
                     self->j = j;
                     moved = true;
+                    printf("%d Unlock %d %d (Self)\n", self->id, i, j);
                     pthread_mutex_unlock(&(speedway.mtxs[i][j]));
                 }
+                printf("%d Unlock %d %d (Mid)\n", self->id, im, j);
                 pthread_mutex_unlock(&(speedway.mtxs[im][j]));
             }
             if (!moved && exists(im, j+1)) {
+                printf("%d Lock %d %d (Up)\n", self->id, im, j+1);
                 pthread_mutex_lock(&(speedway.mtxs[im][j+1]));
                 if (speedway.road[im][j+1] == -1) {
+                    printf("%d Lock %d %d (Self)\n", self->id, i, j);
                     pthread_mutex_lock(&(speedway.mtxs[i][j]));
                     printf("Up %d %d %d %s\uf206%s\n", self->id, im, j, self->color, RESET);
                     speedway.road[im][j+1] = self->id;
@@ -178,16 +203,20 @@ void* biker_loop(void *arg) {
                     self->i = im;
                     self->j = j+1;
                     moved = true;
+                    printf("%d Unlock %d %d (Self)\n", self->id, i, j);
                     pthread_mutex_unlock(&(speedway.mtxs[i][j]));
                 }
+                printf("%d Unlock %d %d (Up)\n", self->id, im, j+1);
                 pthread_mutex_unlock(&(speedway.mtxs[im][j+1]));
             }
         }
         if (!moved)
             printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
+        printf("%d waiting...\n", self->id);
         pthread_barrier_wait(&barr);
         if (moved && self->i == 0)
             add_score(sb, self);
+        printf("%d waiting 2...\n", self->id);
         pthread_barrier_wait(&barr2);
     }
     return NULL;
