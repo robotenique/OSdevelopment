@@ -12,7 +12,7 @@ all: bikeSim
 
 
 bikeSim: bikeSim.o error.o randomizer.o bikeStructures.o debugger.o
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)

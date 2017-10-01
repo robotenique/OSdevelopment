@@ -8,18 +8,11 @@
  * Main file of the bike sprint simulator
  */
  #include <stdio.h>
+ #include <pthread.h>
  #include "bikeStructures.h"
  #include "error.h"
  #include "randomizer.h"
  #include "debugger.h"
-
-void debug_buffer(Buffer b) {
-    printf("LAP = %u, i = %u, SIZE = %u\n", b->lap, b->i, b->size);
-    for (size_t i = 0; i < b->i; i++)
-        printf("%s\n", b->data[i]);
-
-}
-
 
 int main(int argc, char const *argv[]) {
     set_prog_name("bikeSim");
@@ -37,11 +30,12 @@ int main(int argc, char const *argv[]) {
     u_int numLaps = 50;
     DEBUG_MODE = true;
 
+    pthread_barrier_init(&barr, NULL, numBikers+1);
+    pthread_barrier_init(&barr2, NULL, numBikers+1);
+
     create_speedway(roadSz);
-    random_initialize(numBikers);
-    printf("bikers criados\n");
-    debug_road();
-    Biker bike0 = emalloc(sizeof(struct biker));
+    //random_initialize(numBikers);
+    /*Biker bike0 = emalloc(sizeof(struct biker));
     bike0->lap = 0;
     bike0->id = 0;
     bike0->score = 0;
@@ -50,7 +44,23 @@ int main(int argc, char const *argv[]) {
         add_score(sb, bike0);
         debug_buffer(sb->scores[i]);
         bike0->lap++;
+    }*/
+    sb = new_scoreboard(20, numBikers);
+    bikers = emalloc(numBikers*sizeof(Biker));
+    random_initialize(numBikers);
+    printf("bikers criados\n");
+    debug_road();
+    // Sometimes some bikers are deadlocked and the race can't proceed
+    // due to the barrier
+    for (int i = 0; i < 20; i++) {
+        pthread_barrier_wait(&barr);
+        debug_road();
+        pthread_barrier_wait(&barr2);
     }
+    destroy_speedway();
+    for (int i = 0; i < numBikers; i++)
+        free(bikers[i]->thread);
+    destroy_scoreboard(sb);
 
     return 0;
 }
