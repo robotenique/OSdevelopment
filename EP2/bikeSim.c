@@ -41,11 +41,16 @@ int main(int argc, char const *argv[]) {
     random_initialize(numBikers);
     printf("bikers criados\n");
     debug_road();
-
-
-
-
-
+    Biker bike0 = emalloc(sizeof(struct biker));
+    bike0->lap = 0;
+    bike0->id = 0;
+    bike0->score = 0;
+    Scoreboard sb = new_scoreboard(20, 10);
+    for (int i = 0; i < 20; i++) {
+        add_score(sb, bike0);
+        debug_buffer(sb->scores[i]);
+        bike0->lap++;
+    }
 
     return 0;
 }

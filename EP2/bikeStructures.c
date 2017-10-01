@@ -2,7 +2,7 @@
 #include "bikeStructures.h"
 
 Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
-    u_int init_sz = 2 + (laps - 1)/4 ;
+    u_int init_sz = 2 + (laps - 1)/4;
     Scoreboard sb = emalloc(sizeof(struct scbr_s*));
     sb->scores = emalloc(init_sz*sizeof(Buffer));
     sb->n = init_sz;
@@ -11,11 +11,11 @@ Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
 }
 
 void add_info(Buffer b, Biker x) {
-    int str_sz = snprintf(NULL, 0, "Pos(%u) - Biker %u", x->id, x->lap);
+    int str_sz = snprintf(NULL, 0, "Pos(%u) - Biker %u", b->i, x->id);
     if(str_sz < 0)
         die("Can't store biker info to scoreboard.");
     char *str_tmp = emalloc((str_sz + 1)*sizeof(char));
-    snprintf(str_tmp, str_sz + 1, "Pos(%u) - Biker %u", x->id, x->lap);
+    snprintf(str_tmp, str_sz + 1, "Pos(%u) - Biker %u", b->i, x->id);
     b->append(b, str_tmp);
     free(str_tmp);
 }
@@ -43,9 +43,9 @@ void add_score(Scoreboard sb, Biker x) {
     // better to keep the mtx list in the Scoreboard struct...
 
     // Lock Mutex
-    if(sb->scores[pos] == NULL) sb->scores[pos] = new_buffer(x->lap);
-    else if(sb->scores[pos]->lap != x->lap)
+    if(sb->scores[pos] && sb->scores[pos]->lap != x->lap)
         pos = reallocate_scoreboard(sb, x);
+    if(sb->scores[pos] == NULL) sb->scores[pos] = new_buffer(x->lap);
     add_info(sb->scores[pos], x);
     if(sb->scores[pos]->i == sb->num_bikers)
         printf("meh\n"); // TODO: Delete this buffer and print everything...
