@@ -29,6 +29,10 @@ int main(int argc, char const *argv[]) {
     u_int numBikers = 10;
     u_int numLaps = 50;
     DEBUG_MODE = true;
+    if (DEBUG_MODE) {
+        printf("\n    ____  _ __             _____ _                 __      __            \n   / __ )(_) /_____       / ___/(_)___ ___  __  __/ /___ _/ /_____  _____\n  / __  / / //_/ _ \\______\\__ \\/ / __ `__ \\/ / / / / __ `/ __/ __ \\/ ___/\n / /_/ / / ,< /  __/_____/__/ / / / / / / / /_/ / / /_/ / /_/ /_/ / /    \n/_____/_/_/|_|\\___/     /____/_/_/ /_/ /_/\\__,_/_/\\__,_/\\__/\\____/_/     \n========================================================================================\n");
+    }
+
 
     pthread_barrier_init(&barr, NULL, numBikers+1);
     pthread_barrier_init(&barr2, NULL, numBikers+1);
@@ -48,17 +52,20 @@ int main(int argc, char const *argv[]) {
     random_initialize(numBikers);
     printf("bikers criados\n");
     debug_road();
+    destroy_speedway();
+    destroy_scoreboard(sb);
+    exit(0);
+
     // Sometimes some bikers are deadlocked and the race can't proceed
     // due to the barrier
     for (int i = 0; i < 20; i++) {
         pthread_barrier_wait(&barr);
         debug_road();
         pthread_barrier_wait(&barr2);
+
     }
-    destroy_speedway();
     for (int i = 0; i < numBikers; i++)
         free(bikers[i]->thread);
-    destroy_scoreboard(sb);
 
     return 0;
 }

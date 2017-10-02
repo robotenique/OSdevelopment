@@ -33,6 +33,7 @@ Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
     u_int init_sz = 2 + (laps - 1)/4;
     Scoreboard sb = emalloc(sizeof(struct scbr_s));
     sb->scores = emalloc(init_sz*sizeof(Buffer));
+    for (size_t i = 0; i < init_sz; sb->scores[i++] = NULL);
     sb->n = init_sz;
     sb->num_bikers = num_bikers;
     return sb;
@@ -85,11 +86,10 @@ void add_info(Buffer b, Biker x) {
 }
 
 void destroy_scoreboard(Scoreboard sb) {
-    /*for (int i = 0; i < sb->n; i++) {
-        // This can be buggy!!!!
+    for (int i = 0; i < sb->n; i++) {
         if (sb->scores[i] != NULL)
-            free(sb->scores[i]);
-    }*/
+            destroy_buffer(sb->scores[i]);
+    }
     free(sb->scores);
     free(sb);
 }
