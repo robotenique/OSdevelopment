@@ -8,5 +8,5 @@
 void debug_road();
 void random_initialize(u_int);
 void debug_buffer(Buffer);
-
+void print_prog_name();
 #endif
