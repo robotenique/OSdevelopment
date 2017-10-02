@@ -75,7 +75,16 @@ void add_score(Scoreboard sb, Biker x) {
     }
 }
 
-
+/*
+ * Function: append
+ * --------------------------------------------------------
+ * Add a di to the buffer b
+ *
+ * @args b : the buffer
+ *       id: the id to insert in the buffer
+ *
+ * @return
+ */
 void append(Buffer b, u_int id) {
     pthread_mutex_lock(&(b->mtx));
     b->data[b->i] = id;
