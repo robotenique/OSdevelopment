@@ -1,6 +1,6 @@
 /*
- * @author: João Gabriel
- * @author: Juliano Garcia
+ * @author: João Gabriel Basi Nº USP: 9793801
+ * @author: Juliano Garcia de Oliveira Nº USP: 9277086
  *
  * MAC0422
  * 16/10/17
@@ -44,7 +44,7 @@ int main(int argc, char const *argv[]) {
     debug_road();
     destroy_speedway(speedway);
     destroy_scoreboard(sb);
-    destroy_bikers(numBikers);    
+    destroy_bikers(numBikers);
     exit(0);
 
     // Sometimes some bikers are deadlocked and the race can't proceed

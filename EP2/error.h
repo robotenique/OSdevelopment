@@ -1,4 +1,10 @@
 /*
+/*
+ João Gabriel Basi Nº USP: 9793801
+ Juliano Garcia de Oliveira Nº USP: 9277086
+
+ MAC0422
+ 16/10/17
   error.h
   Error-handling routines.
   This code is an adaptation of the module provided during

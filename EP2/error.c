@@ -1,9 +1,9 @@
 /*
- * @author: João Gabriel
- * @author: Juliano Garcia
+ * @author: João Gabriel Basi Nº USP: 9793801
+ * @author: Juliano Garcia de Oliveira Nº USP: 9277086
  *
  * MAC0422
- * 11/09/17
+ * 16/10/17
  *
  * Error functions library.
  */
