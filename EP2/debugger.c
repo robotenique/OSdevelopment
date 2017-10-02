@@ -1,3 +1,12 @@
+/*
+ * @author: João Gabriel Basi Nº USP: 9793801
+ * @author: Juliano Garcia de Oliveira Nº USP: 9277086
+ *
+ * MAC0422
+ * 16/10/17
+ *
+ * File for the debugging functions
+ */
 #include <string.h>
 #include "debugger.h"
 #include "error.h"

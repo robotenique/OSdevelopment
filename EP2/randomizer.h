@@ -1,3 +1,12 @@
+/*
+ * @author: João Gabriel Basi Nº USP: 9793801
+ * @author: Juliano Garcia de Oliveira Nº USP: 9277086
+ *
+ * MAC0422
+ * 16/10/17
+ *
+ * Header for the randomizer module
+ */
 #ifndef __RANDOMIZER_H__
 #define __RANDOMIZER_H__
 

@@ -1,4 +1,6 @@
 #
+# @author: João Gabriel Basi Nº USP: 9793801
+# @author: Juliano Garcia de Oliveira Nº USP: 9277086
 # Makefile para EP1 de S.O.
 #
 CC=gcc

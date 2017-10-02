@@ -14,76 +14,6 @@
 #include "bikeStructures.h"
 #include "debugger.h"
 
-void add_score(Scoreboard, Biker);
-
-/*
- * Function: create_speedway
- * --------------------------------------------------------
- * Create the global speedway. The speedway is a global variable
- * which has the road matrix (d x 10 matrix), the length is d,
- * and the lanes are (by default) 10.
- *
- * @args d : u_int which represents the length of the speedway
- *
- * @return
- */
-void create_speedway(u_int d){
-    speedway.road = emalloc(d*sizeof(u_int*));
-    speedway.length = d;
-    speedway.lanes = NUM_LANES;
-    for (int i = 0; i < d; i++) {
-        speedway.road[i] = emalloc(10*sizeof(u_int));
-        for(int j = 0; j < 10; j++)
-            speedway.road[i][j] = -1; // infinity :'(
-    }
-    speedway.mtxs = emalloc(d*sizeof(pthread_mutex_t*));
-    for (int i = 0; i < d; i++) {
-        speedway.mtxs[i] = emalloc(10*sizeof(pthread_mutex_t));
-        for(int j = 0; j < 10; j++)
-            pthread_mutex_init(&(speedway.mtxs[i][j]), NULL);
-    }
-}
-
-/*
- * Function: destroy_speedway
- * --------------------------------------------------------
- * Destroy the global speedway, freeing the memory
- *
- * @args
- *
- * @return
- */
-void destroy_speedway() {
-    for (int i = 0; i < speedway.length; i++) {
-        free(speedway.road[i]);
-        free(speedway.mtxs[i]);
-    }
-    free(speedway.road);
-    free(speedway.mtxs);
-}
-
-/*
- * Function: new_scoreboard
- * --------------------------------------------------------
- * Creates a new scoreboard, and returns it
- *
- * @args laps : The quantity of laps
- *       num_bikers : The number of bikers
- *
- * @return the new scoreboard
- */
-Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
-    u_int init_sz = 2 + (laps - 1)/4;
-    Scoreboard sb = emalloc(sizeof(struct scbr_s));
-    sb->scores = emalloc(init_sz*sizeof(Buffer));
-    for (size_t i = 0; i < init_sz; sb->scores[i++] = NULL);
-    sb->n = init_sz;
-    sb->num_bikers = num_bikers;
-    pthread_mutex_init(&(sb->scbr_mtx), NULL);
-    sb->add_score = &add_score;
-    return sb;
-}
-
 /*
  * Function: reallocate_scoreboard
  * --------------------------------------------------------
@@ -145,74 +75,12 @@ void add_score(Scoreboard sb, Biker x) {
     }
 }
 
-/*
- * Function: destroy_scoreboard
- * --------------------------------------------------------
- * Destroys the scoreboard, freeing the memory
- *
- * @args sb : the scoreboard to be destroyed
- *
- * @return
- */
-void destroy_scoreboard(Scoreboard sb) {
-    for (int i = 0; i < sb->n; i++) {
-        if (sb->scores[i] != NULL)
-            destroy_buffer(sb->scores[i]);
-    }
-    free(sb->scores);
-    free(sb);
-}
 
-/*
- * Function: new_buffer
- * --------------------------------------------------------
- * Creates a new buffer and returns it
- *
- * @args lap : the lap that the buffer represents
- *       num_bikers : the number of bikers in the sprint
- *
- * @return the newly Created buffer
- */
-Buffer new_buffer(u_int lap, u_int num_bikers) {
-    Buffer b = emalloc(sizeof(struct buffer_s*));
-    b->lap = lap;
-    b->i = 0;
-    b->data = emalloc(num_bikers*sizeof(u_int));
-    b->size = num_bikers;
-    b->append = &append;
-    pthread_mutex_init(&(b->mtx), NULL);
-    return b;
-}
-
-/*
- * Function: append
- * --------------------------------------------------------
- * Function to add a new id to the buffer_s
- *
- * @args b : the buffer
- *       id: the id of the biker to add
- *
- * @return
- */
 void append(Buffer b, u_int id) {
     pthread_mutex_lock(&(b->mtx));
     b->data[b->i] = id;
     b->i++;
     pthread_mutex_unlock(&(b->mtx));
-}
-
-/*
- * Function: destroy_buffer
- * --------------------------------------------------------
- * Destroys the buffer, freeing the memory
- *
- * @args  b :  the buffer
- *
- * @return
- */
-void destroy_buffer(Buffer b){
-    free(b->data);
-    free(b);
 }
 
 /*
@@ -240,43 +108,6 @@ Biker new_biker(u_int id) {
     b->j = lane;
     pthread_create(b->thread, NULL, &biker_loop, (void*)b);
     return b;
-}
-
-/*
- * Function: new_bikers
- * --------------------------------------------------------
- * Creates the bikers, the global array of bikers
- *
- * @args numBikers : the number of bikers
- *
- * @return
- */
-void new_bikers(u_int numBikers) {
-    bikers = emalloc(numBikers*sizeof(Biker));
-    for (int i = 0; i < numBikers; i++)
-        bikers[i] = new_biker(i);
-}
-
-/*
- * Function: destroy_bikers
- * --------------------------------------------------------
- * Destroys the bikers global array
- *
- * @args numBikers : number of bikers in the global array
- *
- * @return
- */
-void destroy_bikers(u_int numBikers) {
-    for (size_t i = 0; i < numBikers; i++) {
-        Biker b = bikers[i];
-        if(b != NULL) {
-            free(b->thread);
-            free(b->mtxs);
-            free(b->color);
-            free(b);
-        }
-    }
-    free(bikers);
 }
 
 /*
@@ -357,4 +188,86 @@ void* biker_loop(void *arg) {
         pthread_barrier_wait(&barr2);
     }
     return NULL;
+}
+
+void create_speedway(u_int d){
+    speedway.road = emalloc(d*sizeof(u_int*));
+    speedway.length = d;
+    speedway.lanes = NUM_LANES;
+    for (int i = 0; i < d; i++) {
+        speedway.road[i] = emalloc(10*sizeof(u_int));
+        for(int j = 0; j < 10; j++)
+            speedway.road[i][j] = -1; // infinity :'(
+    }
+    speedway.mtxs = emalloc(d*sizeof(pthread_mutex_t*));
+    for (int i = 0; i < d; i++) {
+        speedway.mtxs[i] = emalloc(10*sizeof(pthread_mutex_t));
+        for(int j = 0; j < 10; j++)
+            pthread_mutex_init(&(speedway.mtxs[i][j]), NULL);
+    }
+}
+
+void destroy_speedway() {
+    for (int i = 0; i < speedway.length; i++) {
+        free(speedway.road[i]);
+        free(speedway.mtxs[i]);
+    }
+    free(speedway.road);
+    free(speedway.mtxs);
+}
+
+Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
+    u_int init_sz = 2 + (laps - 1)/4;
+    Scoreboard sb = emalloc(sizeof(struct scbr_s));
+    sb->scores = emalloc(init_sz*sizeof(Buffer));
+    for (size_t i = 0; i < init_sz; sb->scores[i++] = NULL);
+    sb->n = init_sz;
+    sb->num_bikers = num_bikers;
+    pthread_mutex_init(&(sb->scbr_mtx), NULL);
+    sb->add_score = &add_score;
+    return sb;
+}
+
+void destroy_scoreboard(Scoreboard sb) {
+    for (int i = 0; i < sb->n; i++) {
+        if (sb->scores[i] != NULL)
+            destroy_buffer(sb->scores[i]);
+    }
+    free(sb->scores);
+    free(sb);
+}
+
+Buffer new_buffer(u_int lap, u_int num_bikers) {
+    Buffer b = emalloc(sizeof(struct buffer_s*));
+    b->lap = lap;
+    b->i = 0;
+    b->data = emalloc(num_bikers*sizeof(u_int));
+    b->size = num_bikers;
+    b->append = &append;
+    pthread_mutex_init(&(b->mtx), NULL);
+    return b;
+}
+
+void destroy_buffer(Buffer b){
+    free(b->data);
+    free(b);
+}
+
+void new_bikers(u_int numBikers) {
+    bikers = emalloc(numBikers*sizeof(Biker));
+    for (int i = 0; i < numBikers; i++)
+        bikers[i] = new_biker(i);
+}
+
+void destroy_bikers(u_int numBikers) {
+    for (size_t i = 0; i < numBikers; i++) {
+        Biker b = bikers[i];
+        if(b != NULL) {
+            free(b->thread);
+            free(b->mtxs);
+            free(b->color);
+            free(b);
+        }
+    }
+    free(bikers);
 }
