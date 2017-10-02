@@ -26,7 +26,7 @@ int main(int argc, char const *argv[]) {
     else
         DEBUG_MODE = false;*/
     u_int roadSz = 80;
-    u_int numBikers = 10;
+    u_int numBikers = 20;
     u_int numLaps = 50;
     DEBUG_MODE = true;
 
@@ -35,17 +35,8 @@ int main(int argc, char const *argv[]) {
 
     create_speedway(roadSz);
     sb = new_scoreboard(20, numBikers);
-    //random_initialize(numBikers);
-    /*Biker bike0 = emalloc(sizeof(struct biker));
-    bike0->lap = 0;
-    bike0->id = 0;
-    bike0->score = 0;
-    bike0->i = 0;
-    Scoreboard sb = new_scoreboard(20, 10);
-    add_score(sb, bike0);*/
-    sb = new_scoreboard(20, numBikers);
     bikers = emalloc(numBikers*sizeof(Biker));
-    random_initialize(numBikers);
+    new_bikers(numBikers);
     printf("bikers criados\n");
     debug_road();
     // Sometimes some bikers are deadlocked and the race can't proceed
@@ -56,8 +47,10 @@ int main(int argc, char const *argv[]) {
         pthread_barrier_wait(&barr2);
     }
     destroy_speedway();
-    for (int i = 0; i < numBikers; i++)
+    for (int i = 0; i < numBikers; i++) {
         free(bikers[i]->thread);
+        free(bikers[i]->mtxs);
+    }
     destroy_scoreboard(sb);
 
     return 0;

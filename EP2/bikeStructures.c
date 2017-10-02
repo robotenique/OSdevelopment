@@ -117,8 +117,56 @@ void destroy_buffer(Buffer b){
     free(b);
 }
 
+Biker new_biker(u_int id) {
+    Biker b = emalloc(sizeof(struct biker));
+    b->lap = 0;
+    b->id = id;
+    b->score = 0;
+    b->speed = 0;
+    b->color = estrdup("\x1b[31m");
+    b->thread = emalloc(sizeof(pthread_t));
+    b->mtxs = emalloc(3*sizeof(pthread_mutex_t));
+    u_int meter = (speedway.length - id/speedway.lanes)%speedway.length;
+    u_int lane = id%speedway.lanes;
+    speedway.road[meter][lane] = id;
+    b->i = meter;
+    b->j = lane;
+    pthread_create(b->thread, NULL, &biker_loop, (void*)b);
+    return b;
+}
+
+void new_bikers(u_int numBikers) {
+    bikers = emalloc(numBikers*sizeof(Biker));
+    for (int i = 0; i < numBikers; i++)
+        bikers[i] = new_biker(i);
+}
+
 int exists(int i, int j) {
     return (i >= 0 && i < speedway.length && j >= 0 && j < speedway.lanes);
+}
+
+bool move(Biker self, u_int nj) {
+    u_int i = self->i;
+    u_int j = self->j;
+    u_int im = (i+1)%speedway.length;
+    bool moved = false;
+    //printf("%d Lock %d %d (Up)\n", self->id, im, nj);
+    pthread_mutex_lock(&(speedway.mtxs[im][nj]));
+    if (speedway.road[im][nj] == -1) {
+        //printf("%d Lock %d %d (Self)\n", self->id, i, j);
+        pthread_mutex_lock(&(speedway.mtxs[i][j]));
+        //printf("Up %d %d %d %s\uf206%s\n", self->id, im, j, self->color, RESET);
+        speedway.road[im][nj] = self->id;
+        speedway.road[i][j] = -1;
+        self->i = im;
+        self->j = nj;
+        moved = true;
+        //printf("%d Unlock %d %d (Self)\n", self->id, i, j);
+        pthread_mutex_unlock(&(speedway.mtxs[i][j]));
+    }
+    //printf("%d Unlock %d %d (Up)\n", self->id, im, nj);
+    pthread_mutex_unlock(&(speedway.mtxs[im][nj]));
+    return moved;
 }
 
 void* biker_loop(void *arg) {
@@ -132,72 +180,27 @@ void* biker_loop(void *arg) {
         i = self->i;
         j = self->j;
         if (exists(i, j+1)) {
-            printf("%d Lock %d %d (Same up)\n", self->id, i, j+1);
+            //printf("%d Lock %d %d (Same up)\n", self->id, i, j+1);
             pthread_mutex_lock(&(speedway.mtxs[i][j+1]));
             if (speedway.road[i][j+1] != -1)
                 up = true;
-            printf("%d Unlock %d %d (Same up)\n", self->id, i, j+1);
+            //printf("%d Unlock %d %d (Same up)\n", self->id, i, j+1);
             pthread_mutex_unlock(&(speedway.mtxs[i][j+1]));
         }
         if (!up) {
             u_int im = (i+1)%speedway.length;
             if (exists(im, j-1)) {
-                printf("%d Lock %d %d (Down)\n", self->id, im, j-1);
-                pthread_mutex_lock(&(speedway.mtxs[im][j-1]));
-                if (speedway.road[im][j-1] == -1) {
-                    printf("%d Lock %d %d (Self)\n", self->id, i, j);
-                    pthread_mutex_lock(&(speedway.mtxs[i][j]));
-                    printf("Down %d %d %d %s\uf206%s\n", self->id, im, j, self->color, RESET);
-                    speedway.road[im][j-1] = self->id;
-                    speedway.road[i][j] = -1;
-                    self->i = im;
-                    self->j = j-1;
-                    moved = true;
-                    printf("%d Unlock %d %d (Self)\n", self->id, i, j);
-                    pthread_mutex_unlock(&(speedway.mtxs[i][j]));
-                }
-                printf("%d Unlock %d %d (Down)\n", self->id, im, j-1);
-                pthread_mutex_unlock(&(speedway.mtxs[im][j-1]));
+                moved = move(self, j-1);
             }
             if (!moved && exists(im, j)) {
-                printf("%d Lock %d %d (Mid)\n", self->id, im, j);
-                pthread_mutex_lock(&(speedway.mtxs[im][j]));
-                if (speedway.road[im][j] == -1) {
-                    printf("%d Lock %d %d (Self)\n", self->id, i, j);
-                    pthread_mutex_lock(&(speedway.mtxs[i][j]));
-                    printf("Mid %d %d %d %s\uf206%s\n", self->id, im, j, self->color, RESET);
-                    speedway.road[im][j] = self->id;
-                    speedway.road[i][j] = -1;
-                    self->i = im;
-                    self->j = j;
-                    moved = true;
-                    printf("%d Unlock %d %d (Self)\n", self->id, i, j);
-                    pthread_mutex_unlock(&(speedway.mtxs[i][j]));
-                }
-                printf("%d Unlock %d %d (Mid)\n", self->id, im, j);
-                pthread_mutex_unlock(&(speedway.mtxs[im][j]));
+                moved = move(self, j);
             }
             if (!moved && exists(im, j+1)) {
-                printf("%d Lock %d %d (Up)\n", self->id, im, j+1);
-                pthread_mutex_lock(&(speedway.mtxs[im][j+1]));
-                if (speedway.road[im][j+1] == -1) {
-                    printf("%d Lock %d %d (Self)\n", self->id, i, j);
-                    pthread_mutex_lock(&(speedway.mtxs[i][j]));
-                    printf("Up %d %d %d %s\uf206%s\n", self->id, im, j, self->color, RESET);
-                    speedway.road[im][j+1] = self->id;
-                    speedway.road[i][j] = -1;
-                    self->i = im;
-                    self->j = j+1;
-                    moved = true;
-                    printf("%d Unlock %d %d (Self)\n", self->id, i, j);
-                    pthread_mutex_unlock(&(speedway.mtxs[i][j]));
-                }
-                printf("%d Unlock %d %d (Up)\n", self->id, im, j+1);
-                pthread_mutex_unlock(&(speedway.mtxs[im][j+1]));
+                moved = move(self, j+1);
             }
         }
-        if (!moved)
-            printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
+        //if (!moved)
+            //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
         //printf("%d waiting...\n", self->id);
         pthread_barrier_wait(&barr);
         if (moved && self->i == 0)

@@ -20,8 +20,7 @@ struct biker {
     char *color;
     u_lint localTime, totalTime;
     pthread_t *thread;
-    pthread_cond_t *cond;
-    pthread_mutex_t *mtx;
+    pthread_mutex_t *mtxs;
     // In the end, to obtain the broken bikers
     // if broken == true, get the lap the biker broke
     bool broken;
