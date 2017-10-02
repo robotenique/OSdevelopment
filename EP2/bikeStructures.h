@@ -40,7 +40,7 @@ struct scbr_s {
     u_int n;
     u_int num_bikers;
     pthread_mutex_t scbr_mtx;
-    //add_score(biker)
+    void(*add_score)(struct scbr_s*, struct biker*);
 };
 
 bool DEBUG_MODE;
@@ -64,12 +64,11 @@ pthread_barrier_t barr2;
 
 void new_bikers(u_int numBikers);
 void destroy_bikers(u_int numBikers);
+
 void create_speedway(u_int d);
 void destroy_speedway();
 
 Scoreboard new_scoreboard(u_int laps, u_int num_bikers);
-void add_info(Buffer b, Biker x);
-void add_score(Scoreboard sb, Biker x);
 void destroy_scoreboard(Scoreboard sb);
 
 Buffer new_buffer(u_int lap, u_int num_bikers);

@@ -1,8 +1,32 @@
+/*
+ * @author: João Gabriel Basi Nº USP: 9793801
+ * @author: Juliano Garcia de Oliveira Nº USP: 9277086
+ *
+ * MAC0422
+ * 16/10/17
+ *
+ * This file contains the implementation and logic of the bikers.
+ * The functions that deal with the scoreboard, the speedway,
+ * the bikers, etc. They're all implemented here.
+ */
 #include <pthread.h>
 #include "error.h"
 #include "bikeStructures.h"
 #include "debugger.h"
 
+void add_score(Scoreboard, Biker);
+
+/*
+ * Function: create_speedway
+ * --------------------------------------------------------
+ * Create the global speedway. The speedway is a global variable
+ * which has the road matrix (d x 10 matrix), the length is d,
+ * and the lanes are (by default) 10.
+ *
+ * @args d : u_int which represents the length of the speedway
+ *
+ * @return
+ */
 void create_speedway(u_int d){
     speedway.road = emalloc(d*sizeof(u_int*));
     speedway.length = d;
@@ -20,6 +44,15 @@ void create_speedway(u_int d){
     }
 }
 
+/*
+ * Function: destroy_speedway
+ * --------------------------------------------------------
+ * Destroy the global speedway, freeing the memory
+ *
+ * @args
+ *
+ * @return
+ */
 void destroy_speedway() {
     for (int i = 0; i < speedway.length; i++) {
         free(speedway.road[i]);
@@ -29,6 +62,16 @@ void destroy_speedway() {
     free(speedway.mtxs);
 }
 
+/*
+ * Function: new_scoreboard
+ * --------------------------------------------------------
+ * Creates a new scoreboard, and returns it
+ *
+ * @args laps : The quantity of laps
+ *       num_bikers : The number of bikers
+ *
+ * @return the new scoreboard
+ */
 Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
     u_int init_sz = 2 + (laps - 1)/4;
     Scoreboard sb = emalloc(sizeof(struct scbr_s));
@@ -37,9 +80,22 @@ Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
     sb->n = init_sz;
     sb->num_bikers = num_bikers;
     pthread_mutex_init(&(sb->scbr_mtx), NULL);
+    sb->add_score = &add_score;
     return sb;
 }
 
+/*
+ * Function: reallocate_scoreboard
+ * --------------------------------------------------------
+ * Auxiliar function to reallocate the internal buffer array,
+ * remapping every old buffer to a new position, then returning
+ * the position of doubling the size.
+ *
+ * @args sb : the scoreboard
+ * @args x  : The biker to insert the array
+ *
+ * @return  the new position for the buffer
+ */
 u_int reallocate_scoreboard(Scoreboard sb, Biker x) {
     u_int new_sz = sb->n * 2;
     Buffer *temp = emalloc(new_sz*sizeof(Buffer));
@@ -55,6 +111,16 @@ u_int reallocate_scoreboard(Scoreboard sb, Biker x) {
     return x->lap % sb->n;
 }
 
+/*
+ * Function: add_score
+ * --------------------------------------------------------
+ * Add a new score to the Scoreboard, sending the new biker
+ *
+ * @args sb : the scoreboard
+ *       x  : the biker
+ *
+ * @return
+ */
 void add_score(Scoreboard sb, Biker x) {
     /* TODO: when a player is the last one to add, it
         needs to print out the information of everything..*/
@@ -79,13 +145,15 @@ void add_score(Scoreboard sb, Biker x) {
     }
 }
 
-void add_info(Buffer b, Biker x) {
-    printf("Got to add_info\n");
-    b->data[b->i] = x->id;
-    b->i++;
-    printf("Out of add_info\n");
-}
-
+/*
+ * Function: destroy_scoreboard
+ * --------------------------------------------------------
+ * Destroys the scoreboard, freeing the memory
+ *
+ * @args sb : the scoreboard to be destroyed
+ *
+ * @return
+ */
 void destroy_scoreboard(Scoreboard sb) {
     for (int i = 0; i < sb->n; i++) {
         if (sb->scores[i] != NULL)
@@ -95,6 +163,16 @@ void destroy_scoreboard(Scoreboard sb) {
     free(sb);
 }
 
+/*
+ * Function: new_buffer
+ * --------------------------------------------------------
+ * Creates a new buffer and returns it
+ *
+ * @args lap : the lap that the buffer represents
+ *       num_bikers : the number of bikers in the sprint
+ *
+ * @return the newly Created buffer
+ */
 Buffer new_buffer(u_int lap, u_int num_bikers) {
     Buffer b = emalloc(sizeof(struct buffer_s*));
     b->lap = lap;
@@ -106,6 +184,16 @@ Buffer new_buffer(u_int lap, u_int num_bikers) {
     return b;
 }
 
+/*
+ * Function: append
+ * --------------------------------------------------------
+ * Function to add a new id to the buffer_s
+ *
+ * @args b : the buffer
+ *       id: the id of the biker to add
+ *
+ * @return
+ */
 void append(Buffer b, u_int id) {
     pthread_mutex_lock(&(b->mtx));
     b->data[b->i] = id;
@@ -113,11 +201,29 @@ void append(Buffer b, u_int id) {
     pthread_mutex_unlock(&(b->mtx));
 }
 
+/*
+ * Function: destroy_buffer
+ * --------------------------------------------------------
+ * Destroys the buffer, freeing the memory
+ *
+ * @args  b :  the buffer
+ *
+ * @return
+ */
 void destroy_buffer(Buffer b){
     free(b->data);
     free(b);
 }
 
+/*
+ * Function: new_biker
+ * --------------------------------------------------------
+ * Creates a new biker with the given id.
+ *
+ * @args id : the id of the biker
+ *
+ * @return the newly created biker
+ */
 Biker new_biker(u_int id) {
     Biker b = emalloc(sizeof(struct biker));
     b->lap = 0;
@@ -136,12 +242,30 @@ Biker new_biker(u_int id) {
     return b;
 }
 
+/*
+ * Function: new_bikers
+ * --------------------------------------------------------
+ * Creates the bikers, the global array of bikers
+ *
+ * @args numBikers : the number of bikers
+ *
+ * @return
+ */
 void new_bikers(u_int numBikers) {
     bikers = emalloc(numBikers*sizeof(Biker));
     for (int i = 0; i < numBikers; i++)
         bikers[i] = new_biker(i);
 }
 
+/*
+ * Function: destroy_bikers
+ * --------------------------------------------------------
+ * Destroys the bikers global array
+ *
+ * @args numBikers : number of bikers in the global array
+ *
+ * @return
+ */
 void destroy_bikers(u_int numBikers) {
     for (size_t i = 0; i < numBikers; i++) {
         Biker b = bikers[i];
@@ -155,7 +279,17 @@ void destroy_bikers(u_int numBikers) {
     free(bikers);
 }
 
-int exists(int i, int j) {
+/*
+ * Function: exists
+ * --------------------------------------------------------
+ * Returns if a position in the speedway exists
+ *
+ * @args i : the row
+ *       j : the column
+ *
+ * @return
+ */
+bool exists(int i, int j) {
     return (i >= 0 && i < speedway.length && j >= 0 && j < speedway.lanes);
 }
 
@@ -218,7 +352,7 @@ void* biker_loop(void *arg) {
         //printf("%d waiting...\n", self->id);
         pthread_barrier_wait(&barr);
         if (moved && self->i == 0)
-            add_score(sb, self);
+            sb->add_score(sb, self);
         //printf("%d waiting 2...\n", self->id);
         pthread_barrier_wait(&barr2);
     }
