@@ -36,14 +36,14 @@ int main(int argc, char const *argv[]) {
     create_speedway(roadSz);
     sb = new_scoreboard(20, numBikers);
     //random_initialize(numBikers);
-    Biker bike0 = emalloc(sizeof(struct biker));
+    /*Biker bike0 = emalloc(sizeof(struct biker));
     bike0->lap = 0;
     bike0->id = 0;
     bike0->score = 0;
     bike0->i = 0;
     Scoreboard sb = new_scoreboard(20, 10);
-    add_score(sb, bike0);
-    /*sb = new_scoreboard(20, numBikers);
+    add_score(sb, bike0);*/
+    sb = new_scoreboard(20, numBikers);
     bikers = emalloc(numBikers*sizeof(Biker));
     random_initialize(numBikers);
     printf("bikers criados\n");
@@ -58,7 +58,7 @@ int main(int argc, char const *argv[]) {
     destroy_speedway();
     for (int i = 0; i < numBikers; i++)
         free(bikers[i]->thread);
-    destroy_scoreboard(sb);*/
+    destroy_scoreboard(sb);
 
     return 0;
 }

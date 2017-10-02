@@ -31,7 +31,7 @@ void destroy_speedway() {
 
 Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
     u_int init_sz = 2 + (laps - 1)/4;
-    Scoreboard sb = emalloc(sizeof(struct scbr_s*));
+    Scoreboard sb = emalloc(sizeof(struct scbr_s));
     sb->scores = emalloc(init_sz*sizeof(Buffer));
     sb->n = init_sz;
     sb->num_bikers = num_bikers;
@@ -59,39 +59,29 @@ void add_score(Scoreboard sb, Biker x) {
     u_int pos = x->lap % sb->n;
     // TODO: LOCK A MUTEX of this position... maybe it's
     // better to keep the mtx list in the Scoreboard struct...
-
-    if(sb->scores[pos] && sb->scores[pos]->lap != x->lap)
+    Buffer currb = sb->scores[pos];
+    if(currb && currb->lap != x->lap)
         pos = reallocate_scoreboard(sb, x);
-    if(sb->scores[pos] == NULL)
-        sb->scores[pos] = new_buffer(x->lap, sb->num_bikers);
-    add_info(sb->scores[pos], x);
-    printf("%s\n", sb->scores[pos]->data[0]);
-    debug_buffer(sb->scores[pos]);
+    if(currb == NULL)
+        currb = new_buffer(x->lap, sb->num_bikers);
+    currb->append(currb, x->id);
+    debug_buffer(currb);
     x->lap++;
-    if(sb->scores[pos]->i == sb->num_bikers) {
+    if(currb->i == sb->num_bikers) {
         printf("meh\n"); // TODO: Delete this buffer and print everything...
-        debug_buffer(sb->scores[pos]);
-        destroy_buffer(sb->scores[pos]);
-        sb->scores[pos] = NULL;
+        debug_buffer(currb);
+        destroy_buffer(currb);
+        currb = NULL;
     }
 }
 
 void add_info(Buffer b, Biker x) {
     printf("Got to add_info\n");
-    int str_sz = snprintf(NULL, 0, "Pos(%u) - Biker %u", x->i, x->id);
-    if(str_sz < 0)
-        die("Can't store biker info to scoreboard.");
     pthread_mutex_lock(&(b->mtx));
-    b->data[b->i] = emalloc((str_sz + 1)*sizeof(char));
-    snprintf(b->data[b->i], str_sz + 1, "Pos(%u) - Biker %u", x->i, x->id);
-    printf("%s\n", b->data[0]);
+    b->data[b->i] = x->id;
     b->i++;
     pthread_mutex_unlock(&(b->mtx));
-    /*char *str_tmp = emalloc((str_sz + 1)*sizeof(char));
-    snprintf(str_tmp, str_sz + 1, "Pos(%u) - Biker %u", x->i, x->id);
-    b->append(b, str_tmp);
-    free(str_tmp);
-    printf("Out of add_info\n");*/
+    printf("Out of add_info\n");
 }
 
 void destroy_scoreboard(Scoreboard sb) {
@@ -108,25 +98,21 @@ Buffer new_buffer(u_int lap, u_int num_bikers) {
     Buffer b = emalloc(sizeof(struct buffer_s*));
     b->lap = lap;
     b->i = 0;
-    b->data = emalloc(num_bikers*sizeof(char*));
+    b->data = emalloc(num_bikers*sizeof(u_int));
     b->size = num_bikers;
     b->append = &append;
     pthread_mutex_init(&(b->mtx), NULL);
     return b;
 }
 
-void append(Buffer b, char *s) {
-    printf("Got to append\n");
+void append(Buffer b, u_int id) {
     pthread_mutex_lock(&(b->mtx));
-    b->data[b->i] = s;
+    b->data[b->i] = id;
     b->i++;
-    printf("Out of append\n");
     pthread_mutex_unlock(&(b->mtx));
 }
 
 void destroy_buffer(Buffer b){
-    for (size_t i = 0; i < b->i; i++)
-        free(b->data[i]);
     free(b->data);
     free(b);
 }
@@ -212,11 +198,11 @@ void* biker_loop(void *arg) {
         }
         if (!moved)
             printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
-        printf("%d waiting...\n", self->id);
+        //printf("%d waiting...\n", self->id);
         pthread_barrier_wait(&barr);
         if (moved && self->i == 0)
             add_score(sb, self);
-        printf("%d waiting 2...\n", self->id);
+        //printf("%d waiting 2...\n", self->id);
         pthread_barrier_wait(&barr2);
     }
     return NULL;

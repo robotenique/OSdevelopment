@@ -27,11 +27,11 @@ struct biker {
     bool broken;
 };
 
-struct buffer_s{
+struct buffer_s {
     u_int lap, i, size;
-    char **data;
+    u_int *data;
     pthread_mutex_t mtx;
-    void(*append)(struct buffer_s*, char*);
+    void(*append)(struct buffer_s*, u_int);
 };
 
 typedef struct buffer_s* Buffer;
@@ -73,7 +73,7 @@ void destroy_scoreboard(Scoreboard sb);
 
 Buffer new_buffer(u_int lap, u_int num_bikers);
 void destroy_buffer(Buffer b);
-void append(Buffer b, char *s);
+void append(Buffer b, u_int id);
 
 void* biker_loop(void *arg);
 

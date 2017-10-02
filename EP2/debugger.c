@@ -54,6 +54,6 @@ void debug_road() {
 void debug_buffer(Buffer b) {
     printf("LAP = %u, i = %u, SIZE = %u\n", b->lap, b->i, b->size);
     for (size_t i = 0; i < b->i; i++)
-        printf("%s\n", b->data[i]);
+        printf("Pos(%lu) - Biker %u\n", i, b->data[i]);
 
 }
