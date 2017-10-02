@@ -29,9 +29,8 @@ int main(int argc, char const *argv[]) {
     u_int numBikers = 20;
     u_int numLaps = 50;
     DEBUG_MODE = true;
-    if (DEBUG_MODE) {
+    if (DEBUG_MODE)
         print_prog_name();
-    }
 
 
     pthread_barrier_init(&barr, NULL, numBikers+1);
@@ -43,8 +42,9 @@ int main(int argc, char const *argv[]) {
     new_bikers(numBikers);
     printf("bikers criados\n");
     debug_road();
-    destroy_speedway();
+    destroy_speedway(speedway);
     destroy_scoreboard(sb);
+    destroy_bikers(numBikers);    
     exit(0);
 
     // Sometimes some bikers are deadlocked and the race can't proceed

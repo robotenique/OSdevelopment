@@ -63,6 +63,7 @@ pthread_barrier_t barr;
 pthread_barrier_t barr2;
 
 void new_bikers(u_int numBikers);
+void destroy_bikers(u_int numBikers);
 void create_speedway(u_int d);
 void destroy_speedway();
 

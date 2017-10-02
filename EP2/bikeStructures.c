@@ -142,6 +142,19 @@ void new_bikers(u_int numBikers) {
         bikers[i] = new_biker(i);
 }
 
+void destroy_bikers(u_int numBikers) {
+    for (size_t i = 0; i < numBikers; i++) {
+        Biker b = bikers[i];
+        if(b != NULL) {
+            free(b->thread);
+            free(b->mtxs);
+            free(b->color);
+            free(b);
+        }
+    }
+    free(bikers);
+}
+
 int exists(int i, int j) {
     return (i >= 0 && i < speedway.length && j >= 0 && j < speedway.lanes);
 }
