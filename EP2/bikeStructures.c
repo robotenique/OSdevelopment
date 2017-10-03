@@ -66,7 +66,6 @@ void add_score(Scoreboard sb, Biker x) {
     if(currb == NULL)
         currb = new_buffer(x->lap, sb->num_bikers);
     currb->append(currb, x->id);
-    printf("%d %d\n", x->lap, x->id);
     debug_buffer(currb);
     x->lap++;
     if(currb->i == sb->num_bikers) {
@@ -95,7 +94,7 @@ void append(Buffer b, u_int id) {
  */
 Biker new_biker(u_int id) {
     Biker b = emalloc(sizeof(struct biker));
-    b->lap = -1;
+    b->lap = (id < 10)? 0 : -1;
     b->id = id;
     b->score = 0;
     b->speed = 6;
@@ -172,39 +171,28 @@ void calc_new_speed(Biker self) {
 
 void* biker_loop(void *arg) {
     Biker self = (Biker)arg;
-    bool up, moved = false;
+    bool moved = false;
     u_int i, j;
     u_int par = 0;
     pthread_barrier_wait(&beg_shot);
     // TODO: Change this to a while true
     for (int k = 0; k < 20; k++) {
+        moved = false;
         if (par%self->speed == 0) {
-            up = false;
-            moved = false;
             i = self->i;
             j = self->j;
-            /*if (exists(i, j+1)) {
-                //printf("%d Lock %d %d (Same up)\n", self->id, i, j+1);
-                pthread_mutex_lock(&(speedway.mtxs[i][j+1]));
-                if (speedway.road[i][j+1] != -1)
-                    up = true;
-                //printf("%d Unlock %d %d (Same up)\n", self->id, i, j+1);
-                pthread_mutex_unlock(&(speedway.mtxs[i][j+1]));
-            }*/
-            //if (!up) {
-                u_int im = (i+1)%speedway.length;
-                if (exists(im, j-1))
-                    moved = move(self, j-1);
-                if (!moved && exists(im, j))
-                    moved = move(self, j);
-                if (!moved && exists(im, j+1))
-                    moved = move(self, j+1);
-            //}
+            u_int im = (i+1)%speedway.length;
+            if (exists(im, j-1))
+                moved = move(self, j-1);
+            if (!moved && exists(im, j))
+                moved = move(self, j);
+            if (!moved && exists(im, j+1))
+                moved = move(self, j+1);
             //if (!moved)
                 //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
-            //printf("%d waiting...\n", self->id);
         }
         par++;
+        //printf("%d waiting...\n", self->id);
         pthread_barrier_wait(&barr);
         if (moved && self->i == 0) {
             if (self->lap != -1) {
