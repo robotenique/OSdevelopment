@@ -61,6 +61,7 @@ typedef struct {
     pthread_mutex_t **mtxs;
     u_int length;
     u_int lanes;
+    u_int laps;
 } Road;
 
 
@@ -70,6 +71,7 @@ Scoreboard sb;
 Biker *bikers;
 pthread_barrier_t barr;
 pthread_barrier_t barr2;
+pthread_barrier_t beg_shot;
 
 /*
  * Function: new_bikers
@@ -104,7 +106,7 @@ void destroy_bikers(u_int numBikers);
  *
  * @return
  */
-void create_speedway(u_int d);
+void create_speedway(u_int d, u_int laps);
 
 /*
  * Function: destroy_speedway
@@ -175,6 +177,15 @@ void destroy_buffer(Buffer b);
  */
 void append(Buffer b, u_int id);
 
+/*
+ * Function: biker_loop
+ * --------------------------------------------------------
+ * Base function for biker threads
+ *
+ * @args arg : biker informations
+ *
+ * @return
+ */
 void* biker_loop(void *arg);
 
 #endif

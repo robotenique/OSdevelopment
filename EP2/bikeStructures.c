@@ -13,6 +13,7 @@
 #include "error.h"
 #include "bikeStructures.h"
 #include "debugger.h"
+#include "randomizer.h"
 
 /*
  * Function: reallocate_scoreboard
@@ -65,6 +66,7 @@ void add_score(Scoreboard sb, Biker x) {
     if(currb == NULL)
         currb = new_buffer(x->lap, sb->num_bikers);
     currb->append(currb, x->id);
+    printf("%d %d\n", x->lap, x->id);
     debug_buffer(currb);
     x->lap++;
     if(currb->i == sb->num_bikers) {
@@ -75,16 +77,6 @@ void add_score(Scoreboard sb, Biker x) {
     }
 }
 
-/*
- * Function: append
- * --------------------------------------------------------
- * Add a di to the buffer b
- *
- * @args b : the buffer
- *       id: the id to insert in the buffer
- *
- * @return
- */
 void append(Buffer b, u_int id) {
     pthread_mutex_lock(&(b->mtx));
     b->data[b->i] = id;
@@ -103,13 +95,15 @@ void append(Buffer b, u_int id) {
  */
 Biker new_biker(u_int id) {
     Biker b = emalloc(sizeof(struct biker));
-    b->lap = 0;
+    b->lap = -1;
     b->id = id;
     b->score = 0;
-    b->speed = 0;
+    b->speed = 6;
     b->color = estrdup("\x1b[31m");
     b->thread = emalloc(sizeof(pthread_t));
     b->mtxs = emalloc(3*sizeof(pthread_mutex_t));
+    for (int i = 0; i < 3; i++)
+        pthread_mutex_init(&(b->mtxs[i]), NULL);
     u_int meter = (speedway.length - id/speedway.lanes)%speedway.length;
     u_int lane = id%speedway.lanes;
     speedway.road[meter][lane] = id;
@@ -133,17 +127,29 @@ bool exists(int i, int j) {
     return (i >= 0 && i < speedway.length && j >= 0 && j < speedway.lanes);
 }
 
+/*
+ * Function: move
+ * --------------------------------------------------------
+ * Moves a biker on the road to the next row and to the "nj"
+ * column
+ *
+ * @args self : the biker
+ *       nj   : the next column
+ *
+ * @return true if the biker were moved
+ */
 bool move(Biker self, u_int nj) {
     u_int i = self->i;
     u_int j = self->j;
     u_int im = (i+1)%speedway.length;
     bool moved = false;
+    printf("%d\n", self->lap);
     //printf("%d Lock %d %d (Up)\n", self->id, im, nj);
     pthread_mutex_lock(&(speedway.mtxs[im][nj]));
     if (speedway.road[im][nj] == -1) {
         //printf("%d Lock %d %d (Self)\n", self->id, i, j);
         pthread_mutex_lock(&(speedway.mtxs[i][j]));
-        //printf("Up %d %d %d %s\uf206%s\n", self->id, im, j, self->color, RESET);
+        printf("%d %d %d %d %s\uf206%s\n", self->id, im, j, nj, self->color, RESET);
         speedway.road[im][nj] = self->id;
         speedway.road[i][j] = -1;
         self->i = im;
@@ -157,52 +163,69 @@ bool move(Biker self, u_int nj) {
     return moved;
 }
 
+void calc_new_speed(Biker self) {
+    if (self->speed == 6)
+        self->speed = (event(0.7))? 3 : 6;
+    else if (self->speed == 3)
+        self->speed = (event(0.5))? 3 : 6;
+}
+
 void* biker_loop(void *arg) {
     Biker self = (Biker)arg;
+    bool up, moved = false;
+    u_int i, j;
+    u_int par = 0;
+    pthread_barrier_wait(&beg_shot);
     // TODO: Change this to a while true
-    bool up, moved;
-    int i, j;
     for (int k = 0; k < 20; k++) {
-        up = false;
-        moved = false;
-        i = self->i;
-        j = self->j;
-        if (exists(i, j+1)) {
-            //printf("%d Lock %d %d (Same up)\n", self->id, i, j+1);
-            pthread_mutex_lock(&(speedway.mtxs[i][j+1]));
-            if (speedway.road[i][j+1] != -1)
-                up = true;
-            //printf("%d Unlock %d %d (Same up)\n", self->id, i, j+1);
-            pthread_mutex_unlock(&(speedway.mtxs[i][j+1]));
+        if (par%self->speed == 0) {
+            up = false;
+            moved = false;
+            i = self->i;
+            j = self->j;
+            /*if (exists(i, j+1)) {
+                //printf("%d Lock %d %d (Same up)\n", self->id, i, j+1);
+                pthread_mutex_lock(&(speedway.mtxs[i][j+1]));
+                if (speedway.road[i][j+1] != -1)
+                    up = true;
+                //printf("%d Unlock %d %d (Same up)\n", self->id, i, j+1);
+                pthread_mutex_unlock(&(speedway.mtxs[i][j+1]));
+            }*/
+            //if (!up) {
+                u_int im = (i+1)%speedway.length;
+                if (exists(im, j-1))
+                    moved = move(self, j-1);
+                if (!moved && exists(im, j))
+                    moved = move(self, j);
+                if (!moved && exists(im, j+1))
+                    moved = move(self, j+1);
+            //}
+            //if (!moved)
+                //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
+            //printf("%d waiting...\n", self->id);
         }
-        if (!up) {
-            u_int im = (i+1)%speedway.length;
-            if (exists(im, j-1)) {
-                moved = move(self, j-1);
-            }
-            if (!moved && exists(im, j)) {
-                moved = move(self, j);
-            }
-            if (!moved && exists(im, j+1)) {
-                moved = move(self, j+1);
-            }
-        }
-        //if (!moved)
-            //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
-        //printf("%d waiting...\n", self->id);
+        par++;
         pthread_barrier_wait(&barr);
-        if (moved && self->i == 0)
-            sb->add_score(sb, self);
+        if (moved && self->i == 0) {
+            if (self->lap != -1) {
+                sb->add_score(sb, self);
+                par = 1;
+                calc_new_speed(self);
+            }
+            else
+                (self->lap)++;
+        }
         //printf("%d waiting 2...\n", self->id);
         pthread_barrier_wait(&barr2);
     }
     return NULL;
 }
 
-void create_speedway(u_int d){
+void create_speedway(u_int d, u_int laps){
     speedway.road = emalloc(d*sizeof(u_int*));
     speedway.length = d;
     speedway.lanes = NUM_LANES;
+    speedway.laps = laps;
     for (int i = 0; i < d; i++) {
         speedway.road[i] = emalloc(10*sizeof(u_int));
         for(int j = 0; j < 10; j++)

@@ -32,35 +32,30 @@ int main(int argc, char const *argv[]) {
     if (DEBUG_MODE)
         print_prog_name();
 
-
     pthread_barrier_init(&barr, NULL, numBikers+1);
     pthread_barrier_init(&barr2, NULL, numBikers+1);
+    pthread_barrier_init(&beg_shot, NULL, numBikers+1);
 
-    create_speedway(roadSz);
-    sb = new_scoreboard(20, numBikers);
+    create_speedway(roadSz, numLaps);
+    sb = new_scoreboard(numLaps, numBikers);
     bikers = emalloc(numBikers*sizeof(Biker));
     new_bikers(numBikers);
     printf("bikers criados\n");
     debug_road();
-    destroy_speedway(speedway);
-    destroy_scoreboard(sb);
-    destroy_bikers(numBikers);
-    exit(0);
+    pthread_barrier_wait(&beg_shot);
+    u_int par = 0;
 
-    // Sometimes some bikers are deadlocked and the race can't proceed
-    // due to the barrier
     for (int i = 0; i < 20; i++) {
         pthread_barrier_wait(&barr);
-        debug_road();
+        if (par%3 == 0)
+            debug_road();
+        par++;
         pthread_barrier_wait(&barr2);
+    }
 
-    }
     destroy_speedway();
-    for (int i = 0; i < numBikers; i++) {
-        free(bikers[i]->thread);
-        free(bikers[i]->mtxs);
-    }
     destroy_scoreboard(sb);
+    destroy_bikers(numBikers);
 
     return 0;
 }
