@@ -46,6 +46,7 @@ int main(int argc, char const *argv[]) {
         pthread_barrier_wait(&debugger_barr);
     }
 
+
     destroy(num_bikers);
     return 0;
 }

@@ -15,7 +15,7 @@
 #include "bikeStructures.h"
 #include "debugger.h"
 #include "randomizer.h"
-
+void print_dummy();
 /*
  * Function: reallocate_scoreboard
  * --------------------------------------------------------
@@ -121,12 +121,14 @@ void add_score(Scoreboard sb, Biker x) {
         else if (b->i == 2) x->score += 3;
         else if (b->i == 3) x->score += 2;
         else if (b->i == 4) x->score += 1;
-    }
-    V(&(b->mtx));
+    }    
     debug_buffer(b);
+    V(&(b->mtx));
+
+    
     //printf("b->i = %d == bikers = %d\n", b->i, sb->tot_num_bikers);
     if(b->i == sb->tot_num_bikers) {
-        printf("meh\n"); // TODO: Delete this buffer and print everything...
+        printf("DESTRUINDO buffer\n"); // TODO: Delete this buffer and print everything...
         print_buffer(b);
         destroy_buffer(sb->scores[pos]);
         sb->scores[pos] = NULL;
@@ -163,10 +165,16 @@ bool exists(int i, int j) {
  * @return
  */
 void* dummy(void *arg) {
-    while (sb->act_num_bikers != 0) { // TODO : Stop this while true
+    // TODO: fix this D:
+    P(&(sb->scbr_mtx));
+    sb->act_num_bikers--;
+    V(&(sb->scbr_mtx));
+    do{
+        printf("ESPERANDOOOOOOOOOOO DUMMY_1\n");
         pthread_barrier_wait(&barr);
+        printf("ESPERANDOOOOOOOOOOO DUMMY_2\n");
         pthread_barrier_wait(&debugger_barr);
-    }
+    } while (sb->act_num_bikers != 0);
     return NULL;
 }
 
@@ -185,7 +193,8 @@ void run_next(DummyThreads dt) {
     P(&(dt->dummy_mtx));
     pthread_create(&(dt->dummyT[dt->i]), NULL, dt->dummy_func, NULL);
     dt->i++;
-    V(&(dt->dummy_mtx));
+    print_dummy();
+    V(&(dt->dummy_mtx));    
 }
 
 void create_speedway(u_int d, u_int laps) {
@@ -262,4 +271,8 @@ void create_dummy_threads(u_int numBikers) {
     dummy_threads->dummyT = emalloc(numBikers*sizeof(pthread_t));
     dummy_threads->dummy_func = &dummy;
     dummy_threads->run_next = &run_next;
+}
+
+void print_dummy() {
+    printf("NO MOMENTO TEMOS = %u ...........\n", dummy_threads->i);
 }

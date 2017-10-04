@@ -95,21 +95,20 @@ void* biker_loop(void *arg) {
             }
             par = 1;
             (self->lap)++;
-            if (self->lap%15 == 0 && event(0.01) && sb->tot_num_bikers > 5) { // Break it down?
+            if (self->lap%15 == 0 && event(0.01) && sb->tot_num_bikers > 5 && self->lap != 0) { // Break it down?
                 break_biker(self);
                 break;
             }
-            if (self->lap == speedway.laps) {
-                P(&(sb->scbr_mtx));
-                sb->act_num_bikers--;
-                V(&(sb->scbr_mtx));
+            if (self->lap == speedway.laps) {                
                 speedway.road[self->i][self->j] = -1;
                 dummy_threads->run_next(dummy_threads);
                 break;
             }
         }
+        printf("ESPERANDOOOOOOOOOOO 1\n");
         // Wait all other bikers move
         pthread_barrier_wait(&barr);
+        printf("ESPERANDOOOOOOOOOOO 2\n");
         pthread_barrier_wait(&debugger_barr);
     }
     return NULL;
@@ -131,7 +130,6 @@ void break_biker(Biker self) {
     printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, self->lsp, self->lap);
     self->broken = true;
     P(&(sb->scbr_mtx));
-        sb->act_num_bikers--;
         sb->tot_num_bikers--;
     V(&(sb->scbr_mtx));
     speedway.road[self->i][self->j] = -1;

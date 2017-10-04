@@ -3,9 +3,10 @@
 # @author: Juliano Garcia de Oliveira Nº USP: 9277086
 # Makefile para EP1 de S.O.
 #
+# TODO: REMOVE -g FLAG
 CC=gcc
-CFLAGS = -Wall -pedantic -O2 -std=gnu11
-LDFLAGS = -lrt -lm -pthread -g
+CFLAGS = -Wall -pedantic -g -std=gnu11
+LDFLAGS = -lrt -lm -pthread
 
 .PHONY: clean
 
