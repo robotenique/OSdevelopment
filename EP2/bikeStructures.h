@@ -11,7 +11,8 @@
 #define __BIKE_STRUCTURES_H__
 #include <stdio.h>
 #include <pthread.h>
-
+#define P(x) pthread_mutex_lock(x)
+#define V(x) pthread_mutex_unlock(x)
 #define NUM_LANES 10
 
 /* Simple types definition */

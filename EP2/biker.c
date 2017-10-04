@@ -3,7 +3,6 @@
 #include "debugger.h"
 #include "randomizer.h"
 
-
 // TODO: In the end, wait for all threads to join
 
 bool try_move(Biker self, u_int next_lane);
@@ -101,9 +100,9 @@ void* biker_loop(void *arg) {
                 break;
             }
             if (self->lap == speedway.laps) {
-                pthread_mutex_lock(&(sb->scbr_mtx));
+                P(&(sb->scbr_mtx));
                 sb->act_num_bikers--;
-                pthread_mutex_unlock(&(sb->scbr_mtx));
+                V(&(sb->scbr_mtx));
                 speedway.road[self->i][self->j] = -1;
                 dummy_threads->run_next(dummy_threads);
                 break;
@@ -131,15 +130,15 @@ void* biker_loop(void *arg) {
 void break_biker(Biker self) {
     printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, self->lsp, self->lap);
     self->broken = true;
-    pthread_mutex_lock(&(sb->scbr_mtx));
+    P(&(sb->scbr_mtx));
         sb->act_num_bikers--;
         sb->tot_num_bikers--;
-    pthread_mutex_unlock(&(sb->scbr_mtx));
+    V(&(sb->scbr_mtx));
     speedway.road[self->i][self->j] = -1;
-    pthread_mutex_lock(&broken_mtx);
+    P(&broken_mtx);
         broken->append(broken, self->id, self->score);
         dummy_threads->run_next(dummy_threads);
-    pthread_mutex_unlock(&broken_mtx);
+    V(&broken_mtx);
 }
 
 /*
@@ -160,12 +159,12 @@ bool try_move(Biker self, u_int next_lane) {
     bool moved = false;
     //printf("%d Lock %d %d (Up)\n", self->id, next_meter, next_lane);
     // Lock the mutex of the next position
-    pthread_mutex_lock(&(speedway.mtxs[next_meter][next_lane]));
+    P(&(speedway.mtxs[next_meter][next_lane]));
     // If the next position in the road is free
     if (speedway.road[next_meter][next_lane] == -1) {
         //printf("%d Lock %d %d (Self)\n", self->id, i, j);
         // Lock the mutex of the current position
-        pthread_mutex_lock(&(speedway.mtxs[i][j]));
+        P(&(speedway.mtxs[i][j]));
         printf("id = %02d, next_meter = %02d, curr_lane = %02d, next_lane = %02d, %s\uf206%s\n", self->id, next_meter, j, next_lane, self->color, RESET);
         speedway.road[next_meter][next_lane] = self->id;
         speedway.road[i][j] = -1;
@@ -173,10 +172,10 @@ bool try_move(Biker self, u_int next_lane) {
         self->j = next_lane;
         moved = true;
         //printf("%d Unlock %d %d (Self)\n", self->id, i, j);
-        pthread_mutex_unlock(&(speedway.mtxs[i][j]));
+        V(&(speedway.mtxs[i][j]));
     }
     //printf("%d Unlock %d %d (Up)\n", self->id, next_meter, next_lane);
-    pthread_mutex_unlock(&(speedway.mtxs[next_meter][next_lane]));
+    V(&(speedway.mtxs[next_meter][next_lane]));
 
     return moved;
 }

@@ -101,7 +101,7 @@ void print_buffer(Buffer b) {
 void add_score(Scoreboard sb, Biker x) {
     /* TODO: when a player is the last one to add, it
         needs to print out the information of everything..*/
-    pthread_mutex_lock(&(sb->scbr_mtx));
+    P(&(sb->scbr_mtx));
     u_int pos = x->lap % sb->n;
     // TODO: LOCK A MUTEX of this position... maybe it's
     // better to keep the mtx list in the Scoreboard struct...
@@ -113,8 +113,8 @@ void add_score(Scoreboard sb, Biker x) {
     Buffer b = sb->scores[pos];
     if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
-    pthread_mutex_unlock(&(sb->scbr_mtx));
-    pthread_mutex_lock(&(b->mtx));
+    V(&(sb->scbr_mtx));
+    P(&(b->mtx));
     b->append(b, x->id, x->score);
     if (b->lap%10 == 0 && b->i <= 4) {
         if (b->i == 1) x->score += 5;
@@ -122,7 +122,7 @@ void add_score(Scoreboard sb, Biker x) {
         else if (b->i == 3) x->score += 2;
         else if (b->i == 4) x->score += 1;
     }
-    pthread_mutex_unlock(&(b->mtx));
+    V(&(b->mtx));
     debug_buffer(b);
     //printf("b->i = %d == bikers = %d\n", b->i, sb->tot_num_bikers);
     if(b->i == sb->tot_num_bikers) {
@@ -153,7 +153,6 @@ bool exists(int i, int j) {
     return (i >= 0 && i < speedway.length && j >= 0 && j < speedway.lanes);
 }
 
-
 /*
  * Function: dummy
  * --------------------------------------------------------
@@ -183,10 +182,10 @@ void* dummy(void *arg) {
 void run_next(DummyThreads dt) {
     if(dt->i == dt->size)
         die("All the threads were ran!");
-    pthread_mutex_lock(&(dt->dummy_mtx));
+    P(&(dt->dummy_mtx));
     pthread_create(&(dt->dummyT[dt->i]), NULL, dt->dummy_func, NULL);
     dt->i++;
-    pthread_mutex_unlock(&(dt->dummy_mtx));
+    V(&(dt->dummy_mtx));
 }
 
 void create_speedway(u_int d, u_int laps) {
