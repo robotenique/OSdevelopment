@@ -75,3 +75,7 @@ void print_prog_name() {
 
 
 }
+
+const char *get_color(u_int x) {
+    return colors[x];
+}

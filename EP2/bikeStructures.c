@@ -15,6 +15,8 @@
 #include "debugger.h"
 #include "randomizer.h"
 
+//TODO: remove this thing
+static u_int color_num = 0;
 /*
  * Function: reallocate_scoreboard
  * --------------------------------------------------------
@@ -97,8 +99,8 @@ Biker new_biker(u_int id) {
     b->lap = (id < 10)? 0 : -1;
     b->id = id;
     b->score = 0;
-    b->speed = 6;
-    b->color = estrdup("\x1b[31m");
+    b->speed = 6;    
+    b->color = estrdup(get_color(color_num++));
     b->thread = emalloc(sizeof(pthread_t));
     b->mtxs = emalloc(3*sizeof(pthread_mutex_t));
     for (int i = 0; i < 3; i++)
@@ -151,7 +153,7 @@ bool move(Biker self, u_int next_lane) {
         //printf("%d Lock %d %d (Self)\n", self->id, i, j);
         // Lock the mutex of the current position
         pthread_mutex_lock(&(speedway.mtxs[i][j]));
-        printf("%d %d %d %d %s\uf206%s\n", self->id, next_meter, j, next_lane, self->color, RESET);
+        printf("id = %d, next_meter = %d, curr_lane = %d, next_lane = %d, %s\uf206%s\n", self->id, next_meter, j, next_lane, self->color, RESET);
         speedway.road[next_meter][next_lane] = self->id;
         speedway.road[i][j] = -1;
         self->i = next_meter;

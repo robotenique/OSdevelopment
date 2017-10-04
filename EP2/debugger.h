@@ -28,4 +28,5 @@ void debug_buffer(Buffer);
  * @return
  */
 void print_prog_name();
+const char *get_color(u_int);
 #endif
