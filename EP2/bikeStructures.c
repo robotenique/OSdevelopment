@@ -61,33 +61,27 @@ void add_score(Scoreboard sb, Biker x) {
     u_int pos = x->lap % sb->n;
     // TODO: LOCK A MUTEX of this position... maybe it's
     // better to keep the mtx list in the Scoreboard struct...
-    Buffer currb = sb->scores[pos];
-    if(currb && currb->lap != x->lap)
+    if(sb->scores[pos] && sb->scores[pos]->lap != x->lap)
         pos = reallocate_scoreboard(sb, x);
-    if(currb == NULL) {
-        printf("Create new buffer for lap %d\n", x->lap);
-        currb = new_buffer(x->lap, sb->num_bikers);
-    }
+    if(sb->scores[pos] == NULL)
+        sb->scores[pos] = new_buffer(x->lap, sb->num_bikers);
     pthread_mutex_unlock(&(sb->scbr_mtx));
-    currb->append(currb, x->id);
-    printf("Debug do add_score\n");
-    debug_buffer(currb);
+    sb->scores[pos]->append(sb->scores[pos], x);
+    debug_buffer(sb->scores[pos]);
     x->lap++;
-    if(currb->i == sb->num_bikers) {
+    if(sb->scores[pos]->i == sb->num_bikers) {
         printf("meh\n"); // TODO: Delete this buffer and print everything...
-        debug_buffer(currb);
-        destroy_buffer(currb);
-        currb = NULL;
+        debug_buffer(sb->scores[pos]);
+        destroy_buffer(sb->scores[pos]);
+        sb->scores[pos] = NULL;
     }
 }
 
-void append(Buffer b, u_int id) {
-    printf("Append id %d\n", id);
+void append(Buffer b, Biker x) {
     pthread_mutex_lock(&(b->mtx));
-    b->data[b->i] = id;
+    b->data[b->i].id = x->id;
+    b->data[b->i].score = x->score;
     b->i++;
-    printf("Debug do append\n");
-    debug_buffer(b);
     pthread_mutex_unlock(&(b->mtx));
 }
 
@@ -291,7 +285,7 @@ void destroy_scoreboard(Scoreboard sb) {
 
 Buffer new_buffer(u_int lap, u_int num_bikers) {
     Buffer b = emalloc(sizeof(struct buffer_s));
-    b->data = emalloc(num_bikers*sizeof(u_int));
+    b->data = emalloc(num_bikers*sizeof(struct score_s));
     b->lap = lap;
     b->i = 0;
     b->size = num_bikers;
