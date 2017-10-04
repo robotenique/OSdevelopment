@@ -27,7 +27,7 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = false;*/
     u_int roadSz = 80;
     u_int numBikers = 20;
-    u_int numLaps = 50;
+    u_int numLaps = 10;
     DEBUG_MODE = true;
     if (DEBUG_MODE)
         print_prog_name();
@@ -41,13 +41,14 @@ int main(int argc, char const *argv[]) {
 
     create_speedway(roadSz, numLaps);
     broken = new_buffer(-1, numBikers);
+    dummies = emalloc(numBikers*sizeof(pthread_t));
     sb = new_scoreboard(numLaps, numBikers);
     new_bikers(numBikers);
     debug_road();
     pthread_barrier_wait(&start_shot);
     u_int par = 0;
 
-    for (int i = 0; i < 500; i++) {
+    while (sb->act_num_bikers != 0) {
         pthread_barrier_wait(&barr);
         if (par%3 == 0)
             debug_road();

@@ -126,7 +126,8 @@ void add_score(Scoreboard sb, Biker x) {
     }
     pthread_mutex_unlock(&(b->mtx));
     debug_buffer(b);
-    if(b->i == sb->act_num_bikers) {
+    //printf("b->i = %d == bikers = %d\n", b->i, sb->tot_num_bikers);
+    if(b->i == sb->tot_num_bikers) {
         printf("meh\n"); // TODO: Delete this buffer and print everything...
         print_buffer(b);
         destroy_buffer(sb->scores[pos]);
@@ -280,7 +281,7 @@ void* biker_loop(void *arg) {
      * and the 3's the inferior diagonal.
      */
      // TODO: Change this to a while true
-    for (int k = 0; k < 500; k++) {
+    while (true) {
         moved = false;
         if (par%self->speed == 0) {
             i = self->i; // The current meter
@@ -306,21 +307,24 @@ void* biker_loop(void *arg) {
             }
             par = 1;
             (self->lap)++;
-            if (self->lap%15 == 0 && event(0.01) && sb->act_num_bikers > 5) { // Break it down?
+            if (self->lap%15 == 0 && event(0.01) && sb->tot_num_bikers > 5) { // Break it down?
                 printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, self->lsp, self->lap);
                 self->broken = true;
                 pthread_mutex_lock(&(sb->scbr_mtx));
                 sb->act_num_bikers--;
+                sb->tot_num_bikers--;
                 pthread_mutex_unlock(&(sb->scbr_mtx));
+                speedway.road[self->i][self->j] = -1;
                 broken->append(broken, self->id, self->score);
-                pthread_create(self->thread, NULL, &dummy, NULL); // TODO: create an array of dummy threads
+                pthread_create(self->thread, NULL, &dummy, NULL);
                 break;
             }
             if (self->lap == speedway.laps) {
                 pthread_mutex_lock(&(sb->scbr_mtx));
                 sb->act_num_bikers--;
                 pthread_mutex_unlock(&(sb->scbr_mtx));
-                pthread_create(self->thread, NULL, &dummy, NULL);
+                speedway.road[self->i][self->j] = -1;
+                pthread_create(&(dummies[self->id]), NULL, &dummy, NULL);
                 break;
             }
         }

@@ -72,6 +72,7 @@ Road speedway;
 Scoreboard sb;
 Biker *bikers;
 Buffer broken;
+pthread_t *dummies;
 pthread_barrier_t barr;
 pthread_barrier_t debugger_barr;
 pthread_barrier_t start_shot;
