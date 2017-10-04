@@ -41,8 +41,8 @@ int main(int argc, char const *argv[]) {
 
     create_speedway(roadSz, numLaps);
     broken = new_buffer(-1, numBikers);
-    dummies = emalloc(numBikers*sizeof(pthread_t));
     sb = new_scoreboard(numLaps, numBikers);
+    create_dummy_threads(numBikers);
     new_bikers(numBikers);
     debug_road();
     pthread_barrier_wait(&start_shot);

@@ -252,7 +252,7 @@ void calc_new_speed(Biker self) {
  * @return
  */
 void* dummy(void *arg) {
-    while (1) { // TODO : Stop this while true
+    while (sb->act_num_bikers != 0) { // TODO : Stop this while true
         pthread_barrier_wait(&barr);
         pthread_barrier_wait(&debugger_barr);
     }
@@ -316,7 +316,7 @@ void* biker_loop(void *arg) {
                 pthread_mutex_unlock(&(sb->scbr_mtx));
                 speedway.road[self->i][self->j] = -1;
                 broken->append(broken, self->id, self->score);
-                pthread_create(self->thread, NULL, &dummy, NULL);
+                dummy_threads->run_next(dummy_threads);
                 break;
             }
             if (self->lap == speedway.laps) {
@@ -324,7 +324,7 @@ void* biker_loop(void *arg) {
                 sb->act_num_bikers--;
                 pthread_mutex_unlock(&(sb->scbr_mtx));
                 speedway.road[self->i][self->j] = -1;
-                pthread_create(&(dummies[self->id]), NULL, &dummy, NULL);
+                dummy_threads->run_next(dummy_threads);
                 break;
             }
         }
@@ -333,6 +333,15 @@ void* biker_loop(void *arg) {
         pthread_barrier_wait(&debugger_barr);
     }
     return NULL;
+}
+
+void run_next(DummyThreads dt) {
+    if(dt->i == dt->size)
+        die("All the threads were ran!");
+    pthread_mutex_lock(&(dt->dummy_mtx));
+    pthread_create(&(dt->dummyT[dt->i]), NULL, dt->dummy_func, NULL);
+    dt->i++;
+    pthread_mutex_unlock(&(dt->dummy_mtx));
 }
 
 void create_speedway(u_int d, u_int laps) {
@@ -417,4 +426,14 @@ void destroy_bikers(u_int numBikers) {
         }
     }
     free(bikers);
+}
+
+void create_dummy_threads(u_int numBikers) {
+    dummy_threads = emalloc(sizeof(struct dummy_s));
+    dummy_threads->i = 0;
+    dummy_threads->size = numBikers;
+    pthread_mutex_init(&(dummy_threads->dummy_mtx), NULL);
+    dummy_threads->dummyT = emalloc(numBikers*sizeof(pthread_t));
+    dummy_threads->dummy_func = &dummy;
+    dummy_threads->run_next = &run_next;
 }
