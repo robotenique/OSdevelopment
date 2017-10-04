@@ -42,7 +42,6 @@ int main(int argc, char const *argv[]) {
     create_speedway(roadSz, numLaps);
     sb = new_scoreboard(numLaps, numBikers);
     new_bikers(numBikers);
-    printf("bikers criados\n");
     debug_road();
     pthread_barrier_wait(&start_shot);
     u_int par = 0;
