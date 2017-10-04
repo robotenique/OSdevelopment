@@ -62,10 +62,13 @@ void add_score(Scoreboard sb, Biker x) {
     Buffer currb = sb->scores[pos];
     if(currb && currb->lap != x->lap)
         pos = reallocate_scoreboard(sb, x);
-    pthread_mutex_unlock(&(sb->scbr_mtx));
-    if(currb == NULL)
+    if(currb == NULL) {
+        printf("Create new buffer for lap %d\n", x->lap);
         currb = new_buffer(x->lap, sb->num_bikers);
+    }
+    pthread_mutex_unlock(&(sb->scbr_mtx));
     currb->append(currb, x->id);
+    printf("Debug do add_score\n");
     debug_buffer(currb);
     x->lap++;
     if(currb->i == sb->num_bikers) {
@@ -77,9 +80,12 @@ void add_score(Scoreboard sb, Biker x) {
 }
 
 void append(Buffer b, u_int id) {
+    printf("Append id %d\n", id);
     pthread_mutex_lock(&(b->mtx));
     b->data[b->i] = id;
     b->i++;
+    printf("Debug do append\n");
+    debug_buffer(b);
     pthread_mutex_unlock(&(b->mtx));
 }
 
@@ -142,7 +148,6 @@ bool move(Biker self, u_int nj) {
     u_int j = self->j;
     u_int im = (i+1)%speedway.length;
     bool moved = false;
-    printf("%d\n", self->lap);
     //printf("%d Lock %d %d (Up)\n", self->id, im, nj);
     pthread_mutex_lock(&(speedway.mtxs[im][nj]));
     if (speedway.road[im][nj] == -1) {
@@ -176,7 +181,7 @@ void* biker_loop(void *arg) {
     u_int par = 0;
     pthread_barrier_wait(&beg_shot);
     // TODO: Change this to a while true
-    for (int k = 0; k < 20; k++) {
+    for (int k = 0; k < 500; k++) {
         moved = false;
         if (par%self->speed == 0) {
             i = self->i;
@@ -192,8 +197,6 @@ void* biker_loop(void *arg) {
                 //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
         }
         par++;
-        //printf("%d waiting...\n", self->id);
-        pthread_barrier_wait(&barr);
         if (moved && self->i == 0) {
             if (self->lap != -1) {
                 sb->add_score(sb, self);
@@ -203,6 +206,8 @@ void* biker_loop(void *arg) {
             else
                 (self->lap)++;
         }
+        //printf("%d waiting...\n", self->id);
+        pthread_barrier_wait(&barr);
         //printf("%d waiting 2...\n", self->id);
         pthread_barrier_wait(&barr2);
     }
@@ -258,10 +263,10 @@ void destroy_scoreboard(Scoreboard sb) {
 }
 
 Buffer new_buffer(u_int lap, u_int num_bikers) {
-    Buffer b = emalloc(sizeof(struct buffer_s*));
+    Buffer b = emalloc(sizeof(struct buffer_s));
+    b->data = emalloc(num_bikers*sizeof(u_int));
     b->lap = lap;
     b->i = 0;
-    b->data = emalloc(num_bikers*sizeof(u_int));
     b->size = num_bikers;
     b->append = &append;
     pthread_mutex_init(&(b->mtx), NULL);

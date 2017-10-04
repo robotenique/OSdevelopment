@@ -38,14 +38,13 @@ int main(int argc, char const *argv[]) {
 
     create_speedway(roadSz, numLaps);
     sb = new_scoreboard(numLaps, numBikers);
-    bikers = emalloc(numBikers*sizeof(Biker));
     new_bikers(numBikers);
     printf("bikers criados\n");
     debug_road();
     pthread_barrier_wait(&beg_shot);
     u_int par = 0;
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 500; i++) {
         pthread_barrier_wait(&barr);
         if (par%3 == 0)
             debug_road();
