@@ -36,8 +36,8 @@ struct biker {
 };
 
 struct buffer_s {
-    u_int lap, i, size;
     u_int *data;
+    u_int lap, i, size;
     pthread_mutex_t mtx;
     void(*append)(struct buffer_s*, u_int);
 };
@@ -52,16 +52,13 @@ struct scbr_s {
     void(*add_score)(struct scbr_s*, struct biker*);
 };
 
-
 typedef struct biker* Biker;
 typedef struct scbr_s* Scoreboard;
 
 typedef struct {
-    u_int **road;
     pthread_mutex_t **mtxs;
-    u_int length;
-    u_int lanes;
-    u_int laps;
+    u_int **road;
+    u_int length, lanes, laps;
 } Road;
 
 
@@ -71,7 +68,7 @@ Scoreboard sb;
 Biker *bikers;
 pthread_barrier_t barr;
 pthread_barrier_t debugger_barr;
-pthread_barrier_t beg_shot;
+pthread_barrier_t start_shot;
 
 /*
  * Function: new_bikers

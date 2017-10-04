@@ -64,10 +64,13 @@ void add_score(Scoreboard sb, Biker x) {
     Buffer currb = sb->scores[pos];
     if(currb && currb->lap != x->lap)
         pos = reallocate_scoreboard(sb, x);
-    pthread_mutex_unlock(&(sb->scbr_mtx));
-    if(currb == NULL)
+    if(currb == NULL) {
+        printf("Create new buffer for lap %d\n", x->lap);
         currb = new_buffer(x->lap, sb->num_bikers);
+    }
+    pthread_mutex_unlock(&(sb->scbr_mtx));
     currb->append(currb, x->id);
+    printf("Debug do add_score\n");
     debug_buffer(currb);
     x->lap++;
     if(currb->i == sb->num_bikers) {
@@ -79,9 +82,12 @@ void add_score(Scoreboard sb, Biker x) {
 }
 
 void append(Buffer b, u_int id) {
+    printf("Append id %d\n", id);
     pthread_mutex_lock(&(b->mtx));
     b->data[b->i] = id;
     b->i++;
+    printf("Debug do append\n");
+    debug_buffer(b);
     pthread_mutex_unlock(&(b->mtx));
 }
 
@@ -105,6 +111,8 @@ Biker new_biker(u_int id) {
     b->mtxs = emalloc(3*sizeof(pthread_mutex_t));
     for (int i = 0; i < 3; i++)
         pthread_mutex_init(&(b->mtxs[i]), NULL);
+    // Start the first row of bikers just after the starting line (meter 0) and
+    // the other rows, behind them
     u_int meter = (speedway.length - id/speedway.lanes)%speedway.length;
     u_int lane = id%speedway.lanes;
     speedway.road[meter][lane] = id;
@@ -144,7 +152,6 @@ bool move(Biker self, u_int next_lane) {
     u_int j = self->j;
     u_int next_meter = (i+1)%speedway.length;
     bool moved = false;
-    printf("%d\n", self->lap);
     //printf("%d Lock %d %d (Up)\n", self->id, next_meter, next_lane);
     // Lock the mutex of the next position
     pthread_mutex_lock(&(speedway.mtxs[next_meter][next_lane]));
@@ -180,8 +187,7 @@ void* biker_loop(void *arg) {
     bool moved = false;
     u_int i, j;
     u_int par = 0; // Parity of the biker
-    pthread_barrier_wait(&beg_shot);
-    // TODO: Change this to a while true
+    pthread_barrier_wait(&start_shot);
     /* The biker (0) can make the following movements:
      *
      *          +----+----+----+----+----+
@@ -197,7 +203,8 @@ void* biker_loop(void *arg) {
      * The 1's are the superior diagonal, the 2's the position ahead
      * and the 3's the inferior diagonal.
      */
-    for (int k = 0; k < 20; k++) {
+     // TODO: Change this to a while true
+    for (int k = 0; k < 500; k++) {
         moved = false;
         if (par%self->speed == 0) {
             i = self->i; // The current meter
@@ -207,7 +214,7 @@ void* biker_loop(void *arg) {
             if (exists(next_meter, j - 1))
                 moved = move(self, j - 1);
             // The lane just ahead
-            if (!moved && exists(next_meter, j))
+            if (!moved)
                 moved = move(self, j);
             // The inferior diagonal
             if (!moved && exists(next_meter, j+1))
@@ -216,9 +223,6 @@ void* biker_loop(void *arg) {
                 //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
         }
         par++;
-        //printf("%d waiting...\n", self->id);
-        // Wait all other bikers move
-        pthread_barrier_wait(&barr);
         if (moved && self->i == 0) {
             if (self->lap != -1) { // If the biker completed a lap
                 sb->add_score(sb, self);
@@ -228,13 +232,16 @@ void* biker_loop(void *arg) {
             else
                 (self->lap)++;
         }
+        // Wait all other bikers move
+        //printf("%d waiting...\n", self->id);
+        pthread_barrier_wait(&barr);
         //printf("%d waiting 2...\n", self->id);
         pthread_barrier_wait(&debugger_barr);
     }
     return NULL;
 }
 
-void create_speedway(u_int d, u_int laps){
+void create_speedway(u_int d, u_int laps) {
     speedway.road = emalloc(d*sizeof(u_int*));
     speedway.length = d;
     speedway.lanes = NUM_LANES;
@@ -283,10 +290,10 @@ void destroy_scoreboard(Scoreboard sb) {
 }
 
 Buffer new_buffer(u_int lap, u_int num_bikers) {
-    Buffer b = emalloc(sizeof(struct buffer_s*));
+    Buffer b = emalloc(sizeof(struct buffer_s));
+    b->data = emalloc(num_bikers*sizeof(u_int));
     b->lap = lap;
     b->i = 0;
-    b->data = emalloc(num_bikers*sizeof(u_int));
     b->size = num_bikers;
     b->append = &append;
     pthread_mutex_init(&(b->mtx), NULL);
