@@ -70,7 +70,7 @@ Road speedway;
 Scoreboard sb;
 Biker *bikers;
 pthread_barrier_t barr;
-pthread_barrier_t barr2;
+pthread_barrier_t debugger_barr;
 pthread_barrier_t beg_shot;
 
 /*

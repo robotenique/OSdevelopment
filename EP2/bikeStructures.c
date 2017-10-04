@@ -133,32 +133,36 @@ bool exists(int i, int j) {
  * column
  *
  * @args self : the biker
- *       nj   : the next column
+ *       next_lane   : the next lane
  *
- * @return true if the biker were moved
+ * @return true if the biker were moved, false otherwise
  */
-bool move(Biker self, u_int nj) {
+bool move(Biker self, u_int next_lane) {
     u_int i = self->i;
     u_int j = self->j;
-    u_int im = (i+1)%speedway.length;
+    u_int next_meter = (i+1)%speedway.length;
     bool moved = false;
     printf("%d\n", self->lap);
-    //printf("%d Lock %d %d (Up)\n", self->id, im, nj);
-    pthread_mutex_lock(&(speedway.mtxs[im][nj]));
-    if (speedway.road[im][nj] == -1) {
+    //printf("%d Lock %d %d (Up)\n", self->id, next_meter, next_lane);
+    // Lock the mutex of the next position
+    pthread_mutex_lock(&(speedway.mtxs[next_meter][next_lane]));
+    // If the next position in the road is free
+    if (speedway.road[next_meter][next_lane] == -1) {
         //printf("%d Lock %d %d (Self)\n", self->id, i, j);
+        // Lock the mutex of the current position
         pthread_mutex_lock(&(speedway.mtxs[i][j]));
-        printf("%d %d %d %d %s\uf206%s\n", self->id, im, j, nj, self->color, RESET);
-        speedway.road[im][nj] = self->id;
+        printf("%d %d %d %d %s\uf206%s\n", self->id, next_meter, j, next_lane, self->color, RESET);
+        speedway.road[next_meter][next_lane] = self->id;
         speedway.road[i][j] = -1;
-        self->i = im;
-        self->j = nj;
+        self->i = next_meter;
+        self->j = next_lane;
         moved = true;
         //printf("%d Unlock %d %d (Self)\n", self->id, i, j);
         pthread_mutex_unlock(&(speedway.mtxs[i][j]));
     }
-    //printf("%d Unlock %d %d (Up)\n", self->id, im, nj);
-    pthread_mutex_unlock(&(speedway.mtxs[im][nj]));
+    //printf("%d Unlock %d %d (Up)\n", self->id, next_meter, next_lane);
+    pthread_mutex_unlock(&(speedway.mtxs[next_meter][next_lane]));
+
     return moved;
 }
 
@@ -173,29 +177,48 @@ void* biker_loop(void *arg) {
     Biker self = (Biker)arg;
     bool moved = false;
     u_int i, j;
-    u_int par = 0;
+    u_int par = 0; // Parity of the biker
     pthread_barrier_wait(&beg_shot);
     // TODO: Change this to a while true
+    /* The biker (0) can make the following movements:
+     *
+     *          +----+----+----+----+----+
+     *          |    |    | 1 1|    |    |
+     *          |    |    | 1 1|    |    |
+     *          +------------------------+
+     *          |    | 0 0| 2 2|    |    |
+     *          |    | 0 0| 2 2|    |    |
+     *          +------------------------+
+     *          |    |    | 3 3|    |    |
+     *          |    |    | 3 3|    |    |
+     *          +----+----+----+----+----+
+     * The 1's are the superior diagonal, the 2's the position ahead
+     * and the 3's the inferior diagonal.
+     */
     for (int k = 0; k < 20; k++) {
         moved = false;
         if (par%self->speed == 0) {
-            i = self->i;
-            j = self->j;
-            u_int im = (i+1)%speedway.length;
-            if (exists(im, j-1))
-                moved = move(self, j-1);
-            if (!moved && exists(im, j))
+            i = self->i; // The current meter
+            j = self->j; // The current lane
+            u_int next_meter = (i + 1)%speedway.length;
+            // The superior diagonal
+            if (exists(next_meter, j - 1))
+                moved = move(self, j - 1);
+            // The lane just ahead
+            if (!moved && exists(next_meter, j))
                 moved = move(self, j);
-            if (!moved && exists(im, j+1))
+            // The inferior diagonal
+            if (!moved && exists(next_meter, j+1))
                 moved = move(self, j+1);
             //if (!moved)
                 //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
         }
         par++;
         //printf("%d waiting...\n", self->id);
+        // Wait all other bikers move
         pthread_barrier_wait(&barr);
         if (moved && self->i == 0) {
-            if (self->lap != -1) {
+            if (self->lap != -1) { // If the biker completed a lap
                 sb->add_score(sb, self);
                 par = 1;
                 calc_new_speed(self);
@@ -204,7 +227,7 @@ void* biker_loop(void *arg) {
                 (self->lap)++;
         }
         //printf("%d waiting 2...\n", self->id);
-        pthread_barrier_wait(&barr2);
+        pthread_barrier_wait(&debugger_barr);
     }
     return NULL;
 }

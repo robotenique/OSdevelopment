@@ -32,9 +32,12 @@ int main(int argc, char const *argv[]) {
     if (DEBUG_MODE)
         print_prog_name();
 
-    pthread_barrier_init(&barr, NULL, numBikers+1);
-    pthread_barrier_init(&barr2, NULL, numBikers+1);
-    pthread_barrier_init(&beg_shot, NULL, numBikers+1);
+    // The main barrier
+    pthread_barrier_init(&barr, NULL, numBikers + 1);
+    // Debug barrier: wait the debugger, then proceed TODO: remove?
+    pthread_barrier_init(&debugger_barr, NULL, numBikers + 1);
+    // Make all bikers start at the same time
+    pthread_barrier_init(&beg_shot, NULL, numBikers + 1);
 
     create_speedway(roadSz, numLaps);
     sb = new_scoreboard(numLaps, numBikers);
@@ -42,7 +45,7 @@ int main(int argc, char const *argv[]) {
     new_bikers(numBikers);
     printf("bikers criados\n");
     debug_road();
-    pthread_barrier_wait(&beg_shot);
+    pthread_barrier_wait(&beg_shot);    
     u_int par = 0;
 
     for (int i = 0; i < 20; i++) {
@@ -50,7 +53,7 @@ int main(int argc, char const *argv[]) {
         if (par%3 == 0)
             debug_road();
         par++;
-        pthread_barrier_wait(&barr2);
+        pthread_barrier_wait(&debugger_barr);
     }
 
     destroy_speedway();
