@@ -40,6 +40,7 @@ int main(int argc, char const *argv[]) {
     pthread_barrier_init(&start_shot, NULL, numBikers + 1);
 
     create_speedway(roadSz, numLaps);
+    broken = new_buffer(-1, numBikers);
     sb = new_scoreboard(numLaps, numBikers);
     new_bikers(numBikers);
     debug_road();

@@ -26,6 +26,7 @@ struct biker {
     // TODO: remove color after finishing EP
     // Speed = 2 (90 km/h) , 3 (60 km/h),  6 (30 km/h)
     u_int lap, i, j, id, score, speed;
+    u_int lsp; // last sprint position
     char *color;
     u_lint localTime, totalTime;
     pthread_t *thread;
@@ -43,7 +44,7 @@ struct buffer_s {
     struct score_s *data;
     u_int lap, i, size;
     pthread_mutex_t mtx;
-    void(*append)(struct buffer_s*, struct biker*);
+    void(*append)(struct buffer_s*, u_int, u_int);
 };
 
 typedef struct buffer_s* Buffer;
@@ -51,7 +52,7 @@ typedef struct buffer_s* Buffer;
 struct scbr_s {
     Buffer *scores;
     u_int n;
-    u_int num_bikers;
+    u_int tot_num_bikers, act_num_bikers;
     pthread_mutex_t scbr_mtx;
     void(*add_score)(struct scbr_s*, struct biker*);
 };
@@ -70,6 +71,7 @@ bool DEBUG_MODE;
 Road speedway;
 Scoreboard sb;
 Biker *bikers;
+Buffer broken;
 pthread_barrier_t barr;
 pthread_barrier_t debugger_barr;
 pthread_barrier_t start_shot;
@@ -169,14 +171,15 @@ void destroy_buffer(Buffer b);
 /*
  * Function: append
  * --------------------------------------------------------
- * Function to add a new id to the buffer_s
+ * Function to add a new id and score to the buffer_s
  *
  * @args b : the buffer
  *       id: the id of the biker to add
+ *       score : the score of the biker to add
  *
  * @return
  */
-void append(Buffer b, Biker x);
+void append(Buffer b, u_int id, u_int score);
 
 /*
  * Function: biker_loop

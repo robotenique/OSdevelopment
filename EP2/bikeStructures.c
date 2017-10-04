@@ -10,6 +10,7 @@
  * the bikers, etc. They're all implemented here.
  */
 #include <pthread.h>
+#include <stdlib.h>
 #include "error.h"
 #include "bikeStructures.h"
 #include "debugger.h"
@@ -45,6 +46,51 @@ u_int reallocate_scoreboard(Scoreboard sb, Biker x) {
 }
 
 /*
+ * Function: compareTo
+ * --------------------------------------------------------
+ * Compare two score_s
+ *
+ * @args a : the first one
+ *       b : the second one
+ *
+ * @return positive if a > b, zero if a == b, negative if a < b
+ */
+int compareTo(const void *a, const void *b) {
+    return ((struct score_s*)b)->score - ((struct score_s*)a)->score;
+}
+
+/*
+ * Function: print_buffer
+ * --------------------------------------------------------
+ * Formatted print of the buffer
+ *
+ * @args b : the buffer
+ *
+ * @return
+ */
+void print_buffer(Buffer b) {
+    printf("Relatório da volta %u\n", b->lap+1);
+    for (size_t i = 0; i < b->i; i++)
+        printf("%luº - Biker %u\n", i+1, b->data[i].id);
+    if (b->lap%10 == 0) {
+        qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
+        for (size_t i = 0; i < b->i; i++)
+            printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+    }
+    if (b->lap == speedway.laps-1) {
+        qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
+        qsort(broken->data, broken->i, sizeof(struct score_s), &compareTo);
+        for (size_t i = 0; i < b->i; i++)
+            // TODO : Add time to this print
+            printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+        for (size_t i = 0; i < broken->i; i++) {
+            Biker x = bikers[broken->data[i].id];
+            printf("Quebrou na volta %u - Biker %u - %upts\n", x->lap, x->id, x->score);
+        }
+    }
+}
+
+/*
  * Function: add_score
  * --------------------------------------------------------
  * Add a new score to the Scoreboard, sending the new biker
@@ -64,25 +110,34 @@ void add_score(Scoreboard sb, Biker x) {
     if(sb->scores[pos] && sb->scores[pos]->lap != x->lap)
         pos = reallocate_scoreboard(sb, x);
     if(sb->scores[pos] == NULL)
-        sb->scores[pos] = new_buffer(x->lap, sb->num_bikers);
+        sb->scores[pos] = new_buffer(x->lap, sb->tot_num_bikers);
+    Buffer prev_b = sb->scores[(pos-1+sb->n)%sb->n];
+    Buffer b = sb->scores[pos];
+    if (prev_b != NULL && prev_b->lap+1 == b->lap && prev_b->i == 1)
+        x->score += 20;
     pthread_mutex_unlock(&(sb->scbr_mtx));
-    sb->scores[pos]->append(sb->scores[pos], x);
-    debug_buffer(sb->scores[pos]);
-    x->lap++;
-    if(sb->scores[pos]->i == sb->num_bikers) {
+    pthread_mutex_lock(&(b->mtx));
+    b->append(b, x->id, x->score);
+    if (b->lap%10 == 0 && b->i <= 4) {
+        if (b->i == 1) x->score += 5;
+        else if (b->i == 2) x->score += 3;
+        else if (b->i == 3) x->score += 2;
+        else if (b->i == 4) x->score += 1;
+    }
+    pthread_mutex_unlock(&(b->mtx));
+    debug_buffer(b);
+    if(b->i == sb->act_num_bikers) {
         printf("meh\n"); // TODO: Delete this buffer and print everything...
-        debug_buffer(sb->scores[pos]);
+        print_buffer(b);
         destroy_buffer(sb->scores[pos]);
         sb->scores[pos] = NULL;
     }
 }
 
-void append(Buffer b, Biker x) {
-    pthread_mutex_lock(&(b->mtx));
-    b->data[b->i].id = x->id;
-    b->data[b->i].score = x->score;
+void append(Buffer b, u_int id, u_int score) {
+    b->data[b->i].id = id;
+    b->data[b->i].score = score;
     b->i++;
-    pthread_mutex_unlock(&(b->mtx));
 }
 
 /*
@@ -100,6 +155,7 @@ Biker new_biker(u_int id) {
     b->id = id;
     b->score = 0;
     b->speed = 6;
+    b->lsp = 0;
     b->color = estrdup(get_color(color_num++));
     b->thread = emalloc(sizeof(pthread_t));
     b->mtxs = emalloc(3*sizeof(pthread_mutex_t));
@@ -169,11 +225,37 @@ bool move(Biker self, u_int next_lane) {
     return moved;
 }
 
+/*
+ * Function: calc_new_speed
+ * --------------------------------------------------------
+ * Calculates the new speed of a biker
+ *
+ * @args self : the biker
+ *
+ * @return
+ */
 void calc_new_speed(Biker self) {
     if (self->speed == 6)
         self->speed = (event(0.7))? 3 : 6;
     else if (self->speed == 3)
         self->speed = (event(0.5))? 3 : 6;
+}
+
+/*
+ * Function: dummy
+ * --------------------------------------------------------
+ * Dummy thread function
+ *
+ * @args
+ *
+ * @return
+ */
+void* dummy(void *arg) {
+    while (1) { // TODO : Stop this while true
+        pthread_barrier_wait(&barr);
+        pthread_barrier_wait(&debugger_barr);
+    }
+    return NULL;
 }
 
 void* biker_loop(void *arg) {
@@ -217,19 +299,27 @@ void* biker_loop(void *arg) {
                 //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
         }
         par++;
-        if (moved && self->i == 0) {
-            if (self->lap != -1) { // If the biker completed a lap
+        if (moved && self->i == 0) { // Trigger events each completed lap
+            if (self->lap != -1) {
                 sb->add_score(sb, self);
-                par = 1;
                 calc_new_speed(self);
             }
-            else
-                (self->lap)++;
+            par = 1;
+            (self->lap)++;
+            if (self->lap%15 == 0 && event(0.01) && sb->act_num_bikers > 5) { // Break it?
+                printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, self->lsp, self->lap);
+                self->broken = true;
+                broken->append(broken, self->id, self->score);
+                pthread_create(self->thread, NULL, &dummy, NULL);
+                break;
+            }
+            if (self->lap == speedway.laps) {
+                pthread_create(self->thread, NULL, &dummy, NULL);
+                break;
+            }
         }
         // Wait all other bikers move
-        //printf("%d waiting...\n", self->id);
         pthread_barrier_wait(&barr);
-        //printf("%d waiting 2...\n", self->id);
         pthread_barrier_wait(&debugger_barr);
     }
     return NULL;
@@ -268,7 +358,8 @@ Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
     sb->scores = emalloc(init_sz*sizeof(Buffer));
     for (size_t i = 0; i < init_sz; sb->scores[i++] = NULL);
     sb->n = init_sz;
-    sb->num_bikers = num_bikers;
+    sb->tot_num_bikers = num_bikers;
+    sb->act_num_bikers = num_bikers;
     pthread_mutex_init(&(sb->scbr_mtx), NULL);
     sb->add_score = &add_score;
     return sb;
