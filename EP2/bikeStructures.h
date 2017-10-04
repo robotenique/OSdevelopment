@@ -22,6 +22,16 @@ typedef unsigned int u_int;
 
 typedef unsigned long long int u_lint;
 
+struct dummy_s {
+    pthread_mutex_t dummy_mtx;
+    pthread_t *dummyT;
+    u_int i;
+    u_int size;
+    void *(* dummy_func)(void *arg);
+    void(*run_next)(struct dummy_s*);
+};
+
+
 struct biker {
     // TODO: remove color after finishing EP
     // Speed = 2 (90 km/h) , 3 (60 km/h),  6 (30 km/h)
@@ -48,6 +58,7 @@ struct buffer_s {
 };
 
 typedef struct buffer_s* Buffer;
+typedef struct dummy_s* DummyThreads;
 
 struct scbr_s {
     Buffer *scores;
@@ -68,6 +79,7 @@ typedef struct {
 
 
 bool DEBUG_MODE;
+DummyThreads dummy_threads;
 Road speedway;
 Scoreboard sb;
 Biker *bikers;
