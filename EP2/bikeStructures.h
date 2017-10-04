@@ -14,14 +14,14 @@
 
 #define NUM_LANES 10
 
-// TODO: Think about the type of road the matrix...
-// TODO: Think about the data structures of the biker...
+/* Simple types definition */
 typedef enum { false, true } bool;
 
 typedef unsigned int u_int;
 
 typedef unsigned long long int u_lint;
 
+/* Complex types definition (structs) */
 struct dummy_s {
     pthread_mutex_t dummy_mtx;
     pthread_t *dummyT;
@@ -33,7 +33,7 @@ struct dummy_s {
 
 
 struct biker {
-    // TODO: remove color after finishing EP
+    // TODO: remove color after finishing EP (or NOT!)
     // Speed = 2 (90 km/h) , 3 (60 km/h),  6 (30 km/h)
     u_int lap, i, j, id, score, speed;
     u_int lsp; // last sprint position
@@ -41,6 +41,9 @@ struct biker {
     u_lint localTime, totalTime;
     pthread_t *thread;
     pthread_mutex_t *mtxs;
+    bool (*try_move)(struct biker* self, u_int next_lane);
+    void(*calc_new_speed)(struct biker* self);
+
     // In the end, to obtain the broken bikers
     // if broken == true, get the lap the biker broke
     bool broken;
@@ -59,6 +62,7 @@ struct buffer_s {
 
 typedef struct buffer_s* Buffer;
 typedef struct dummy_s* DummyThreads;
+typedef struct biker* Biker;
 
 struct scbr_s {
     Buffer *scores;
@@ -68,22 +72,22 @@ struct scbr_s {
     void(*add_score)(struct scbr_s*, struct biker*);
 };
 
-typedef struct biker* Biker;
 typedef struct scbr_s* Scoreboard;
 
 typedef struct {
     pthread_mutex_t **mtxs;
     u_int **road;
     u_int length, lanes, laps;
+    bool (*exists)(int i, int j);
 } Road;
 
-
+/* Global Variables */
 bool DEBUG_MODE;
 DummyThreads dummy_threads;
 Road speedway;
 Scoreboard sb;
-Biker *bikers;
 Buffer broken;
+Biker *bikers;
 pthread_barrier_t barr;
 pthread_barrier_t debugger_barr;
 pthread_barrier_t start_shot;
@@ -204,6 +208,15 @@ void append(Buffer b, u_int id, u_int score);
  */
 void* biker_loop(void *arg);
 
+/*
+ * Function: create_dummy_threads
+ * --------------------------------------------------------
+ * Create the global variable for the dummy threads
+ *
+ * @args numBikers : the number of bikers
+ *
+ * @return
+ */
 void create_dummy_threads(u_int numBikers);
-
+// TODO: destroy the dummy threads
 #endif

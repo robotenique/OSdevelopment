@@ -40,7 +40,6 @@ void random_initialize(u_int nBikers) {
 }
 
 void debug_road() {
-    u_int lastbk = 0;
     printf("+");
     for (size_t i = 0; i < speedway.length; printf("-"), i++);
     printf("+\n");
