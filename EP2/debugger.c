@@ -49,10 +49,10 @@ void debug_road() {
         for (size_t j = 0; j < speedway.length; j++) {
             u_int id;
             if((id = speedway.road[j][i]) != -1){
-                printf("%s\uf206%s", colors[id], RESET);
+                printf("%s0%s", colors[id], RESET);
             }
             else
-                printf(" ");
+                printf("·");
         }
         printf("|\n+");
         for (size_t j = 0; j < speedway.length; printf("-"), j++);
