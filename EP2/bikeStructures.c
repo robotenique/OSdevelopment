@@ -69,7 +69,7 @@ int compareTo(const void *a, const void *b) {
  * @return
  */
 void print_buffer(Buffer b) {
-    printf("Relatório da volta %u\n", b->lap+1);
+    printf("Relatório da volta %u\n", b->lap + 1);
     for (size_t i = 0; i < b->i; i++)
         printf("%luº - Biker %u\n", i+1, b->data[i].id);
     if (b->lap%10 == 0) {
@@ -77,7 +77,7 @@ void print_buffer(Buffer b) {
         for (size_t i = 0; i < b->i; i++)
             printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
     }
-    if (b->lap == speedway.laps-1) {
+    if (b->lap == speedway.laps - 1) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         qsort(broken->data, broken->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
@@ -111,9 +111,9 @@ void add_score(Scoreboard sb, Biker x) {
         pos = reallocate_scoreboard(sb, x);
     if(sb->scores[pos] == NULL)
         sb->scores[pos] = new_buffer(x->lap, sb->tot_num_bikers);
-    Buffer prev_b = sb->scores[(pos-1+sb->n)%sb->n];
+    Buffer prev_b = sb->scores[(pos - 1 + sb->n)%sb->n];
     Buffer b = sb->scores[pos];
-    if (prev_b != NULL && prev_b->lap+1 == b->lap && prev_b->i == 1)
+    if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
     pthread_mutex_unlock(&(sb->scbr_mtx));
     pthread_mutex_lock(&(b->mtx));
@@ -306,14 +306,20 @@ void* biker_loop(void *arg) {
             }
             par = 1;
             (self->lap)++;
-            if (self->lap%15 == 0 && event(0.01) && sb->act_num_bikers > 5) { // Break it?
+            if (self->lap%15 == 0 && event(0.01) && sb->act_num_bikers > 5) { // Break it down?
                 printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, self->lsp, self->lap);
                 self->broken = true;
+                pthread_mutex_lock(&(sb->scbr_mtx));
+                sb->act_num_bikers--;
+                pthread_mutex_unlock(&(sb->scbr_mtx));
                 broken->append(broken, self->id, self->score);
-                pthread_create(self->thread, NULL, &dummy, NULL);
+                pthread_create(self->thread, NULL, &dummy, NULL); // TODO: create an array of dummy threads
                 break;
             }
             if (self->lap == speedway.laps) {
+                pthread_mutex_lock(&(sb->scbr_mtx));
+                sb->act_num_bikers--;
+                pthread_mutex_unlock(&(sb->scbr_mtx));
                 pthread_create(self->thread, NULL, &dummy, NULL);
                 break;
             }
