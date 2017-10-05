@@ -100,6 +100,7 @@ void print_buffer(Buffer b) {
  * @return
  */
 void add_score(Scoreboard sb, Biker x) {
+    // TODO: THIS IS BUGGED! FIX THIS!
     /* TODO: when a player is the last one to add, it
         needs to print out the information of everything..*/
     P(&(sb->scbr_mtx));
