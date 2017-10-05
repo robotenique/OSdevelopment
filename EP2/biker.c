@@ -8,11 +8,12 @@
 bool try_move(Biker self, u_int next_lane);
 void calc_new_speed(Biker self);
 void break_biker(Biker self);
-
+void destroy_all();
 
 static pthread_mutex_t broken_mtx;
 //TODO: remove this thing (?)
 static u_int color_num = 0;
+typedef enum {BROKEN, FINISHED, NORMAL} Status;
 
 /*
  * Function: new_biker
@@ -70,6 +71,7 @@ void* biker_loop(void *arg) {
      * and the 3's the inferior diagonal.
      */
     while (true) {
+        Status biker_status = NORMAL;
         moved = false;
         if (par%self->speed == 0) {
             i = self->i; // The current meter
@@ -95,20 +97,29 @@ void* biker_loop(void *arg) {
             }
             par = 1;
             (self->lap)++;
-            if (self->lap%15 == 0 && event(0.01) && sb->tot_num_bikers > 5 && self->lap != 0) { // Break it down?
-                break_biker(self);
-                break;
-            }
-            if (self->lap == speedway.laps) {                
+            if (self->lap%3 == 0 && event(0.9) && sb->tot_num_bikers > 5 && self->lap != 0) { // Break it down?
                 speedway.road[self->i][self->j] = -1;
-                dummy_threads->run_next(dummy_threads);
-                break;
+                biker_status = BROKEN;
+            }
+            if (self->lap == speedway.laps) {
+                speedway.road[self->i][self->j] = -1;
+                biker_status = FINISHED;
             }
         }
-        printf("ESPERANDOOOOOOOOOOO 1\n");
+        //printf("ESPERANDOOOOOOOOOOO 1\n");
         // Wait all other bikers move
         pthread_barrier_wait(&barr);
-        printf("ESPERANDOOOOOOOOOOO 2\n");
+        if(biker_status == BROKEN){
+            break_biker(self);
+            break;
+        }
+        else if(biker_status == FINISHED){
+            dummy_threads->run_next(dummy_threads);
+            if(sb->act_num_bikers == 0)
+                destroy_all();
+            break;
+        }
+        //printf("ESPERANDOOOOOOOOOOO 2\n");
         pthread_barrier_wait(&debugger_barr);
     }
     return NULL;
@@ -132,7 +143,6 @@ void break_biker(Biker self) {
     P(&(sb->scbr_mtx));
         sb->tot_num_bikers--;
     V(&(sb->scbr_mtx));
-    speedway.road[self->i][self->j] = -1;
     P(&broken_mtx);
         broken->append(broken, self->id, self->score);
         dummy_threads->run_next(dummy_threads);
@@ -212,4 +222,9 @@ void destroy_bikers(u_int numBikers) {
         }
     }
     free(bikers);
+}
+
+void destroy_all() {
+    for (size_t i = 0; i < dummy_threads->i; i++)
+        pthread_cancel(dummy_threads->dummyT[i]);
 }

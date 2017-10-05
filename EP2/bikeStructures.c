@@ -29,6 +29,7 @@ void print_dummy();
  * @return  the new position for the buffer
  */
 u_int reallocate_scoreboard(Scoreboard sb, Biker x) {
+    printf("REALOCANDO SCOREBOARD....\n");
     u_int new_sz = sb->n * 2;
     Buffer *temp = emalloc(new_sz*sizeof(Buffer));
     for (size_t i = 0; i < sb->n; i++) {
@@ -113,7 +114,6 @@ void add_score(Scoreboard sb, Biker x) {
     Buffer b = sb->scores[pos];
     if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
-    V(&(sb->scbr_mtx));
     P(&(b->mtx));
     b->append(b, x->id, x->score);
     if (b->lap%10 == 0 && b->i <= 4) {
@@ -121,18 +121,17 @@ void add_score(Scoreboard sb, Biker x) {
         else if (b->i == 2) x->score += 3;
         else if (b->i == 3) x->score += 2;
         else if (b->i == 4) x->score += 1;
-    }    
+    }
     debug_buffer(b);
     V(&(b->mtx));
 
-    
-    //printf("b->i = %d == bikers = %d\n", b->i, sb->tot_num_bikers);
-    if(b->i == sb->tot_num_bikers) {
+    if(sb->scores[pos] != NULL && b->i == sb->tot_num_bikers) {
         printf("DESTRUINDO buffer\n"); // TODO: Delete this buffer and print everything...
         print_buffer(b);
         destroy_buffer(sb->scores[pos]);
         sb->scores[pos] = NULL;
     }
+    V(&(sb->scbr_mtx));
 }
 
 void append(Buffer b, u_int id, u_int score) {
@@ -165,16 +164,14 @@ bool exists(int i, int j) {
  * @return
  */
 void* dummy(void *arg) {
-    // TODO: fix this D:
-    P(&(sb->scbr_mtx));
-    sb->act_num_bikers--;
-    V(&(sb->scbr_mtx));
-    do{
-        printf("ESPERANDOOOOOOOOOOO DUMMY_1\n");
-        pthread_barrier_wait(&barr);
-        printf("ESPERANDOOOOOOOOOOO DUMMY_2\n");
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+    while (true) {
+        //printf("ESPERANDOOOOOOOOOOO DUMMY_2\n");
         pthread_barrier_wait(&debugger_barr);
-    } while (sb->act_num_bikers != 0);
+        //printf("ESPERANDOOOOOOOOOOO DUMMY_1\n");
+        pthread_barrier_wait(&barr);
+
+    }
     return NULL;
 }
 
@@ -188,13 +185,16 @@ void* dummy(void *arg) {
  * @return
  */
 void run_next(DummyThreads dt) {
+    P(&(sb->scbr_mtx));
+    sb->act_num_bikers--;
+    V(&(sb->scbr_mtx));
     if(dt->i == dt->size)
         die("All the threads were ran!");
     P(&(dt->dummy_mtx));
     pthread_create(&(dt->dummyT[dt->i]), NULL, dt->dummy_func, NULL);
     dt->i++;
     print_dummy();
-    V(&(dt->dummy_mtx));    
+    V(&(dt->dummy_mtx));
 }
 
 void create_speedway(u_int d, u_int laps) {

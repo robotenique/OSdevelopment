@@ -39,13 +39,23 @@ int main(int argc, char const *argv[]) {
     u_int par = 0;
 
     while (sb->act_num_bikers != 0) {
+        //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
+        //printf("****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
         if (par%3 == 0)
             debug_road();
         par++;
+        if(sb->act_num_bikers == 0)
+            break;
+        //printf("****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
     }
 
+    for (size_t i = 0; i < dummy_threads->i; i++) {
+        printf("VRAU\n");
+        pthread_join(dummy_threads->dummyT[i], NULL);
+        printf("JOINED - %lu\n", i);
+    }
 
     destroy(num_bikers);
     return 0;
