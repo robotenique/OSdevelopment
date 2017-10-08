@@ -9,6 +9,7 @@
  */
  #include <stdio.h>
  #include <pthread.h>
+ #include <unistd.h> // sleep
  #include "bikeStructures.h"
  #include "biker.h"
  #include "error.h"
@@ -29,9 +30,9 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 20;
-    u_int num_laps = 10;
-    u_int road_sz = 3;
+    u_int num_bikers = 10;
+    u_int num_laps = 4;
+    u_int road_sz = 10;
     DEBUG_MODE = true;
     init(num_bikers, num_laps, road_sz);
     debug_road();
@@ -47,6 +48,7 @@ int main(int argc, char const *argv[]) {
         par++;
         if(sb->act_num_bikers == 0)
             break;
+        //sleep(2);
         //printf("****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
     }

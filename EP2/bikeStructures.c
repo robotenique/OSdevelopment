@@ -205,14 +205,14 @@ void create_speedway(u_int d, u_int laps) {
     speedway.lanes = NUM_LANES;
     speedway.laps = laps;
     for (int i = 0; i < d; i++) {
-        speedway.road[i] = emalloc(10*sizeof(u_int));
-        for(int j = 0; j < 10; j++)
+        speedway.road[i] = emalloc(NUM_LANES*sizeof(u_int));
+        for(int j = 0; j < NUM_LANES; j++)
             speedway.road[i][j] = -1; // infinity :'(
     }
     speedway.mtxs = emalloc(d*sizeof(pthread_mutex_t*));
     for (int i = 0; i < d; i++) {
-        speedway.mtxs[i] = emalloc(10*sizeof(pthread_mutex_t));
-        for(int j = 0; j < 10; j++)
+        speedway.mtxs[i] = emalloc(NUM_LANES*sizeof(pthread_mutex_t));
+        for(int j = 0; j < NUM_LANES; j++)
             pthread_mutex_init(&(speedway.mtxs[i][j]), NULL);
     }
     speedway.exists = &exists;

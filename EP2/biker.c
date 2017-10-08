@@ -10,6 +10,17 @@ void calc_new_speed(Biker self);
 void break_biker(Biker self);
 void destroy_all();
 
+char* getspeed(Biker self) {
+  if (self->speed == 2)
+    return estrdup("90 km/h");
+  else if(self->speed == 3)
+    return estrdup("60 km/h");
+  else if(self->speed == 6)
+    return estrdup("30 km/h");
+  else
+    return estrdup("QUE??");
+}
+
 static pthread_mutex_t broken_mtx;
 //TODO: remove this thing (?)
 static u_int color_num = 0;
@@ -26,7 +37,7 @@ typedef enum {BROKEN, FINISHED, NORMAL} Status;
  */
 Biker new_biker(u_int id) {
     Biker b = emalloc(sizeof(struct biker));
-    b->lap = (id < 10)? 0 : -1;
+    b->lap = (id < NUM_LANES)? 0 : -1;
     b->id = id;
     b->score = 0;
     b->speed = 6;
@@ -34,12 +45,18 @@ Biker new_biker(u_int id) {
     b->moved = false;
     b->color = estrdup(get_color(color_num++));
     b->thread = emalloc(sizeof(pthread_t));
+    /* What each mutex is referring to (X is the biker):
+     *    0
+     *    1  X
+     *    2  3
+     */
     // 0 -> top left, 1 -> left, 2 -> bottom left, 3 -> bottom
     b->mtxs = emalloc(4*sizeof(pthread_mutex_t));
     b->used_mtx = emalloc(4*sizeof(bool));
+    // Set all mutexes to 0 at first
     for (int i = 0; i < 4; i++) {
         pthread_mutex_init(&(b->mtxs[i]), NULL);
-        pthread_mutex_lock(&(b->mtxs[i]));
+        P(&(b->mtxs[i]));
         b->used_mtx[i] = false;
     }
     // Start the first row of bikers just after the starting line (meter 0) and
@@ -83,17 +100,17 @@ void* biker_loop(void *arg) {
             i = self->i; // The current meter
             j = self->j; // The current lane
             u_int next_meter = (i + 1)%speedway.length;
-            if (speedway.exists(i, j+1) && (mem = speedway.road[i][j+1]) != -1 && !(bikers[mem]->moved)) {
+            if (speedway.exists(i, j - 1) && (mem = speedway.road[i][j - 1]) != -1 && !(bikers[mem]->moved)) {
                 bikers[mem]->used_mtx[3] = true;
                 //printf("Biker %d locked down of %d\n", self->id, mem);
-                pthread_mutex_lock(&(bikers[mem]->mtxs[3]));
+                P(&(bikers[mem]->mtxs[3]));
                 //printf("Biker %d proceed\n", self->id);
             }
             // The lane just ahead
             if ((mem = speedway.road[next_meter][j]) != -1 && !(bikers[mem]->moved)) {
                 bikers[mem]->used_mtx[1] = true;
                 //printf("Biker %d locked back of %d\n", self->id, mem);
-                pthread_mutex_lock(&(bikers[mem]->mtxs[1]));
+                P(&(bikers[mem]->mtxs[1]));
                 //printf("Biker %d proceed\n", self->id);
             }
             moved = self->try_move(self, j);
@@ -102,7 +119,7 @@ void* biker_loop(void *arg) {
                 if ((mem = speedway.road[next_meter][j-1]) != -1 && !(bikers[mem]->moved)) {
                     bikers[mem]->used_mtx[0] = true;
                     //printf("Biker %d locked back up of %d\n", self->id, mem);
-                    pthread_mutex_lock(&(bikers[mem]->mtxs[0]));
+                    P(&(bikers[mem]->mtxs[0]));
                     //printf("Biker %d proceed\n", self->id);
                 }
                 moved = self->try_move(self, j - 1);
@@ -112,10 +129,10 @@ void* biker_loop(void *arg) {
                 if ((mem = speedway.road[next_meter][j+1]) != -1 && !(bikers[mem]->moved)) {
                     bikers[mem]->used_mtx[2] = true;
                     //printf("Biker %d locked back down of %d\n", self->id, mem);
-                    pthread_mutex_lock(&(bikers[mem]->mtxs[2]));
+                    P(&(bikers[mem]->mtxs[2]));
                     //printf("Biker %d proceed\n", self->id);
                 }
-                moved = self->try_move(self, j+1);
+                moved = self->try_move(self, j + 1);
             }
             //if (!moved)
                 //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
@@ -123,9 +140,9 @@ void* biker_loop(void *arg) {
         self->moved = true;
         for (size_t i = 0; i < 4; i++) {
             //printf("Biker %d unlocked %lu\n", self->id, i);
-            pthread_mutex_unlock(&(self->mtxs[i]));
+            V(&(self->mtxs[i]));
             if (!(self->used_mtx[i]))
-                pthread_mutex_lock(&(self->mtxs[i]));
+                P(&(self->mtxs[i]));
             self->used_mtx[i] = false;
         }
         par++;
@@ -213,7 +230,7 @@ bool try_move(Biker self, u_int next_lane) {
         //printf("%d Lock %d %d (Self)\n", self->id, i, j);
         // Lock the mutex of the current position
         P(&(speedway.mtxs[i][j]));
-        printf("id = %02d, next_meter = %02d, curr_lane = %02d, next_lane = %02d, %s\uf206%s\n", self->id, next_meter, j, next_lane, self->color, RESET);
+        printf("id = %02d, speed = %s , next_meter = %02d, curr_lane = %02d, next_lane = %02d, %s\uf206%s\n", self->id, getspeed(self), next_meter, j, next_lane, self->color, RESET);
         speedway.road[next_meter][next_lane] = self->id;
         speedway.road[i][j] = -1;
         self->i = next_meter;
