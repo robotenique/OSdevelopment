@@ -11,12 +11,13 @@ void break_biker(Biker self);
 void destroy_all();
 
 char* getspeed(Biker self) {
+
   if (self->speed == 2)
-    return estrdup("90 km/h");
+    return estrdup("\x1b[38;5;240m90 km/h\x1b[0m");
   else if(self->speed == 3)
-    return estrdup("60 km/h");
+    return estrdup("\x1b[38;5;214m60 km/h\x1b[0m");
   else if(self->speed == 6)
-    return estrdup("30 km/h");
+    return estrdup("\x1b[38;5;105m30 km/h\x1b[0m");
   else
     return estrdup("QUE??");
 }
@@ -153,7 +154,8 @@ void* biker_loop(void *arg) {
             }
             par = 1;
             (self->lap)++;
-            if (self->lap%3 == 0 && event(0.9) && sb->tot_num_bikers > 5 && self->lap != 0) { // Break it down?
+            // TODO: Check if the sb->tot_num_bikers is correct....
+            if (self->lap%15 == 0 && event(0.1) && sb->tot_num_bikers > 5 && self->lap != 0) { // Break it down?
                 speedway.road[self->i][self->j] = -1;
                 biker_status = BROKEN;
             }
