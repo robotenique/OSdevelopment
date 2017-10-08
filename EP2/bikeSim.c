@@ -40,16 +40,20 @@ int main(int argc, char const *argv[]) {
     u_int par = 1;
 
     //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
-    printf("****MAIN***** ESPERANDO BARR1\n");
+    printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
     pthread_barrier_wait(&barr);
     debug_road();
     while (sb->act_num_bikers != 0) {
         //sleep(2);
-        printf("****MAIN***** ESPERANDO BARR2\n");
+        printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
+        printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
+
         //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
-        printf("****MAIN***** ESPERANDO BARR1\n");
+        printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
+        printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
+
         if (par%3 == 0)
             debug_road();
         par++;
