@@ -103,17 +103,17 @@ void* biker_loop(void *arg) {
             u_int next_meter = (i + 1)%speedway.length;
             if (speedway.exists(i, j - 1) && (mem = speedway.road[i][j - 1]) != -1 && !(bikers[mem]->moved)) {
                 bikers[mem]->used_mtx[3] = true;
-                //printf("Biker %d locked up of %d\n", self->id, mem);
+                printf("--> %sBiker %d%s locked up of %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
                 P(&(bikers[mem]->mtxs[3]));
-                //printf("Biker %d proceed\n", self->id);
+                printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
             }
             // The superior diagonal
             if (speedway.exists(next_meter, j - 1)) {
                 if ((mem = speedway.road[next_meter][j-1]) != -1 && !(bikers[mem]->moved)) {
                     bikers[mem]->used_mtx[0] = true;
-                    //printf("Biker %d locked back up of %d\n", self->id, mem);
+                    printf("--> %sBiker %d%s locked up of %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
                     P(&(bikers[mem]->mtxs[0]));
-                    //printf("Biker %d proceed\n", self->id);
+                    printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
                 }
                 moved = self->try_move(self, j - 1);
             }
@@ -121,9 +121,9 @@ void* biker_loop(void *arg) {
             if (!moved) {
                 if ((mem = speedway.road[next_meter][j]) != -1 && !(bikers[mem]->moved)) {
                     bikers[mem]->used_mtx[1] = true;
-                    //printf("Biker %d locked back of %d\n", self->id, mem);
+                    printf("--> %sBiker %d%s locked up of %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
                     P(&(bikers[mem]->mtxs[1]));
-                    //printf("Biker %d proceed\n", self->id);
+                    printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
                 }
                 moved = self->try_move(self, j);
             }
@@ -131,9 +131,10 @@ void* biker_loop(void *arg) {
             if (!moved && speedway.exists(next_meter, j+1)) {
                 if ((mem = speedway.road[next_meter][j+1]) != -1 && !(bikers[mem]->moved)) {
                     bikers[mem]->used_mtx[2] = true;
-                    //printf("Biker %d locked back down of %d\n", self->id, mem);
+                    printf("--> %sBiker %d%s locked up of %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
                     P(&(bikers[mem]->mtxs[2]));
-                    //printf("Biker %d proceed\n", self->id);
+                    printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
+
                 }
                 moved = self->try_move(self, j + 1);
             }
