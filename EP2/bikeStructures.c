@@ -187,9 +187,6 @@ void* dummy(void *arg) {
  * @return
  */
 void run_next(DummyThreads dt) {
-    P(&(sb->scbr_mtx));
-    sb->act_num_bikers--;
-    V(&(sb->scbr_mtx));
     if(dt->i == dt->size)
         die("All the threads were ran!");
     P(&(dt->dummy_mtx));

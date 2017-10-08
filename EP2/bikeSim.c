@@ -30,16 +30,25 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 20;
+    u_int num_bikers = 9;
     u_int num_laps = 5;
     u_int road_sz = 10;
     DEBUG_MODE = true;
     init(num_bikers, num_laps, road_sz);
     debug_road();
     pthread_barrier_wait(&start_shot);
-    u_int par = 0;
+    u_int par = 1;
 
+    //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
+    printf("****MAIN***** ESPERANDO BARR1\n");
+    pthread_barrier_wait(&barr);
+    debug_road();
     while (sb->act_num_bikers != 0) {
+        //sleep(2);
+        printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
+        pthread_barrier_wait(&debugger_barr);
+        printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
+
         //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
         printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
@@ -48,12 +57,6 @@ int main(int argc, char const *argv[]) {
         if (par%3 == 0)
             debug_road();
         par++;
-        if(sb->act_num_bikers == 0)
-            break;
-        //sleep(2);
-        printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
-        pthread_barrier_wait(&debugger_barr);
-        printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
     }
 
     for (size_t i = 0; i < dummy_threads->i; i++) {
