@@ -30,8 +30,8 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 10;
-    u_int num_laps = 4;
+    u_int num_bikers = 20;
+    u_int num_laps = 5;
     u_int road_sz = 10;
     DEBUG_MODE = true;
     init(num_bikers, num_laps, road_sz);
@@ -41,7 +41,7 @@ int main(int argc, char const *argv[]) {
 
     while (sb->act_num_bikers != 0) {
         //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
-        //printf("****MAIN***** ESPERANDO BARR1\n");
+        printf("****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
         if (par%3 == 0)
             debug_road();
@@ -49,7 +49,7 @@ int main(int argc, char const *argv[]) {
         if(sb->act_num_bikers == 0)
             break;
         //sleep(2);
-        //printf("****MAIN***** ESPERANDO BARR2\n");
+        printf("****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
     }
 
