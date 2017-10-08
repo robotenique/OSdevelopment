@@ -102,20 +102,12 @@ void* biker_loop(void *arg) {
             u_int next_meter = (i + 1)%speedway.length;
             if (speedway.exists(i, j - 1) && (mem = speedway.road[i][j - 1]) != -1 && !(bikers[mem]->moved)) {
                 bikers[mem]->used_mtx[3] = true;
-                //printf("Biker %d locked down of %d\n", self->id, mem);
+                //printf("Biker %d locked up of %d\n", self->id, mem);
                 P(&(bikers[mem]->mtxs[3]));
                 //printf("Biker %d proceed\n", self->id);
             }
-            // The lane just ahead
-            if ((mem = speedway.road[next_meter][j]) != -1 && !(bikers[mem]->moved)) {
-                bikers[mem]->used_mtx[1] = true;
-                //printf("Biker %d locked back of %d\n", self->id, mem);
-                P(&(bikers[mem]->mtxs[1]));
-                //printf("Biker %d proceed\n", self->id);
-            }
-            moved = self->try_move(self, j);
             // The superior diagonal
-            if (!moved && speedway.exists(next_meter, j - 1)) {
+            if (speedway.exists(next_meter, j - 1)) {
                 if ((mem = speedway.road[next_meter][j-1]) != -1 && !(bikers[mem]->moved)) {
                     bikers[mem]->used_mtx[0] = true;
                     //printf("Biker %d locked back up of %d\n", self->id, mem);
@@ -123,6 +115,16 @@ void* biker_loop(void *arg) {
                     //printf("Biker %d proceed\n", self->id);
                 }
                 moved = self->try_move(self, j - 1);
+            }
+            // The lane just ahead
+            if (!moved) {
+                if ((mem = speedway.road[next_meter][j]) != -1 && !(bikers[mem]->moved)) {
+                    bikers[mem]->used_mtx[1] = true;
+                    //printf("Biker %d locked back of %d\n", self->id, mem);
+                    P(&(bikers[mem]->mtxs[1]));
+                    //printf("Biker %d proceed\n", self->id);
+                }
+                moved = self->try_move(self, j);
             }
             // The inferior diagonal
             if (!moved && speedway.exists(next_meter, j+1)) {
