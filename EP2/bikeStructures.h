@@ -40,7 +40,7 @@ struct biker {
     u_int lsp; // last sprint position
     bool fast, moved, *used_mtx;
     char *color;
-    u_lint localTime, totalTime;
+    u_lint totalTime;
     pthread_t *thread;
     pthread_mutex_t *mtxs;
     bool (*try_move)(struct biker* self, u_int next_lane);
@@ -53,13 +53,14 @@ struct biker {
 
 struct score_s {
     u_int id, score;
+    u_lint time;
 };
 
 struct buffer_s {
     struct score_s *data;
     u_int lap, i, size;
     pthread_mutex_t mtx;
-    void(*append)(struct buffer_s*, u_int, u_int);
+    void(*append)(struct buffer_s*, u_int, u_int, u_lint);
 };
 
 typedef struct buffer_s* Buffer;
@@ -197,7 +198,7 @@ void destroy_buffer(Buffer b);
  *
  * @return
  */
-void append(Buffer b, u_int id, u_int score);
+void append(Buffer b, u_int id, u_int score, u_lint t);
 
 /*
  * Function: biker_loop

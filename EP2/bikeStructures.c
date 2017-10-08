@@ -82,10 +82,10 @@ void print_buffer(Buffer b) {
         qsort(broken->data, broken->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
             // TODO : Add time to this print
-            printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+            printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
         for (size_t i = 0; i < broken->i; i++) {
             Biker x = bikers[broken->data[i].id];
-            printf("Quebrou na volta %u - Biker %u - %upts\n", x->lap, x->id, x->score);
+            printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap, x->id, ((float)x->totalTime)/1000.0, x->score);
         }
     }
 }
@@ -117,8 +117,8 @@ void add_score(Scoreboard sb, Biker x) {
     if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
     P(&(b->mtx));
-    b->append(b, x->id, x->score);
-    if (b->lap%10 == 0 && b->i <= 4) {
+    b->append(b, x->id, x->score, x->totalTime);
+    if (b->lap%10 == 0 && b->lap != 0 && b->i <= 4) {
         if (b->i == 1) x->score += 5;
         else if (b->i == 2) x->score += 3;
         else if (b->i == 3) x->score += 2;
@@ -136,9 +136,10 @@ void add_score(Scoreboard sb, Biker x) {
     V(&(sb->scbr_mtx));
 }
 
-void append(Buffer b, u_int id, u_int score) {
+void append(Buffer b, u_int id, u_int score, u_lint t) {
     b->data[b->i].id = id;
     b->data[b->i].score = score;
+    b->data[b->i].time = t;
     b->i++;
 }
 
