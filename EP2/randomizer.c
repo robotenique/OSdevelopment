@@ -38,8 +38,8 @@ u_int randint(u_int a, u_int b){
 
 bool event(double probability) {
     initSeed();
-    u_int roll = randint(0, 101);
-    if(roll <= probability*100)
+    u_int roll = randint(0, 100); // Don't change this
+    if(roll < probability*100) // Don't change this
         return true;
     return false;
 }

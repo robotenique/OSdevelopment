@@ -32,8 +32,9 @@ u_int reallocate_scoreboard(Scoreboard sb, Biker x) {
     printf("REALOCANDO SCOREBOARD....\n");
     u_int new_sz = sb->n * 2;
     Buffer *temp = emalloc(new_sz*sizeof(Buffer));
+    for (size_t i = 0; i < new_sz; temp[i] = NULL, i++);
     for (size_t i = 0; i < sb->n; i++) {
-        if(sb->scores[i] != NULL) {
+        if (sb->scores[i] != NULL) {
             u_int new_pos = sb->scores[i]->lap % new_sz;
             temp[new_pos] = sb->scores[i];
         }

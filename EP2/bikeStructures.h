@@ -38,6 +38,7 @@ struct biker {
     // Speed = 2 (90 km/h) , 3 (60 km/h),  6 (30 km/h)
     u_int lap, i, j, id, score, speed;
     u_int lsp; // last sprint position
+    bool fast, moved, *used_mtx;
     char *color;
     u_lint localTime, totalTime;
     pthread_t *thread;

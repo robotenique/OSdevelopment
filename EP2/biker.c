@@ -31,11 +31,17 @@ Biker new_biker(u_int id) {
     b->score = 0;
     b->speed = 6;
     b->lsp = 0;
+    b->moved = false;
     b->color = estrdup(get_color(color_num++));
     b->thread = emalloc(sizeof(pthread_t));
-    b->mtxs = emalloc(3*sizeof(pthread_mutex_t));
-    for (int i = 0; i < 3; i++)
+    // 0 -> top left, 1 -> left, 2 -> bottom left, 3 -> bottom
+    b->mtxs = emalloc(4*sizeof(pthread_mutex_t));
+    b->used_mtx = emalloc(4*sizeof(bool));
+    for (int i = 0; i < 4; i++) {
         pthread_mutex_init(&(b->mtxs[i]), NULL);
+        pthread_mutex_lock(&(b->mtxs[i]));
+        b->used_mtx[i] = false;
+    }
     // Start the first row of bikers just after the starting line (meter 0) and
     // the other rows, behind them
     u_int meter = (speedway.length - id/speedway.lanes)%speedway.length;
@@ -52,7 +58,7 @@ Biker new_biker(u_int id) {
 void* biker_loop(void *arg) {
     Biker self = (Biker)arg;
     bool moved = false;
-    u_int i, j;
+    u_int i, j, mem;
     u_int par = 0; // Parity of the biker
     pthread_barrier_wait(&start_shot);
     /* The biker (0) can make the following movements:
@@ -77,17 +83,50 @@ void* biker_loop(void *arg) {
             i = self->i; // The current meter
             j = self->j; // The current lane
             u_int next_meter = (i + 1)%speedway.length;
-            // The superior diagonal
-            if (speedway.exists(next_meter, j - 1))
-                moved = self->try_move(self, j - 1);
+            if (speedway.exists(i, j+1) && (mem = speedway.road[i][j+1]) != -1) {
+                bikers[mem]->used_mtx[3] = true;
+                printf("Biker %d locked down of %d\n", self->id, mem);
+                pthread_mutex_lock(&(bikers[mem]->mtxs[3]));
+                printf("Biker %d proceed\n", self->id);
+            }
             // The lane just ahead
-            if (!moved)
-                moved = self->try_move(self, j);
+            if ((mem = speedway.road[next_meter][j]) != -1 && !(bikers[mem]->moved)) {
+                bikers[mem]->used_mtx[1] = true;
+                printf("Biker %d locked back of %d\n", self->id, mem);
+                pthread_mutex_lock(&(bikers[mem]->mtxs[1]));
+                printf("Biker %d proceed\n", self->id);
+            }
+            moved = self->try_move(self, j);
+            // The superior diagonal
+            if (!moved && speedway.exists(next_meter, j - 1)) {
+                if ((mem = speedway.road[next_meter][j-1]) != -1 && !(bikers[mem]->moved)) {
+                    bikers[mem]->used_mtx[0] = true;
+                    printf("Biker %d locked back up of %d\n", self->id, mem);
+                    pthread_mutex_lock(&(bikers[mem]->mtxs[0]));
+                    printf("Biker %d proceed\n", self->id);
+                }
+                moved = self->try_move(self, j - 1);
+            }
             // The inferior diagonal
-            if (!moved && speedway.exists(next_meter, j+1))
+            if (!moved && speedway.exists(next_meter, j+1)) {
+                if ((mem = speedway.road[next_meter][j+1]) != -1 && !(bikers[mem]->moved)) {
+                    bikers[mem]->used_mtx[2] = true;
+                    printf("Biker %d locked back down of %d\n", self->id, mem);
+                    pthread_mutex_lock(&(bikers[mem]->mtxs[2]));
+                    printf("Biker %d proceed\n", self->id);
+                }
                 moved = self->try_move(self, j+1);
+            }
             //if (!moved)
                 //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
+        }
+        self->moved = true;
+        for (size_t i = 0; i < 4; i++) {
+            printf("Biker %d unlocked %lu\n", self->id, i);
+            pthread_mutex_unlock(&(self->mtxs[i]));
+            if (!(self->used_mtx[i]))
+                pthread_mutex_lock(&(self->mtxs[i]));
+            self->used_mtx[i] = false;
         }
         par++;
         if (moved && self->i == 0) { // Trigger events each completed lap
@@ -119,6 +158,7 @@ void* biker_loop(void *arg) {
                 destroy_all();
             break;
         }
+        self->moved = false;
         //printf("ESPERANDOOOOOOOOOOO 2\n");
         pthread_barrier_wait(&debugger_barr);
     }
@@ -202,6 +242,8 @@ void calc_new_speed(Biker self) {
         self->speed = (event(0.7))? 3 : 6;
     else if (self->speed == 3)
         self->speed = (event(0.5))? 3 : 6;
+    if (self->fast && self->lap > speedway.laps-2)
+        self->speed = 2;
 }
 
 void new_bikers(u_int numBikers) {
