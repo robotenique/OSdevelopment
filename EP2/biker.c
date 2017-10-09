@@ -27,6 +27,21 @@ static pthread_mutex_t broken_mtx;
 static u_int color_num = 0;
 typedef enum {BROKEN, FINISHED, NORMAL} Status;
 
+// TODO: Remove the function below
+char* getsymbol(int i){
+  if (i == 0)
+    return estrdup("↖");
+  else if(i == 1)
+  return estrdup("←");
+  else if(i == 2)
+  return estrdup("↙");
+  else if(i == 3)
+  return estrdup("↓");
+  else
+    die("ERROR!");
+
+}
+
 /*
  * Function: new_biker
  * --------------------------------------------------------
@@ -48,11 +63,11 @@ Biker new_biker(u_int id) {
     b->color = color_num <=  230 ? estrdup(get_color(color_num++)) : estrdup(RESET);
     b->thread = emalloc(sizeof(pthread_t));
     /* What each mutex is referring to (X is the biker):
-     *    0  3
+     *    0
      *    1  X
-     *    2
+     *    2  3
      */
-    // 0 -> top left, 1 -> left, 2 -> bottom left, 3 -> top
+    // 0 -> top left, 1 -> left, 2 -> bottom left, 3 -> bottom
     b->mtxs = emalloc(4*sizeof(pthread_mutex_t));
     b->used_mtx = emalloc(4*sizeof(bool));
     // Set all mutexes to 0 at first
@@ -144,7 +159,7 @@ void* biker_loop(void *arg) {
             printf("___%sBiker %d%s___ cant't move!\n", self->color, self->id, RESET);
         self->moved = true;
         for (size_t i = 0; i < 4; i++) {
-            printf("%sBiker %d%s unlocked %lu\n", self->color, self->id, RESET, i);
+            printf("%sBiker %d%s unlocked %s\n", self->color, self->id, RESET, getsymbol(i));
             V(&(self->mtxs[i]));
             if (!(self->used_mtx[i]))
                 P(&(self->mtxs[i]));
