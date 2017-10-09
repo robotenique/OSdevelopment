@@ -139,10 +139,10 @@ void* biker_loop(void *arg) {
                 moved = self->try_move(self, j + 1);
             //if (!moved)
                 //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
+            self->moved = true;
         }
         else
             printf("___%sBiker %d%s___ cant't move!\n", self->color, self->id, RESET);
-        self->moved = true;
         for (size_t i = 0; i < 4; i++) {
             //printf("Biker %d unlocked %lu\n", self->id, i);
             V(&(self->mtxs[i]));
@@ -189,7 +189,7 @@ void* biker_loop(void *arg) {
                 destroy_all();
             break;
         }
-        self->moved = false;
+        self->moved = (par%self->speed == 0)? false : true;
         //printf("ESPERANDOOOOOOOOOOO 2\n");
         pthread_barrier_wait(&debugger_barr);
     }
