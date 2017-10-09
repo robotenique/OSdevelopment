@@ -137,18 +137,14 @@ void* biker_loop(void *arg) {
                 moved = self->try_move(self, j);
             if (!moved && speedway.exists(next_meter, j + 1))
                 moved = self->try_move(self, j + 1);
-            //if (!moved)
-                //printf("Still %d %d %d %s\uf206%s\n", self->id, i, j, self->color, RESET);
             self->moved = true;
         }
         else
             printf("___%sBiker %d%s___ cant't move!\n", self->color, self->id, RESET);
+
         for (size_t i = 0; i < 4; i++) {
             printf("%sBiker %d%s unlocked %lu\n", self->color, self->id, RESET, i);
             V(&(self->mtxs[i]));
-            if (!(self->used_mtx[i]))
-                P(&(self->mtxs[i]));
-            self->used_mtx[i] = false;
         }
         par++;
         self->totalTime += 20;
@@ -160,7 +156,7 @@ void* biker_loop(void *arg) {
             par = 1;
             (self->lap)++;
             // TODO: Check if the sb->tot_num_bikers is correct....
-            if (self->lap%15 == 0 && event(0.1) && sb->tot_num_bikers > 5 && self->lap != 0) { // Break it down?
+            if (self->lap%15 == 0 && event(0.01) && sb->tot_num_bikers > 5 && self->lap != 0) { // Break it down?
                 speedway.road[self->i][self->j] = -1;
                 biker_status = BROKEN;
                 P(&(sb->scbr_mtx));
@@ -176,6 +172,7 @@ void* biker_loop(void *arg) {
                 V(&(sb->scbr_mtx));
             }
         }
+
         //printf("ESPERANDOOOOOOOOOOO 1\n");
         // Wait all other bikers move
         pthread_barrier_wait(&barr);
@@ -188,6 +185,11 @@ void* biker_loop(void *arg) {
             if(sb->act_num_bikers == 0)
                 destroy_all();
             break;
+        }
+        for (size_t i = 0; i < 4; i++) {
+            if (!(self->used_mtx[i]))
+                P(&(self->mtxs[i]));
+            self->used_mtx[i] = false;
         }
         self->moved = (par%self->speed == 0)? false : true;
         //printf("ESPERANDOOOOOOOOOOO 2\n");
