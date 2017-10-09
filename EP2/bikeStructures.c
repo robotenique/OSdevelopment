@@ -168,9 +168,11 @@ bool exists(int i, int j) {
  */
 void* dummy(void *arg) {
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-    while (true) {
+    while (sb->act_num_bikers != 0) {
         //printf("ESPERANDOOOOOOOOOOO DUMMY_2\n");
         pthread_barrier_wait(&debugger_barr);
+        if (sb->act_num_bikers == 0)
+            break;
         //printf("ESPERANDOOOOOOOOOOO DUMMY_1\n");
         pthread_barrier_wait(&barr);
 

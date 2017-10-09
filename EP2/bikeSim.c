@@ -49,7 +49,7 @@ int main(int argc, char const *argv[]) {
         pthread_barrier_wait(&debugger_barr);
         printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
 
-        if (sb->act_num_bikers != 0)
+        if (sb->act_num_bikers == 0)
             break;
 
         //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
@@ -61,7 +61,7 @@ int main(int argc, char const *argv[]) {
             debug_road();
         par++;
     }
-
+    destroy_all();
     for (size_t i = 0; i < dummy_threads->i; i++) {
         printf("VRAU\n");
         pthread_join(dummy_threads->dummyT[i], NULL);
