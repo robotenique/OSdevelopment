@@ -38,7 +38,7 @@ char* getsymbol(int i){
     else if(i == 3)
         return estrdup("↓");
     die("ERROR!");
-    //return NULL;
+    return estrdup("Error!");
 }
 
 /*
