@@ -1,13 +1,7 @@
 #ifndef __GRAPH_H__
 #define __GRAPH_H__
 
-#include "bikeStructures.h"
-
-struct queue_s {
-    u_int* v;
-    u_int beg, end, size;
-};
-typedef struct queue_s* Queue;
+#include "macros.h"
 
 struct stack_s {
     u_int* v;
@@ -25,13 +19,11 @@ Graph new_graph(u_int);
 
 void addEdge(Graph, u_int, u_int);
 
-Stack getCycle(Graph);
+Stack getCycles(Graph);
 
-Queue new_queue();
+void reset_graph(Graph);
 
-void enqueue(Queue, u_int);
-
-u_int dequeue(Queue);
+void destroy_graph(Graph);
 
 Stack new_stack();
 
@@ -42,5 +34,9 @@ u_int pop(Stack);
 bool empty(Stack);
 
 u_int top(Stack);
+
+void reset(Stack);
+
+void destroy_stack(Stack);
 
 #endif

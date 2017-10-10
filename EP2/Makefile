@@ -13,7 +13,7 @@ LDFLAGS = -lrt -lm -pthread
 
 all: bikeSim
 
-bikeSim: bikeSim.o error.o randomizer.o bikeStructures.o biker.o debugger.o
+bikeSim: bikeSim.o error.o randomizer.o bikeStructures.o biker.o debugger.o graph.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c %.h

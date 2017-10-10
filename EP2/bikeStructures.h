@@ -11,18 +11,8 @@
 #define __BIKE_STRUCTURES_H__
 #include <stdio.h>
 #include <pthread.h>
-#define P(x) pthread_mutex_lock(x)
-#define V(x) pthread_mutex_unlock(x)
-#define NUM_LANES 10
-
-/* Simple types definition */
-typedef enum { false, true } bool;
-
-typedef enum { NONE, TOP, DOWN, TOPDOWN } Move;
-
-typedef unsigned int u_int;
-
-typedef unsigned long long int u_lint;
+#include "macros.h"
+#include "graph.h"
 
 /* Complex types definition (structs) */
 struct dummy_s {
@@ -43,7 +33,6 @@ struct biker {
     bool fast, moved, *used_mtx;
     char *color;
     u_lint totalTime;
-    Move moveType;
     pthread_t *thread;
     pthread_mutex_t *mtxs;
     bool (*try_move)(struct biker* self, u_int next_lane);
@@ -85,6 +74,8 @@ typedef struct {
     pthread_mutex_t mymtx; // Mine
     u_int **road;
     u_int *nbpl; // Number of bikers per lane
+    Move *moveTypes; // Move type of each lane
+    Graph g;
     u_int length, lanes, laps;
     bool (*exists)(int i, int j);
 } Road;
@@ -98,6 +89,7 @@ Buffer broken;
 Biker *bikers;
 pthread_barrier_t barr;
 pthread_barrier_t debugger_barr;
+pthread_barrier_t prep_barr;
 pthread_barrier_t start_shot;
 
 /*
@@ -133,7 +125,7 @@ void destroy_bikers(u_int numBikers);
  *
  * @return
  */
-void create_speedway(u_int d, u_int laps);
+void create_speedway(u_int d, u_int laps, u_int num_bikers);
 
 /*
  * Function: destroy_speedway
