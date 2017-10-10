@@ -13,10 +13,12 @@
 #include <pthread.h>
 #define P(x) pthread_mutex_lock(x)
 #define V(x) pthread_mutex_unlock(x)
-#define NUM_LANES 4
+#define NUM_LANES 10
 
 /* Simple types definition */
 typedef enum { false, true } bool;
+
+typedef enum { NONE, TOP, DOWN, TOPDOWN } Move;
 
 typedef unsigned int u_int;
 
@@ -41,6 +43,7 @@ struct biker {
     bool fast, moved, *used_mtx;
     char *color;
     u_lint totalTime;
+    Move moveType;
     pthread_t *thread;
     pthread_mutex_t *mtxs;
     bool (*try_move)(struct biker* self, u_int next_lane);
@@ -78,8 +81,10 @@ struct scbr_s {
 typedef struct scbr_s* Scoreboard;
 
 typedef struct {
-    pthread_mutex_t **mtxs;
+    pthread_mutex_t **mtxs; // Their
+    pthread_mutex_t mymtx; // Mine
     u_int **road;
+    u_int *nbpl; // Number of bikers per lane
     u_int length, lanes, laps;
     bool (*exists)(int i, int j);
 } Road;

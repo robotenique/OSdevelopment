@@ -30,8 +30,8 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 9;
-    u_int num_laps = 5;
+    u_int num_bikers = 15;
+    u_int num_laps = 20;
     u_int road_sz = 10;
     DEBUG_MODE = true;
     init(num_bikers, num_laps, road_sz);

@@ -215,6 +215,10 @@ void create_speedway(u_int d, u_int laps) {
         for(int j = 0; j < NUM_LANES; j++)
             pthread_mutex_init(&(speedway.mtxs[i][j]), NULL);
     }
+    pthread_mutex_init(&(speedway.mymtx), NULL);
+    speedway.nbpl = emalloc(NUM_LANES*sizeof(u_int));
+    for (int i = 0; i < NUM_LANES; i++)
+        speedway.nbpl[i] = 0;
     speedway.exists = &exists;
 }
 
