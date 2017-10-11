@@ -144,7 +144,7 @@ Stacklist new_Stacklist(u_int threshold){
 
 void add_SCCstack(Stacklist sl, Stack newscc){
     // Don't add if the SCC has more than the threshold number of components
-    if(newscc->top >= sl->threshold)
+    if(newscc->top < sl->threshold)
     return;
   scc_node* t = emalloc(sizeof(scc_node));
   t->scc = newscc;
@@ -163,7 +163,7 @@ void debugStacklist(Stacklist sl){
 
 int main() {
     Grafinho g = new_grafinho(11);
-    Stacklist mysccs = new_Stacklist(200);
+    Stacklist mysccs = new_Stacklist(0);
     add_edge(g, 0, 1);add_edge(g, 0, 3);
     add_edge(g, 1, 2);add_edge(g, 1, 4);
     add_edge(g, 2, 0);add_edge(g, 2, 6);
