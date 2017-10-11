@@ -59,7 +59,11 @@ void SCC(Grafinho g, Stacklist sl);
 
 void reset_grafinho(Grafinho g);
 
+void destroy_grafinho(Grafinho g);
+
 Stacklist new_Stacklist(u_int threshold);
+
+void destroy_Stacklist(Stacklist sl);
 
 // TODO: Remove this two below
 void debugAdj(AdjList adj);

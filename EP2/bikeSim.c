@@ -41,15 +41,15 @@ int main(int argc, char const *argv[]) {
     u_int par = 1;
 
     //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
-    printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
+    //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
     pthread_barrier_wait(&barr);
-    printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
+    //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
     debug_road();
     while (sb->act_num_bikers != 0) {
         //sleep(2);
-        printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
+        //printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
-        printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
+        //printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
 
         if (sb->act_num_bikers >= speedway.length) {
             // Get the SCCs
@@ -68,9 +68,12 @@ int main(int argc, char const *argv[]) {
                 while (!empty(x->scc))
                     speedway.moveTypes[bikers[pop(x->scc)]->j] = NONE;
 
+            destroy_Stacklist(sccl);
+
 
             // Invert directions
-            for (int i = 0; i < 9; i++) {
+            // TODO: HARDCODED 9??
+            for (int i = 0; i < NUM_LANES - 1; i++) {
                 if (speedway.moveTypes[i] & DOWN & ~(speedway.moveTypes[i+1] & TOP)) {
                     speedway.moveTypes[i] ^= DOWN;
                     speedway.moveTypes[i+1] |= TOP;
@@ -88,17 +91,17 @@ int main(int argc, char const *argv[]) {
         if (sb->act_num_bikers == 0)
             break;
 
-        printf("\t ---> ****MAIN***** ESPERANDO BARR3\n");
+        //printf("\t ---> ****MAIN***** ESPERANDO BARR3\n");
         pthread_barrier_wait(&prep_barr);
-        printf("\t <--- ****MAIN***** CHEGOU BARR3\n");
+        //printf("\t <--- ****MAIN***** CHEGOU BARR3\n");
 
         if (sb->act_num_bikers == 0)
             break;
 
         //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
-        printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
+        //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
-        printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
+        //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
 
         if (par%3 == 0)
             debug_road();
@@ -106,9 +109,9 @@ int main(int argc, char const *argv[]) {
     }
     destroy_all();
     for (size_t i = 0; i < dummy_threads->i; i++) {
-        printf("VRAU\n");
+        //printf("VRAU\n");
         pthread_join(dummy_threads->dummyT[i], NULL);
-        printf("JOINED - %lu\n", i);
+        //printf("JOINED - %lu\n", i);
     }
 
     destroy(num_bikers);
@@ -164,4 +167,5 @@ void destroy(u_int num_bikers) {
     destroy_scoreboard(sb);
     destroy_bikers(num_bikers);
     destroy_buffer(broken);
+    destroy_dummy_threads();
 }

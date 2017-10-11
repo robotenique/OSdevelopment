@@ -45,6 +45,13 @@ void reset_grafinho(Grafinho g){
     }
 }
 
+void destroy_grafinho(Grafinho g){
+    reset_grafinho(g);
+    free(g->adj->vertexList);
+    free(g->adj);
+    free(g);
+}
+
 void add_edge(Grafinho g, u_int from, u_int to) {
     AdjList adj = g->adj;
     List temp = emalloc(sizeof(struct list_s));
@@ -79,13 +86,11 @@ void SCC_aux(Grafinho g, u_int u, u_int disc[], u_int low[],
         while (top(st) != u) {
             w = top(st);
             push(newscc, w);
-            printf("%d ", w);
             stackMember[w] = false;
             pop(st);
         }
         w = top(st);
         push(newscc, w);
-        printf("%d\n", w);
         stackMember[w] = false;
         pop(st);
         add_SCCstack(sl, newscc);
@@ -107,6 +112,10 @@ void SCC(Grafinho g, Stacklist sl) {
         if(disc[i] == -1)
             SCC_aux(g, i, disc, low, st, stackMember, sl);
     }
+    destroy_stack(st);
+    free(disc);
+    free(low);
+    free(stackMember);
 }
 
 void debugAdj(AdjList adj) {
@@ -129,12 +138,25 @@ Stacklist new_Stacklist(u_int threshold){
 
 void add_SCCstack(Stacklist sl, Stack newscc){
     // Don't add if the SCC has more than the threshold number of components
-    if(newscc->top < sl->threshold)
+    if(newscc->top < sl->threshold){
+        destroy_stack(newscc);
         return;
+    }
     scc_node* t = emalloc(sizeof(scc_node));
     t->scc = newscc;
     t->next = sl->head == NULL ? NULL : sl->head;
     sl->head = t;
+}
+
+void destroy_Stacklist(Stacklist sl){
+    scc_node* tmp;
+    while (sl->head != NULL) {
+        tmp = sl->head;
+        sl->head = sl->head->next;
+        destroy_stack(tmp->scc);
+        free(tmp);
+     }
+     free(sl);
 }
 
 void debugStacklist(Stacklist sl){
