@@ -74,11 +74,11 @@ int main(int argc, char const *argv[]) {
             // Invert directions
             // TODO: HARDCODED 9??
             for (int i = 0; i < NUM_LANES - 1; i++) {
-                if (speedway.moveTypes[i] & DOWN & ~(speedway.moveTypes[i+1] & TOP)) {
+                if ((speedway.moveTypes[i] & DOWN) && !(speedway.moveTypes[i+1] & TOP)) {
                     speedway.moveTypes[i] ^= DOWN;
                     speedway.moveTypes[i+1] |= TOP;
                 }
-                else if (~(speedway.moveTypes[i] & DOWN) & speedway.moveTypes[i+1] & TOP) {
+                else if (!(speedway.moveTypes[i] & DOWN) && (speedway.moveTypes[i+1] & TOP)) {
                     speedway.moveTypes[i] |= DOWN;
                     speedway.moveTypes[i+1] ^= TOP;
                 }
