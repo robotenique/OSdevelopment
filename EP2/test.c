@@ -14,9 +14,11 @@ int main() {
     add_edge(g, 7, 9);
     add_edge(g, 8, 9);
     add_edge(g, 9, 8);
-    //debugAdj(g->adj);
+    debugAdj(g->adj);
     SCC(g, mysccs);
     debugStacklist(mysccs);
+    reset_grafinho(g);
+    debugAdj(g->adj);
 
 
     /*Graph g = new_graph(7);

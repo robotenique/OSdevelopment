@@ -57,6 +57,8 @@ void add_edge(Grafinho g, u_int from, u_int to);
 
 void SCC(Grafinho g, Stacklist sl);
 
+void reset_grafinho(Grafinho g);
+
 Stacklist new_Stacklist(u_int threshold);
 
 // TODO: Remove this two below
