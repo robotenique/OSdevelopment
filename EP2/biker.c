@@ -153,7 +153,7 @@ void* biker_loop(void *arg) {
                 moved = self->try_move(self, j - 1);
             if (!moved)
                 moved = self->try_move(self, j);
-            if (!moved && speedway.exists(i, j + 1) && (self->moveType & DOWN) && speedway.nbpl[j+1] < speedway.length-1 && ((mem = speedway.road[i][j+1]) == -1 || (mem != -1 && bikers[mem]->moved)))
+            if (!moved && speedway.exists(i, j + 1) && speedway.nbpl[j+1] < speedway.length-1 && ((mem = speedway.road[i][j+1]) == -1 || (mem != -1 && bikers[mem]->moved)))
                 moved = self->try_move(self, j + 1);
             self->moved = true;
         }
