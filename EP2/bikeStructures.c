@@ -30,7 +30,7 @@ void print_dummy();
  * @return  the new position for the buffer
  */
 u_int reallocate_scoreboard(Scoreboard sb, Biker x) {
-    printf("REALOCANDO SCOREBOARD....\n");
+    //printf("REALOCANDO SCOREBOARD....\n");
     u_int new_sz = sb->n * 2;
     Buffer *temp = emalloc(new_sz*sizeof(Buffer));
     for (size_t i = 0; i < new_sz; temp[i] = NULL, i++);
