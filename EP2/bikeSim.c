@@ -31,7 +31,7 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 15;
+    u_int num_bikers = 19;
     u_int num_laps = 20;
     u_int road_sz = 10;
     DEBUG_MODE = true;
@@ -41,22 +41,22 @@ int main(int argc, char const *argv[]) {
     u_int par = 1;
 
     //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
-    printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
+    //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
     pthread_barrier_wait(&barr);
-    printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
+    //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
     debug_road();
     while (sb->act_num_bikers != 0) {
         //sleep(2);
-        printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
+        //printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
-        printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
+        //printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
 
         if (sb->act_num_bikers >= speedway.length) {
             // Get the SCCs
-            Stacklist sccs = new_Stacklist(speedway.length - 1);
-            SCC(g, mysccs);
-            //Stack mem = getCycles(speedway.g);
-
+            Stacklist sccl = new_Stacklist(speedway.length - 1);
+            SCC(speedway.g, sccl);
+            //debugAdj(speedway.g->adj);
+            //debugStacklist(sccl);
             // Reset moveTypes array
             speedway.moveTypes[0] = DOWN;
             for (int i = 1; i < NUM_LANES-1; i++)
@@ -64,13 +64,16 @@ int main(int argc, char const *argv[]) {
             speedway.moveTypes[NUM_LANES-1] = TOP;
 
             // Put NONE at all cycle vertices' lines
-            for (scc_node* x = mysccs->head; x != NULL; x = x->next)
+            for (scc_node* x = sccl->head; x != NULL; x = x->next)
                 while (!empty(x->scc))
                     speedway.moveTypes[bikers[pop(x->scc)]->j] = NONE;
 
+            destroy_Stacklist(sccl);
+
 
             // Invert directions
-            for (int i = 0; i < 9; i++) {
+            // TODO: HARDCODED 9??
+            for (int i = 0; i < NUM_LANES - 1; i++) {
                 if (speedway.moveTypes[i] & DOWN & ~(speedway.moveTypes[i+1] & TOP)) {
                     speedway.moveTypes[i] ^= DOWN;
                     speedway.moveTypes[i+1] |= TOP;
@@ -88,29 +91,27 @@ int main(int argc, char const *argv[]) {
         if (sb->act_num_bikers == 0)
             break;
 
-        printf("\t ---> ****MAIN***** ESPERANDO BARR3\n");
+        //printf("\t ---> ****MAIN***** ESPERANDO BARR3\n");
         pthread_barrier_wait(&prep_barr);
-        printf("\t <--- ****MAIN***** CHEGOU BARR3\n");
+        //printf("\t <--- ****MAIN***** CHEGOU BARR3\n");
 
         if (sb->act_num_bikers == 0)
             break;
 
         //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
-        printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
+        //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
-        printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
+        //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
 
         if (par%3 == 0)
             debug_road();
         par++;
     }
-    destroy_all();
-    for (size_t i = 0; i < dummy_threads->i; i++) {
-        printf("VRAU\n");
-        pthread_join(dummy_threads->dummyT[i], NULL);
-        printf("JOINED - %lu\n", i);
-    }
 
+
+    destroy_all();
+    for (size_t i = 0; i < dummy_threads->i; i++)
+        pthread_join(dummy_threads->dummyT[i], NULL);
     destroy(num_bikers);
     return 0;
 }
@@ -164,4 +165,5 @@ void destroy(u_int num_bikers) {
     destroy_scoreboard(sb);
     destroy_bikers(num_bikers);
     destroy_buffer(broken);
+    destroy_dummy_threads();
 }

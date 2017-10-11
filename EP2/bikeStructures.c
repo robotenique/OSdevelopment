@@ -238,11 +238,11 @@ void destroy_speedway() {
         free(speedway.road[i]);
         free(speedway.mtxs[i]);
     }
-    //TODO: destroy the GRAPH!!! destroy_graph(speedway.g);
     free(speedway.nbpl);
     free(speedway.moveTypes);
     free(speedway.road);
     free(speedway.mtxs);
+    destroy_grafinho(speedway.g);
 }
 
 Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
@@ -291,6 +291,12 @@ void create_dummy_threads(u_int numBikers) {
     dummy_threads->dummyT = emalloc(numBikers*sizeof(pthread_t));
     dummy_threads->dummy_func = &dummy;
     dummy_threads->run_next = &run_next;
+}
+
+void destroy_dummy_threads(){
+    pthread_mutex_destroy(&(dummy_threads->dummy_mtx));
+    free(dummy_threads->dummyT);
+    free(dummy_threads);
 }
 
 void print_dummy() {

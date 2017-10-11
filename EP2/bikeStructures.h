@@ -70,8 +70,8 @@ struct scbr_s {
 typedef struct scbr_s* Scoreboard;
 
 typedef struct {
-    pthread_mutex_t **mtxs; // Their
-    pthread_mutex_t mymtx; // Mine
+    pthread_mutex_t **mtxs; // Theirs (each road position)
+    pthread_mutex_t mymtx; // Mine (the Road itself)
     u_int **road;
     u_int *nbpl; // Number of bikers per lane
     Move *moveTypes; // Move type of each lane
@@ -218,5 +218,18 @@ void* biker_loop(void *arg);
  * @return
  */
 void create_dummy_threads(u_int numBikers);
-// TODO: destroy the dummy threads
+
+/*
+ * Function: destroy_dummy_threads
+ * --------------------------------------------------------
+ * Destroy the global dummy_thread structure. Should only be
+ * called after all dummy threads that were created were
+ * destroyed
+ *
+ * @args
+ *
+ * @return
+ */
+void destroy_dummy_threads();
+
 #endif
