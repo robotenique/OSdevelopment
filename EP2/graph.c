@@ -3,86 +3,138 @@
 #include "error.h"
 #include "bikeStructures.h"
 
-Graph new_graph(u_int numBikers) {
-    Graph g = emalloc(sizeof(struct graph_s));
-    g->vtcs = emalloc(numBikers*sizeof(Stack));
-    for (size_t i = 0; i < numBikers; i++)
-        g->vtcs[i] = new_stack(4);
-    g->size = numBikers;
+void add_SCCstack(Stacklist st, Stack newscc);
+
+// Global variable for the SCC
+static u_int timeG = 0;
+
+u_int min(u_int a, u_int b) {
+  if (a <= b)
+    return a;
+  return b;
+}
+
+/*---------------------------------------------------------------------*
+ |                           Graph functions                           |
+ *---------------------------------------------------------------------*/
+
+AdjList new_adjacencyList(u_int num_vertex){
+    AdjList ret = emalloc(sizeof(struct adj_s));
+    ret->vertexList = emalloc(num_vertex*sizeof(List));
+        for (u_int i = 0; i < num_vertex; i++)
+            ret->vertexList[i] = NULL;
+    ret->size = num_vertex;
+    return ret;
+}
+
+Grafinho new_grafinho(u_int num_vertex){
+    Grafinho g = emalloc(sizeof(struct graph_2));
+    g->V = num_vertex;
+    g->adj = new_adjacencyList(g->V);
     return g;
 }
 
-void addEdge(Graph g, u_int from, u_int to) {
-    push(g->vtcs[from], to);
-}
-
-Stack getCycles(Graph g) {
-    Stack s = new_stack(g->size);
-    Stack l = new_stack(g->size);
-    Stack path = new_stack(speedway.length+1);
-    Stack res = new_stack(g->size);
-    bool *marked;
-    bool brk = false;
-    u_int aux;
-    marked = emalloc(g->size*sizeof(bool));
-    for (size_t i = 0; i < g->size; i++)
-        marked[i] = false;
-    for (size_t i = 0; i < g->size; i++) {
-        if (marked[i]) continue;
-        push(s, i);
-        push(l, -1);
-        while (!empty(s)) {
-            brk = false;
-            while (!brk && !empty(s)) {
-                u_int last = pop(l);
-                u_int now = pop(s);
-                printf("pop %u <- %u\n", now, last);
-                marked[now] = true;
-                while ((aux = top(path)) != last && aux != -1 && last != -1)
-                printf("pop %u from path\n", pop(path));
-                push(path, now);
-                printf("push %u at path\n", now);
-                Stack edges = g->vtcs[now];
-                for (u_int i = 0; i < edges->top; i++) {
-                    printf("%d == %d\n", path->v[0], edges->v[i]);
-                    if (!empty(path) && path->v[0] == edges->v[i]) {
-                        push(path, edges->v[i]);
-                        printf("BREAK\n");
-                        for (int i = 0; i < path->top; i++)
-                        printf("%d\n", path->v[i]);
-                        brk = true;
-                    }
-                    if (!marked[edges->v[i]]) {
-                        push(s, edges->v[i]);
-                        push(l, now);
-                        printf("push %u <- %u\n", edges->v[i], now);
-                    }
-                }
-            }
-            if (path->top > 1 && path->v[0] == top(path)) {
-                for (int i = 0; i < path->top; i++)
-                    printf("%d\n", path->v[i]);
-                pop(path);
-                for (int i = 0; i < path->top; i++)
-                    push(res, path->v[i]);
-            }
-        }
-        reset(path);
+void add_edge(Grafinho g, u_int from, u_int to) {
+    AdjList adj = g->adj;
+    List temp = emalloc(sizeof(struct list_s));
+    temp->next = NULL;
+    temp->to = to;
+    if(adj->vertexList[from] == NULL){
+        adj->vertexList[from] = temp;
     }
-    return res;
+    else{
+        temp->next = adj->vertexList[from];
+        adj->vertexList[from] = temp;
+    }
 }
 
-void reset_graph(Graph g) {
-    for (int i = 0; i < g->size; i++)
-        reset(g->vtcs[i]);
+void SCC_aux(Grafinho g, u_int u, u_int disc[], u_int low[],
+             Stack st, bool stackMember[], Stacklist sl){
+    disc[u] = low[u] = ++timeG;
+    push(st, u);
+    stackMember[u] = true;
+    for (List t = g->adj->vertexList[u]; t != NULL; t = t->next) {
+        u_int v = t->to;
+        if(disc[v] == -1){
+            SCC_aux(g, v, disc, low, st, stackMember, sl);
+            low[u] = min(low[u], low[v]);
+        }
+        else if(stackMember[v])
+            low[u] = min(low[u], disc[v]);
+    }
+    u_int w = 0;
+    if(low[u] == disc[u]) {
+        Stack newscc = new_stack(g->V);
+        while (top(st) != u) {
+            w = top(st);
+            push(newscc, w);
+            printf("%d ", w);
+            stackMember[w] = false;
+            pop(st);
+        }
+        w = top(st);
+        push(newscc, w);
+        printf("%d\n", w);
+        stackMember[w] = false;
+        pop(st);
+        add_SCCstack(sl, newscc);
+    }
 }
 
-void destroy_graph(Graph g) {
-    for (int i = 0; i < g->size; i++)
-        destroy_stack(g->vtcs[i]);
-    free(g->vtcs);
-    free(g);
+void SCC(Grafinho g, Stacklist sl) {
+    u_int* disc = emalloc(g->V*sizeof(u_int));
+    u_int* low = emalloc(g->V*sizeof(u_int));
+    bool* stackMember = emalloc(g->V*sizeof(u_int));
+    Stack st = new_stack(g->V);
+    timeG = 0;
+    for (size_t i = 0; i < g->V; i++) {
+        disc[i] = -1;
+        low[i] = -1;
+        stackMember[i] = false;
+    }
+    for (size_t i = 0; i < g->V; i++) {
+        if(disc[i] == -1)
+            SCC_aux(g, i, disc, low, st, stackMember, sl);
+    }
 }
+
+void debugAdj(AdjList adj) {
+    for (u_int i = 0; i < adj->size; i++) {
+        printf("FROM = %d :  ", i);
+        for (List t = adj->vertexList[i]; t != NULL ; t = t->next)
+            printf("%d, ", t->to);
+        printf("\n");
+    }
+}
+
+Stacklist new_Stacklist(u_int threshold){
+    Stacklist sl = emalloc(sizeof(struct stacklist_s));
+    sl->head = NULL;
+    sl->threshold = threshold;
+    return sl;
+}
+
+void add_SCCstack(Stacklist sl, Stack newscc){
+    // Don't add if the SCC has more than the threshold number of components
+    if(newscc->top < sl->threshold)
+        return;
+    scc_node* t = emalloc(sizeof(scc_node));
+    t->scc = newscc;
+    t->next = sl->head == NULL ? NULL : sl->head;
+    sl->head = t;
+}
+
+void debugStacklist(Stacklist sl){
+    for (scc_node* x = sl->head; x != NULL; x = x->next) {
+        while (!empty(x->scc))
+            printf("%d | ", pop(x->scc));
+        printf("\n");
+    }
+}
+
+/*---------------------------------------------------------------------
+ |                           Stack functions                           |
+  ---------------------------------------------------------------------*/
 
 Stack new_stack(u_int size) {
     Stack s = emalloc(sizeof(struct stack_s));
