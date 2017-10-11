@@ -15,6 +15,7 @@
  #include "error.h"
  #include "randomizer.h"
  #include "debugger.h"
+ #include "graph.h"
 
  void init(u_int num_bikers, u_int num_laps, u_int road_sz);
  void destroy(u_int num_bikers);
@@ -40,14 +41,52 @@ int main(int argc, char const *argv[]) {
     u_int par = 1;
 
     //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
-    printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
+    printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
     pthread_barrier_wait(&barr);
+    printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
     debug_road();
     while (sb->act_num_bikers != 0) {
         //sleep(2);
         printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
         printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
+
+        if (sb->act_num_bikers >= speedway.length) {
+            // Get the cycle
+            //Stack mem = getCycles(speedway.g);
+
+            // Reset moveTypes array
+            speedway.moveTypes[0] = DOWN;
+            for (int i = 1; i < NUM_LANES-1; i++)
+                speedway.moveTypes[i] = TOPDOWN;
+            speedway.moveTypes[NUM_LANES-1] = TOP;
+
+            // Put NONE at all cycle vertices' lines
+            //for (int i = 0; i < mem->top; i++)
+            //    speedway.moveTypes[bikers[mem ->v[i]]->j] = NONE;
+
+            // Invert directions
+            for (int i = 0; i < 9; i++) {
+                if (speedway.moveTypes[i] & DOWN & ~(speedway.moveTypes[i+1] & TOP)) {
+                    speedway.moveTypes[i] ^= DOWN;
+                    speedway.moveTypes[i+1] |= TOP;
+                }
+                else if (~(speedway.moveTypes[i] & DOWN) & speedway.moveTypes[i+1] & TOP) {
+                    speedway.moveTypes[i] |= DOWN;
+                    speedway.moveTypes[i+1] ^= TOP;
+                }
+            }
+
+            // Reset the graph
+            //reset_graph(speedway.g);
+        }
+
+        if (sb->act_num_bikers == 0)
+            break;
+
+        printf("\t ---> ****MAIN***** ESPERANDO BARR3\n");
+        pthread_barrier_wait(&prep_barr);
+        printf("\t <--- ****MAIN***** CHEGOU BARR3\n");
 
         if (sb->act_num_bikers == 0)
             break;
@@ -91,10 +130,12 @@ void init(u_int num_bikers, u_int num_laps, u_int road_sz) {
     pthread_barrier_init(&barr, NULL, num_bikers + 1);
     // Debug barrier: wait the debugger, then proceed TODO: remove?
     pthread_barrier_init(&debugger_barr, NULL, num_bikers + 1);
+    // Barrier that checks for any cycle
+    pthread_barrier_init(&prep_barr, NULL, num_bikers + 1);
     // Make all bikers start at the same time
     pthread_barrier_init(&start_shot, NULL, num_bikers + 1);
 
-    create_speedway(road_sz, num_laps);
+    create_speedway(road_sz, num_laps, num_bikers);
     broken = new_buffer(-1, num_bikers);
     sb = new_scoreboard(num_laps, num_bikers);
     create_dummy_threads(num_bikers);

@@ -15,6 +15,7 @@
 #include "bikeStructures.h"
 #include "debugger.h"
 #include "randomizer.h"
+#include "graph.h"
 void print_dummy();
 /*
  * Function: reallocate_scoreboard
@@ -173,6 +174,10 @@ void* dummy(void *arg) {
         pthread_barrier_wait(&debugger_barr);
         if (sb->act_num_bikers == 0)
             break;
+        //printf("ESPERANDOOOOOOOOOOO DUMMY_3\n");
+        pthread_barrier_wait(&prep_barr);
+        if (sb->act_num_bikers == 0)
+            break;
         //printf("ESPERANDOOOOOOOOOOO DUMMY_1\n");
         pthread_barrier_wait(&barr);
 
@@ -199,7 +204,7 @@ void run_next(DummyThreads dt) {
     V(&(dt->dummy_mtx));
 }
 
-void create_speedway(u_int d, u_int laps) {
+void create_speedway(u_int d, u_int laps, u_int num_bikers) {
     speedway.road = emalloc(d*sizeof(u_int*));
     speedway.length = d;
     speedway.lanes = NUM_LANES;
@@ -219,6 +224,12 @@ void create_speedway(u_int d, u_int laps) {
     speedway.nbpl = emalloc(NUM_LANES*sizeof(u_int));
     for (int i = 0; i < NUM_LANES; i++)
         speedway.nbpl[i] = 0;
+    speedway.moveTypes = emalloc(NUM_LANES*sizeof(Move));
+    speedway.moveTypes[0] = DOWN;
+    for (int i = 1; i < NUM_LANES-1; i++)
+        speedway.moveTypes[i] = TOPDOWN;
+    speedway.moveTypes[NUM_LANES-1] = TOP;
+    speedway.g = new_graph(num_bikers);
     speedway.exists = &exists;
 }
 
@@ -227,6 +238,9 @@ void destroy_speedway() {
         free(speedway.road[i]);
         free(speedway.mtxs[i]);
     }
+    destroy_graph(speedway.g);
+    free(speedway.nbpl);
+    free(speedway.moveTypes);
     free(speedway.road);
     free(speedway.mtxs);
 }
