@@ -75,7 +75,7 @@ typedef struct {
     u_int **road;
     u_int *nbpl; // Number of bikers per lane
     Move *moveTypes; // Move type of each lane
-    Graph g;
+    Grafinho g;
     u_int length, lanes, laps;
     bool (*exists)(int i, int j);
 } Road;

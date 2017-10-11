@@ -229,7 +229,7 @@ void create_speedway(u_int d, u_int laps, u_int num_bikers) {
     for (int i = 1; i < NUM_LANES-1; i++)
         speedway.moveTypes[i] = TOPDOWN;
     speedway.moveTypes[NUM_LANES-1] = TOP;
-    speedway.g = new_graph(num_bikers);
+    speedway.g = new_grafinho(num_bikers);
     speedway.exists = &exists;
 }
 
@@ -238,7 +238,7 @@ void destroy_speedway() {
         free(speedway.road[i]);
         free(speedway.mtxs[i]);
     }
-    destroy_graph(speedway.g);
+    //TODO: destroy the GRAPH!!! destroy_graph(speedway.g);
     free(speedway.nbpl);
     free(speedway.moveTypes);
     free(speedway.road);
