@@ -217,14 +217,14 @@ void* biker_loop(void *arg) {
         j = self->j; // The current lane
         next_meter = (i + 1)%speedway.length;
 
-        /*P(&(speedway.mymtx));
+        P(&(speedway.mymtx));
         if (speedway.exists(i, j-1) && (mem = speedway.road[i][j-1]) != -1)
-            addEdge(speedway.g, self->id, mem);
+            add_edge(speedway.g, self->id, mem);
         for (int k = -1; k < 2; k++) {
             if (speedway.exists(next_meter, j+k) && (mem = speedway.road[next_meter][j+k]) != -1)
-                addEdge(speedway.g, self->id, mem);
+                add_edge(speedway.g, self->id, mem);
         }
-        V(&(speedway.mymtx));*/
+        V(&(speedway.mymtx));
         //printf("ESPERANDOOOOOOOOOOO 2 %d\n", self->id);
         pthread_barrier_wait(&debugger_barr);
         pthread_barrier_wait(&prep_barr);

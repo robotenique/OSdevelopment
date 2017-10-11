@@ -45,7 +45,6 @@ void reset_grafinho(Grafinho g){
     }
 }
 
-
 void add_edge(Grafinho g, u_int from, u_int to) {
     AdjList adj = g->adj;
     List temp = emalloc(sizeof(struct list_s));
@@ -139,11 +138,13 @@ void add_SCCstack(Stacklist sl, Stack newscc){
 }
 
 void debugStacklist(Stacklist sl){
+    printf("Debug Stacklist {\n");
     for (scc_node* x = sl->head; x != NULL; x = x->next) {
-        while (!empty(x->scc))
-            printf("%d | ", pop(x->scc));
-        printf("\n");
+        for (size_t i = 0; i < x->scc->top - 1; i++)
+            printf("%d , ", x->scc->v[i]);
+        printf("%d\n", x->scc->v[x->scc->top - 1]);
     }
+    printf("}\n");
 }
 
 /*---------------------------------------------------------------------

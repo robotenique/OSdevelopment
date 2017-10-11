@@ -31,7 +31,7 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 15;
+    u_int num_bikers = 19;
     u_int num_laps = 20;
     u_int road_sz = 10;
     DEBUG_MODE = true;
@@ -53,10 +53,10 @@ int main(int argc, char const *argv[]) {
 
         if (sb->act_num_bikers >= speedway.length) {
             // Get the SCCs
-            Stacklist sccs = new_Stacklist(speedway.length - 1);
-            SCC(g, mysccs);
-            //Stack mem = getCycles(speedway.g);
-
+            Stacklist sccl = new_Stacklist(speedway.length - 1);
+            SCC(speedway.g, sccl);
+            //debugAdj(speedway.g->adj);
+            //debugStacklist(sccl);
             // Reset moveTypes array
             speedway.moveTypes[0] = DOWN;
             for (int i = 1; i < NUM_LANES-1; i++)
@@ -64,7 +64,7 @@ int main(int argc, char const *argv[]) {
             speedway.moveTypes[NUM_LANES-1] = TOP;
 
             // Put NONE at all cycle vertices' lines
-            for (scc_node* x = mysccs->head; x != NULL; x = x->next)
+            for (scc_node* x = sccl->head; x != NULL; x = x->next)
                 while (!empty(x->scc))
                     speedway.moveTypes[bikers[pop(x->scc)]->j] = NONE;
 
