@@ -107,13 +107,11 @@ int main(int argc, char const *argv[]) {
             debug_road();
         par++;
     }
-    destroy_all();
-    for (size_t i = 0; i < dummy_threads->i; i++) {
-        //printf("VRAU\n");
-        pthread_join(dummy_threads->dummyT[i], NULL);
-        //printf("JOINED - %lu\n", i);
-    }
 
+
+    destroy_all();
+    for (size_t i = 0; i < dummy_threads->i; i++)
+        pthread_join(dummy_threads->dummyT[i], NULL);
     destroy(num_bikers);
     return 0;
 }
