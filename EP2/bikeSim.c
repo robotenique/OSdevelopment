@@ -52,7 +52,9 @@ int main(int argc, char const *argv[]) {
         printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
 
         if (sb->act_num_bikers >= speedway.length) {
-            // Get the cycle
+            // Get the SCCs
+            Stacklist sccs = new_Stacklist(speedway.length - 1);
+            SCC(g, mysccs);
             //Stack mem = getCycles(speedway.g);
 
             // Reset moveTypes array
@@ -62,8 +64,10 @@ int main(int argc, char const *argv[]) {
             speedway.moveTypes[NUM_LANES-1] = TOP;
 
             // Put NONE at all cycle vertices' lines
-            //for (int i = 0; i < mem->top; i++)
-            //    speedway.moveTypes[bikers[mem ->v[i]]->j] = NONE;
+            for (scc_node* x = mysccs->head; x != NULL; x = x->next)
+                while (!empty(x->scc))
+                    speedway.moveTypes[bikers[pop(x->scc)]->j] = NONE;
+
 
             // Invert directions
             for (int i = 0; i < 9; i++) {
@@ -78,7 +82,7 @@ int main(int argc, char const *argv[]) {
             }
 
             // Reset the graph
-            //reset_graph(speedway.g);
+            reset_grafinho(speedway.g);
         }
 
         if (sb->act_num_bikers == 0)

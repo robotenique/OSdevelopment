@@ -34,6 +34,18 @@ Grafinho new_grafinho(u_int num_vertex){
     return g;
 }
 
+void reset_grafinho(Grafinho g){
+    for (int i = 0; i < g->adj->size; i++) {
+        List tmp;
+        while (g->adj->vertexList[i] != NULL) {
+            tmp = g->adj->vertexList[i];
+            g->adj->vertexList[i] = g->adj->vertexList[i]->next;
+            free(tmp);
+         }
+    }
+}
+
+
 void add_edge(Grafinho g, u_int from, u_int to) {
     AdjList adj = g->adj;
     List temp = emalloc(sizeof(struct list_s));
@@ -84,7 +96,7 @@ void SCC_aux(Grafinho g, u_int u, u_int disc[], u_int low[],
 void SCC(Grafinho g, Stacklist sl) {
     u_int* disc = emalloc(g->V*sizeof(u_int));
     u_int* low = emalloc(g->V*sizeof(u_int));
-    bool* stackMember = emalloc(g->V*sizeof(u_int));
+    bool* stackMember = emalloc(g->V*sizeof(bool));
     Stack st = new_stack(g->V);
     timeG = 0;
     for (size_t i = 0; i < g->V; i++) {
@@ -101,6 +113,8 @@ void SCC(Grafinho g, Stacklist sl) {
 void debugAdj(AdjList adj) {
     for (u_int i = 0; i < adj->size; i++) {
         printf("FROM = %d :  ", i);
+        if(adj->vertexList[i] == NULL)
+            printf("Nothing from vertex %d...\n", i);
         for (List t = adj->vertexList[i]; t != NULL ; t = t->next)
             printf("%d, ", t->to);
         printf("\n");
