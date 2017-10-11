@@ -40,7 +40,6 @@ void random_initialize(u_int nBikers) {
 }
 
 void debug_road() {
-    printf("LANES = %u\n",speedway.lanes );
     printf("+");
     for (size_t i = 0; i < speedway.length; printf("-"), i++);
     printf("+\n");
@@ -61,9 +60,10 @@ void debug_road() {
 }
 
 void debug_buffer(Buffer b) {
-    printf("LAP = %u, i = %u, SIZE = %u\n", b->lap, b->i, b->size);
+    //printf("LAP = %u, i = %u, SIZE = %u\n", b->lap, b->i, b->size);
     for (size_t i = 0; i < b->i; i++)
-        printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+        continue;
+        //printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
 }
 
 void print_prog_name() {

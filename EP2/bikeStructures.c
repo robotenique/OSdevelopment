@@ -70,23 +70,25 @@ int compareTo(const void *a, const void *b) {
  * @return
  */
 void print_buffer(Buffer b) {
-    printf("Relatório da volta %u\n", b->lap + 1);
+    //printf("Relatório da volta %u\n", b->lap + 1);
     for (size_t i = 0; i < b->i; i++)
-        printf("%luº - Biker %u\n", i+1, b->data[i].id);
+        //printf("%luº - Biker %u\n", i+1, b->data[i].id);
     if (b->lap%10 == 0) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
-            printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+            continue;
+            //printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
     }
     if (b->lap == speedway.laps - 1) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         qsort(broken->data, broken->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
+            continue;
             // TODO : Add time to this print
-            printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
+            //printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
         for (size_t i = 0; i < broken->i; i++) {
             Biker x = bikers[broken->data[i].id];
-            printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap, x->id, ((float)x->totalTime)/1000.0, x->score);
+            //printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap, x->id, ((float)x->totalTime)/1000.0, x->score);
         }
     }
 }
@@ -129,7 +131,7 @@ void add_score(Scoreboard sb, Biker x) {
     V(&(b->mtx));
 
     if(sb->scores[pos] != NULL && b->i == sb->tot_num_bikers) {
-        printf("DESTRUINDO buffer\n"); // TODO: Delete this buffer and print everything...
+        //printf("DESTRUINDO buffer\n"); // TODO: Delete this buffer and print everything...
         print_buffer(b);
         destroy_buffer(sb->scores[pos]);
         sb->scores[pos] = NULL;
@@ -300,5 +302,6 @@ void destroy_dummy_threads(){
 }
 
 void print_dummy() {
-    printf("NO MOMENTO TEMOS = %u ...........\n", dummy_threads->i);
+    return;
+    //printf("NO MOMENTO TEMOS = %u ...........\n", dummy_threads->i);
 }

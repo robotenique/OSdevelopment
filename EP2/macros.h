@@ -5,7 +5,7 @@
 
 #define P(x) pthread_mutex_lock(x)
 #define V(x) pthread_mutex_unlock(x)
-#define NUM_LANES 4
+#define NUM_LANES 10
 
 /* Simple types definition */
 typedef enum { false, true } bool;

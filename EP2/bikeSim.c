@@ -10,6 +10,8 @@
  #include <stdio.h>
  #include <pthread.h>
  #include <unistd.h> // sleep
+ #include <time.h> // nanosleep
+ #include <math.h> // floor
  #include "bikeStructures.h"
  #include "biker.h"
  #include "error.h"
@@ -31,9 +33,9 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 19;
+    u_int num_bikers = 48;
     u_int num_laps = 20;
-    u_int road_sz = 10;
+    u_int road_sz = 40;
     DEBUG_MODE = true;
     init(num_bikers, num_laps, road_sz);
     debug_road();
@@ -46,7 +48,6 @@ int main(int argc, char const *argv[]) {
     //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
     debug_road();
     while (sb->act_num_bikers != 0) {
-        //sleep(2);
         //printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
         //printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
@@ -102,7 +103,8 @@ int main(int argc, char const *argv[]) {
         //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
         //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
-
+        double dt = 0.03;
+        nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/1e-9)}, NULL);
         if (par%3 == 0)
             debug_road();
         par++;
