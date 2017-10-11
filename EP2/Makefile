@@ -13,6 +13,10 @@ LDFLAGS = -lrt -lm -pthread
 
 all: bikeSim
 
+graph: test.o error.o randomizer.o bikeStructures.o biker.o debugger.o graph.o
+		$(CC) -o $@ $^ $(LDFLAGS)
+
+
 bikeSim: bikeSim.o error.o randomizer.o bikeStructures.o biker.o debugger.o graph.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
@@ -25,4 +29,4 @@ bikeSim: bikeSim.o error.o randomizer.o bikeStructures.o biker.o debugger.o grap
 
 
 clean:
-	rm -f *.o *~ *.out bikeSim
+	rm -f *.o *~ *.out bikeSim graph
