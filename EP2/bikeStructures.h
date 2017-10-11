@@ -33,6 +33,7 @@ struct biker {
     bool fast, moved, *used_mtx;
     char *color;
     u_lint totalTime;
+    Move moveType;
     pthread_t *thread;
     pthread_mutex_t *mtxs;
     bool (*try_move)(struct biker* self, u_int next_lane);

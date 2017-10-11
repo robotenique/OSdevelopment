@@ -2,6 +2,7 @@
 #include "graph.h"
 #include "error.h"
 #include "bikeStructures.h"
+#include "debugger.h"
 
 void add_SCCstack(Stacklist st, Stack newscc);
 
@@ -162,8 +163,10 @@ void destroy_Stacklist(Stacklist sl){
 void debugStacklist(Stacklist sl){
     printf("Debug Stacklist {\n");
     for (scc_node* x = sl->head; x != NULL; x = x->next) {
-        for (size_t i = 0; i < x->scc->top - 1; i++)
-            printf("%d , ", x->scc->v[i]);
+        for (size_t i = 0; i < x->scc->top - 1; i++) {
+            Biker b = bikers[x->scc->v[i]];
+            printf("%s%d%s , ", b->color, b->id, RESET);
+        }
         printf("%d\n", x->scc->v[x->scc->top - 1]);
     }
     printf("}\n");

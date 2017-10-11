@@ -33,9 +33,9 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 48;
-    u_int num_laps = 20;
-    u_int road_sz = 40;
+    u_int num_bikers = 400;
+    u_int num_laps = 10;
+    u_int road_sz = 80;
     DEBUG_MODE = true;
     init(num_bikers, num_laps, road_sz);
     debug_road();
@@ -48,6 +48,13 @@ int main(int argc, char const *argv[]) {
     //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
     debug_road();
     while (sb->act_num_bikers != 0) {
+
+        // Reset moveTypes array
+        speedway.moveTypes[0] = DOWN;
+        for (int i = 1; i < NUM_LANES-1; i++)
+            speedway.moveTypes[i] = TOPDOWN;
+        speedway.moveTypes[NUM_LANES-1] = TOP;
+
         //printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
         //printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
@@ -56,24 +63,18 @@ int main(int argc, char const *argv[]) {
             // Get the SCCs
             Stacklist sccl = new_Stacklist(speedway.length - 1);
             SCC(speedway.g, sccl);
-            //debugAdj(speedway.g->adj);
-            //debugStacklist(sccl);
-            // Reset moveTypes array
-            speedway.moveTypes[0] = DOWN;
-            for (int i = 1; i < NUM_LANES-1; i++)
-                speedway.moveTypes[i] = TOPDOWN;
-            speedway.moveTypes[NUM_LANES-1] = TOP;
+
+            //if (sccl->head != NULL) {
+            //    debugAdj(speedway.g->adj);
+            //    debugStacklist(sccl);
+            //}
 
             // Put NONE at all cycle vertices' lines
             for (scc_node* x = sccl->head; x != NULL; x = x->next)
-                while (!empty(x->scc))
-                    speedway.moveTypes[bikers[pop(x->scc)]->j] = NONE;
-
-            destroy_Stacklist(sccl);
-
+                for (int i = 0; i < x->scc->top; i++)
+                    speedway.moveTypes[bikers[x->scc->v[i]]->j] = NONE;
 
             // Invert directions
-            // TODO: HARDCODED 9??
             for (int i = 0; i < NUM_LANES - 1; i++) {
                 if ((speedway.moveTypes[i] & DOWN) && !(speedway.moveTypes[i+1] & TOP)) {
                     speedway.moveTypes[i] ^= DOWN;
@@ -84,6 +85,15 @@ int main(int argc, char const *argv[]) {
                     speedway.moveTypes[i+1] ^= TOP;
                 }
             }
+
+            for (scc_node* x = sccl->head; x != NULL; x = x->next) {
+                while (!empty(x->scc)) {
+                    Biker b = bikers[pop(x->scc)];
+                    b->moveType = speedway.moveTypes[b->j];
+                }
+            }
+
+            destroy_Stacklist(sccl);
 
             // Reset the graph
             reset_grafinho(speedway.g);

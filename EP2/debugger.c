@@ -47,9 +47,8 @@ void debug_road() {
         printf("|");
         for (size_t j = 0; j < speedway.length; j++) {
             u_int id;
-            if((id = speedway.road[j][i]) != -1 && id < 230){
-                printf("%s0%s", colors[id], RESET);
-            }
+            if((id = speedway.road[j][i]) != -1)
+                printf("%s0%s", bikers[id]->color, RESET);
             else
                 printf("·");
         }
