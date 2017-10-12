@@ -15,6 +15,7 @@
 #include "bikeStructures.h"
 #include "debugger.h"
 #include "randomizer.h"
+#include "graph.h"
 void print_dummy();
 /*
  * Function: reallocate_scoreboard
@@ -29,7 +30,7 @@ void print_dummy();
  * @return  the new position for the buffer
  */
 u_int reallocate_scoreboard(Scoreboard sb, Biker x) {
-    printf("REALOCANDO SCOREBOARD....\n");
+    //printf("REALOCANDO SCOREBOARD....\n");
     u_int new_sz = sb->n * 2;
     Buffer *temp = emalloc(new_sz*sizeof(Buffer));
     for (size_t i = 0; i < new_sz; temp[i] = NULL, i++);
@@ -69,23 +70,25 @@ int compareTo(const void *a, const void *b) {
  * @return
  */
 void print_buffer(Buffer b) {
-    printf("Relatório da volta %u\n", b->lap + 1);
+    //printf("Relatório da volta %u\n", b->lap + 1);
     for (size_t i = 0; i < b->i; i++)
-        printf("%luº - Biker %u\n", i+1, b->data[i].id);
+        //printf("%luº - Biker %u\n", i+1, b->data[i].id);
     if (b->lap%10 == 0) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
-            printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+            continue;
+            //printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
     }
     if (b->lap == speedway.laps - 1) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         qsort(broken->data, broken->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
+            continue;
             // TODO : Add time to this print
-            printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
+            //printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
         for (size_t i = 0; i < broken->i; i++) {
             Biker x = bikers[broken->data[i].id];
-            printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap, x->id, ((float)x->totalTime)/1000.0, x->score);
+            //printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap, x->id, ((float)x->totalTime)/1000.0, x->score);
         }
     }
 }
@@ -128,7 +131,7 @@ void add_score(Scoreboard sb, Biker x) {
     V(&(b->mtx));
 
     if(sb->scores[pos] != NULL && b->i == sb->tot_num_bikers) {
-        printf("DESTRUINDO buffer\n"); // TODO: Delete this buffer and print everything...
+        //printf("DESTRUINDO buffer\n"); // TODO: Delete this buffer and print everything...
         print_buffer(b);
         destroy_buffer(sb->scores[pos]);
         sb->scores[pos] = NULL;
@@ -173,6 +176,10 @@ void* dummy(void *arg) {
         pthread_barrier_wait(&debugger_barr);
         if (sb->act_num_bikers == 0)
             break;
+        //printf("ESPERANDOOOOOOOOOOO DUMMY_3\n");
+        pthread_barrier_wait(&prep_barr);
+        if (sb->act_num_bikers == 0)
+            break;
         //printf("ESPERANDOOOOOOOOOOO DUMMY_1\n");
         pthread_barrier_wait(&barr);
 
@@ -199,7 +206,7 @@ void run_next(DummyThreads dt) {
     V(&(dt->dummy_mtx));
 }
 
-void create_speedway(u_int d, u_int laps) {
+void create_speedway(u_int d, u_int laps, u_int num_bikers) {
     speedway.road = emalloc(d*sizeof(u_int*));
     speedway.length = d;
     speedway.lanes = NUM_LANES;
@@ -215,6 +222,16 @@ void create_speedway(u_int d, u_int laps) {
         for(int j = 0; j < NUM_LANES; j++)
             pthread_mutex_init(&(speedway.mtxs[i][j]), NULL);
     }
+    pthread_mutex_init(&(speedway.mymtx), NULL);
+    speedway.nbpl = emalloc(NUM_LANES*sizeof(u_int));
+    for (int i = 0; i < NUM_LANES; i++)
+        speedway.nbpl[i] = 0;
+    speedway.moveTypes = emalloc(NUM_LANES*sizeof(Move));
+    speedway.moveTypes[0] = DOWN;
+    for (int i = 1; i < NUM_LANES-1; i++)
+        speedway.moveTypes[i] = TOPDOWN;
+    speedway.moveTypes[NUM_LANES-1] = TOP;
+    speedway.g = new_grafinho(num_bikers);
     speedway.exists = &exists;
 }
 
@@ -223,8 +240,11 @@ void destroy_speedway() {
         free(speedway.road[i]);
         free(speedway.mtxs[i]);
     }
+    free(speedway.nbpl);
+    free(speedway.moveTypes);
     free(speedway.road);
     free(speedway.mtxs);
+    destroy_grafinho(speedway.g);
 }
 
 Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
@@ -275,6 +295,13 @@ void create_dummy_threads(u_int numBikers) {
     dummy_threads->run_next = &run_next;
 }
 
+void destroy_dummy_threads(){
+    pthread_mutex_destroy(&(dummy_threads->dummy_mtx));
+    free(dummy_threads->dummyT);
+    free(dummy_threads);
+}
+
 void print_dummy() {
-    printf("NO MOMENTO TEMOS = %u ...........\n", dummy_threads->i);
+    return;
+    //printf("NO MOMENTO TEMOS = %u ...........\n", dummy_threads->i);
 }
