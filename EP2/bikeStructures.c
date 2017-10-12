@@ -73,7 +73,7 @@ void print_buffer(Buffer b) {
     printf("Relatório da volta %u\n", b->lap + 1);
     for (size_t i = 0; i < b->i; i++)
         printf("%luº - Biker %u\n", i+1, b->data[i].id);
-    if (b->lap%10 == 0) {
+    if ((b->lap + 1)%10 == 0) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
             printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
@@ -81,6 +81,7 @@ void print_buffer(Buffer b) {
     if (b->lap == speedway.laps - 1) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         qsort(broken->data, broken->i, sizeof(struct score_s), &compareTo);
+        printf("==== Relatório Final ====\n");
         for (size_t i = 0; i < b->i; i++)
             printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
         for (size_t i = 0; i < broken->i; i++) {

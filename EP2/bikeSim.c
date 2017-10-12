@@ -24,22 +24,29 @@
 
 int main(int argc, char const *argv[]) {
     set_prog_name("bikeSim");
-    /*if(argc < 5)
+    if(argc < 4)
         die("Wrong number of arguments!\nUsage ./bikeSim <d> <n> <v> <debug>");
     u_int road_sz = atoi(argv[1]);
-    if
     u_int num_bikers = atoi(argv[2]);
     u_int num_laps = atoi(argv[3]);
-    if (argc == 4)
+    if(road_sz <= 249)
+        die("Error in road size (d)");
+    else if(num_bikers <= 5 || num_bikers > 5*road_sz)
+        die("Error in number of bikers (n)");
+    else if(num_laps%20 != 0)
+        die("Error in number of laps (v)");
+    if (argc == 5)
         DEBUG_MODE = true;
     else
-        DEBUG_MODE = false;*/
-    u_int num_bikers = 400;
-    u_int num_laps = 20;
+        DEBUG_MODE = false;
+    /*u_int num_bikers = 400;
+    u_int num_laps = 2;
     u_int road_sz = 80;
-    DEBUG_MODE = true;
+    DEBUG_MODE = true;*/
+
     init(num_bikers, num_laps, road_sz);
-    debug_road();
+    if(DEBUG_MODE)
+        debug_road();
     pthread_barrier_wait(&start_shot);
     u_int par = 1;
 
@@ -47,7 +54,8 @@ int main(int argc, char const *argv[]) {
     //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
     pthread_barrier_wait(&barr);
     //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
-    debug_road();
+    if(DEBUG_MODE)
+        debug_road();
     while (sb->act_num_bikers != 0) {
 
         // Reset moveTypes array
@@ -110,7 +118,7 @@ int main(int argc, char const *argv[]) {
         //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
         //double dt = 0.03;
         //nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/1e-9)}, NULL);
-        if (par%3 == 0 || sb->foundFast)
+        if (DEBUG_MODE && (par%3 == 0 || sb->foundFast) && sb->act_num_bikers != 0)
             debug_road();
         par++;
     }
