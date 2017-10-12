@@ -33,9 +33,9 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 400;
+    u_int num_bikers = 15;
     u_int num_laps = 10;
-    u_int road_sz = 80;
+    u_int road_sz = 10;
     DEBUG_MODE = true;
     init(num_bikers, num_laps, road_sz);
     debug_road();
@@ -99,27 +99,20 @@ int main(int argc, char const *argv[]) {
             reset_grafinho(speedway.g);
         }
 
-        if (sb->act_num_bikers == 0)
-            break;
-
         //printf("\t ---> ****MAIN***** ESPERANDO BARR3\n");
         pthread_barrier_wait(&prep_barr);
         //printf("\t <--- ****MAIN***** CHEGOU BARR3\n");
-
-        if (sb->act_num_bikers == 0)
-            break;
 
         //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb->act_num_bikers);
         //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
         //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
-        double dt = 0.03;
-        nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/1e-9)}, NULL);
+        //double dt = 0.03;
+        //nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/1e-9)}, NULL);
         if (par%3 == 0)
             debug_road();
         par++;
     }
-
 
     destroy_all();
     for (size_t i = 0; i < dummy_threads->i; i++)

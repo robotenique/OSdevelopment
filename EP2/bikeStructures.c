@@ -70,25 +70,24 @@ int compareTo(const void *a, const void *b) {
  * @return
  */
 void print_buffer(Buffer b) {
-    //printf("Relatório da volta %u\n", b->lap + 1);
+    printf("Relatório da volta %u\n", b->lap + 1);
     for (size_t i = 0; i < b->i; i++)
-        //printf("%luº - Biker %u\n", i+1, b->data[i].id);
+        printf("%luº - Biker %u\n", i+1, b->data[i].id);
     if (b->lap%10 == 0) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
-            continue;
-            //printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+            printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+            //continue;
     }
     if (b->lap == speedway.laps - 1) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         qsort(broken->data, broken->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
-            continue;
-            // TODO : Add time to this print
-            //printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
+            printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
+            //continue;
         for (size_t i = 0; i < broken->i; i++) {
             Biker x = bikers[broken->data[i].id];
-            //printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap, x->id, ((float)x->totalTime)/1000.0, x->score);
+            printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap, x->id, ((float)x->totalTime)/1000.0, x->score);
         }
     }
 }
@@ -117,16 +116,16 @@ void add_score(Scoreboard sb, Biker x) {
         sb->scores[pos] = new_buffer(x->lap, sb->tot_num_bikers);
     Buffer prev_b = sb->scores[(pos - 1 + sb->n)%sb->n];
     Buffer b = sb->scores[pos];
+    P(&(b->mtx));
     if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
-    P(&(b->mtx));
-    b->append(b, x->id, x->score, x->totalTime);
-    if (b->lap%10 == 0 && b->lap != 0 && b->i <= 4) {
+    if ((b->lap+1)%10 == 0 && (b->lap+1) != 0 && b->i <= 4) {
         if (b->i == 1) x->score += 5;
         else if (b->i == 2) x->score += 3;
         else if (b->i == 3) x->score += 2;
         else if (b->i == 4) x->score += 1;
     }
+    b->append(b, x->id, x->score, x->totalTime);
     debug_buffer(b);
     V(&(b->mtx));
 
@@ -174,15 +173,10 @@ void* dummy(void *arg) {
     while (sb->act_num_bikers != 0) {
         //printf("ESPERANDOOOOOOOOOOO DUMMY_2\n");
         pthread_barrier_wait(&debugger_barr);
-        if (sb->act_num_bikers == 0)
-            break;
         //printf("ESPERANDOOOOOOOOOOO DUMMY_3\n");
         pthread_barrier_wait(&prep_barr);
-        if (sb->act_num_bikers == 0)
-            break;
         //printf("ESPERANDOOOOOOOOOOO DUMMY_1\n");
         pthread_barrier_wait(&barr);
-
     }
     return NULL;
 }

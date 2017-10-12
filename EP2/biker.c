@@ -175,7 +175,7 @@ void* biker_loop(void *arg) {
             par = 1;
             (self->lap)++;
             // TODO: Check if the sb->tot_num_bikers is correct....
-            if (self->lap%15 == 0 && event(0.01) && sb->tot_num_bikers > 5 && self->lap != 0) { // Break it down?
+            if ((self->lap+1)%15 == 0 && event(0.01) && sb->tot_num_bikers > 5 && (self->lap+1) != 0) { // Break it down?
                 speedway.road[self->i][self->j] = -1;
                 biker_status = BROKEN;
                 P(&(speedway.mymtx));
