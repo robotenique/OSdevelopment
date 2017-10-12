@@ -150,10 +150,6 @@ void init(u_int num_bikers, u_int num_laps, u_int road_sz) {
     sb = new_scoreboard(num_laps, num_bikers);
     create_dummy_threads(num_bikers);
     new_bikers(num_bikers);
-    // TODO: Change this immediately =================
-    if (event(0.1))
-        bikers[randint(0, num_bikers)]->fast = true;
-    // ===============================================
 }
 
 /*

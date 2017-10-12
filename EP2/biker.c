@@ -176,7 +176,9 @@ void* biker_loop(void *arg) {
             (self->lap)++;
             // TODO: Check if the sb->tot_num_bikers is correct....
             if ((self->lap+1)%15 == 0 && event(0.01) && sb->tot_num_bikers > 5 && (self->lap+1) != 0) { // Break it down?
+                P(&(speedway.mtxs[self->i][self->j]));
                 speedway.road[self->i][self->j] = -1;
+                V(&(speedway.mtxs[self->i][self->j]));
                 biker_status = BROKEN;
                 P(&(speedway.mymtx));
                 speedway.nbpl[self->j]--;
@@ -187,7 +189,9 @@ void* biker_loop(void *arg) {
                 V(&(sb->scbr_mtx));
             }
             if (self->lap == speedway.laps) {
+                P(&(speedway.mtxs[self->i][self->j]));
                 speedway.road[self->i][self->j] = -1;
+                V(&(speedway.mtxs[self->i][self->j]));
                 biker_status = FINISHED;
                 P(&(speedway.mymtx));
                 speedway.nbpl[self->j]--;
@@ -203,7 +207,6 @@ void* biker_loop(void *arg) {
         pthread_barrier_wait(&barr);
         if(biker_status == BROKEN){
             break_biker(self);
-            //printf("DESTROYYY\n");
             break;
         }
         else if(biker_status == FINISHED) {
@@ -315,9 +318,8 @@ void calc_new_speed(Biker self) {
         self->speed = (event(0.7))? 3 : 6;
     else if (self->speed == 3)
         self->speed = (event(0.5))? 3 : 6;
-    if (self->fast)
-        if(self->lap > speedway.laps - 2)
-            self->speed = 2;
+    if (self->fast && self->lap > speedway.laps - 2)
+        self->speed = 2;
 }
 
 void new_bikers(u_int numBikers) {

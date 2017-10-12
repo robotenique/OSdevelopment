@@ -116,6 +116,7 @@ void add_score(Scoreboard sb, Biker x) {
         sb->scores[pos] = new_buffer(x->lap, sb->tot_num_bikers);
     Buffer prev_b = sb->scores[(pos - 1 + sb->n)%sb->n];
     Buffer b = sb->scores[pos];
+
     P(&(b->mtx));
     if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
@@ -127,6 +128,12 @@ void add_score(Scoreboard sb, Biker x) {
     }
     b->append(b, x->id, x->score, x->totalTime);
     debug_buffer(b);
+    if (b->lap == speedway.laps - 2 && b->i == 1 && event(0.1)) {
+        Biker x = bikers[randint(0, speedway.num_bikers)];
+        while (x->broken)
+            x = bikers[randint(0, speedway.num_bikers)];
+        x->fast = true;
+    }
     V(&(b->mtx));
 
     if(sb->scores[pos] != NULL && b->i == sb->tot_num_bikers) {
@@ -205,6 +212,7 @@ void create_speedway(u_int d, u_int laps, u_int num_bikers) {
     speedway.length = d;
     speedway.lanes = NUM_LANES;
     speedway.laps = laps;
+    speedway.num_bikers = num_bikers;
     for (int i = 0; i < d; i++) {
         speedway.road[i] = emalloc(NUM_LANES*sizeof(u_int));
         for(int j = 0; j < NUM_LANES; j++)

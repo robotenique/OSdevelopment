@@ -24,7 +24,6 @@ struct dummy_s {
     void(*run_next)(struct dummy_s*);
 };
 
-
 struct biker {
     // TODO: remove color after finishing EP (or NOT!)
     // Speed = 2 (90 km/h) , 3 (60 km/h),  6 (30 km/h)
@@ -77,7 +76,7 @@ typedef struct {
     u_int *nbpl; // Number of bikers per lane
     Move *moveTypes; // Move type of each lane
     Grafinho g;
-    u_int length, lanes, laps;
+    u_int length, lanes, laps, num_bikers;
     bool (*exists)(int i, int j);
 } Road;
 
