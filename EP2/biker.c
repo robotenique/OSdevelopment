@@ -57,10 +57,6 @@ Biker new_biker(u_int id) {
     b->id = id;
     b->score = 0;
     b->speed = 6;
-    //TODO: remove below
-    if (b->id == 1) {
-        b->speed = 1;
-    }
     b->lsp = 0;
     b->moved = false;
     b->totalTime = 0;
@@ -319,9 +315,6 @@ bool try_move(Biker self, u_int next_lane) {
  * @return
  */
 void calc_new_speed(Biker self) {
-    //TODO: remove below
-    if(self->id == 1)
-        return;
     if (self->speed == 6)
         self->speed = (event(0.7))? 3 : 6;
     else if (self->speed == 3)

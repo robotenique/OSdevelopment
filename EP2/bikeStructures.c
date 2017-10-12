@@ -73,19 +73,16 @@ void print_buffer(Buffer b) {
     printf("Relatório da volta %u\n", b->lap + 1);
     for (size_t i = 0; i < b->i; i++)
         printf("%luº - Biker %u\n", i+1, b->data[i].id);
-    //TODO: CHANGE THIS BELOW BACK TO %10
-    if (b->lap%1 == 0) {
+    if (b->lap%10 == 0) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
             printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
-            //continue;
     }
     if (b->lap == speedway.laps - 1) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         qsort(broken->data, broken->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
             printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
-            //continue;
         for (size_t i = 0; i < broken->i; i++) {
             Biker x = bikers[broken->data[i].id];
             printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap, x->id, ((float)x->totalTime)/1000.0, x->score);
@@ -104,9 +101,6 @@ void print_buffer(Buffer b) {
  * @return
  */
 void add_score(Scoreboard sb, Biker x) {
-    // TODO: THIS IS BUGGED! FIX THIS!
-    /* TODO: when a player is the last one to add, it
-        needs to print out the information of everything..*/
     P(&(sb->scbr_mtx));
     u_int pos = x->lap % sb->n;
     // TODO: LOCK A MUTEX of this position... maybe it's
@@ -121,15 +115,13 @@ void add_score(Scoreboard sb, Biker x) {
     P(&(b->mtx));
     if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
-    //TODO: cHANGE THIS TO %10 again
-    if ((b->lap+1)%1 == 0 && (b->lap+1) != 0 && b->i <= 4) {
-        if (b->i == 1) x->score += 5;
-        else if (b->i == 2) x->score += 3;
-        else if (b->i == 3) x->score += 2;
-        else if (b->i == 4) x->score += 1;
+    if ((b->lap+1)%10 == 0 && (b->lap + 1) != 0 && b->i <= 4) {
+        if (b->i == 0) x->score += 5;
+        else if (b->i == 1) x->score += 3;
+        else if (b->i == 2) x->score += 2;
+        else if (b->i == 3) x->score += 1;
     }
     b->append(b, x->id, x->score, x->totalTime);
-    debug_buffer(b);
     if (b->lap + 1 == speedway.laps - 2 && !sb->foundFast && b->i == 1 && event(0.1)) {
         Biker x = bikers[randint(0, speedway.num_bikers)];
         while (x->broken)

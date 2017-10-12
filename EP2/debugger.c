@@ -59,13 +59,13 @@ void debug_road() {
         for (size_t j = 0; j < speedway.length; printf("-"), j++);
         printf("+\n");
     }
+    printf("\n");
 }
 
 void debug_buffer(Buffer b) {
-    //printf("LAP = %u, i = %u, SIZE = %u\n", b->lap, b->i, b->size);
+    printf("LAP = %u, i = %u, SIZE = %u\n", b->lap, b->i, b->size);
     for (size_t i = 0; i < b->i; i++)
-        continue;
-        //printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+        printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
 }
 
 void print_prog_name() {
