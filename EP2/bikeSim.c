@@ -33,8 +33,8 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;*/
-    u_int num_bikers = 15;
-    u_int num_laps = 10;
+    u_int num_bikers = 2;
+    u_int num_laps = 3;
     u_int road_sz = 10;
     DEBUG_MODE = true;
     init(num_bikers, num_laps, road_sz);
@@ -107,8 +107,8 @@ int main(int argc, char const *argv[]) {
         //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
         //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
-        //double dt = 0.03;
-        //nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/1e-9)}, NULL);
+        double dt = 0.05;
+        nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/1e-9)}, NULL);
         if (par%3 == 0 || sb->foundFast)
             debug_road();
         par++;

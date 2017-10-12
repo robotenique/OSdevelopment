@@ -73,7 +73,8 @@ void print_buffer(Buffer b) {
     printf("Relatório da volta %u\n", b->lap + 1);
     for (size_t i = 0; i < b->i; i++)
         printf("%luº - Biker %u\n", i+1, b->data[i].id);
-    if (b->lap%10 == 0) {
+    //TODO: CHANGE THIS BELOW BACK TO %10
+    if (b->lap%1 == 0) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
             printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
@@ -120,7 +121,8 @@ void add_score(Scoreboard sb, Biker x) {
     P(&(b->mtx));
     if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
-    if ((b->lap+1)%10 == 0 && (b->lap+1) != 0 && b->i <= 4) {
+    //TODO: cHANGE THIS TO %10 again
+    if ((b->lap+1)%1 == 0 && (b->lap+1) != 0 && b->i <= 4) {
         if (b->i == 1) x->score += 5;
         else if (b->i == 2) x->score += 3;
         else if (b->i == 3) x->score += 2;
@@ -128,7 +130,7 @@ void add_score(Scoreboard sb, Biker x) {
     }
     b->append(b, x->id, x->score, x->totalTime);
     debug_buffer(b);
-    if (b->lap == speedway.laps - 2 && b->i == 1 && event(0.1)) {
+    if (b->lap + 1 == speedway.laps - 2 && !sb->foundFast && b->i == 1 && event(0.1)) {
         Biker x = bikers[randint(0, speedway.num_bikers)];
         while (x->broken)
             x = bikers[randint(0, speedway.num_bikers)];

@@ -10,6 +10,8 @@ void calc_new_speed(Biker self);
 void break_biker(Biker self);
 void destroy_all();
 
+typedef enum {BROKEN, FINISHED, NORMAL} Status;
+
 char* getspeed(Biker self) {
 
   if (self->speed == 2)
@@ -25,7 +27,6 @@ char* getspeed(Biker self) {
 static pthread_mutex_t broken_mtx;
 //TODO: remove this thing (?)
 static u_int color_num = 0;
-typedef enum {BROKEN, FINISHED, NORMAL} Status;
 
 // TODO: Remove the function below
 char* getsymbol(int i){
@@ -56,6 +57,10 @@ Biker new_biker(u_int id) {
     b->id = id;
     b->score = 0;
     b->speed = 6;
+    //TODO: remove below
+    if (b->id == 1) {
+        b->speed = 1;
+    }
     b->lsp = 0;
     b->moved = false;
     b->totalTime = 0;
@@ -314,11 +319,14 @@ bool try_move(Biker self, u_int next_lane) {
  * @return
  */
 void calc_new_speed(Biker self) {
+    //TODO: remove below
+    if(self->id == 1)
+        return;
     if (self->speed == 6)
         self->speed = (event(0.7))? 3 : 6;
     else if (self->speed == 3)
         self->speed = (event(0.5))? 3 : 6;
-    if (self->fast && self->lap > speedway.laps - 2)
+    if (self->fast && self->lap + 1 >= speedway.laps - 2)
         self->speed = 2;
 }
 
