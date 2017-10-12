@@ -133,6 +133,7 @@ void add_score(Scoreboard sb, Biker x) {
         while (x->broken)
             x = bikers[randint(0, speedway.num_bikers)];
         x->fast = true;
+        sb->foundFast = true;
     }
     V(&(b->mtx));
 
@@ -255,6 +256,7 @@ Scoreboard new_scoreboard(u_int laps, u_int num_bikers) {
     sb->scores = emalloc(init_sz*sizeof(Buffer));
     for (size_t i = 0; i < init_sz; sb->scores[i++] = NULL);
     sb->n = init_sz;
+    sb->foundFast = false;
     sb->tot_num_bikers = num_bikers;
     sb->act_num_bikers = num_bikers;
     pthread_mutex_init(&(sb->scbr_mtx), NULL);

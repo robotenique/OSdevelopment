@@ -109,7 +109,7 @@ int main(int argc, char const *argv[]) {
         //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
         //double dt = 0.03;
         //nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/1e-9)}, NULL);
-        if (par%3 == 0)
+        if (par%3 == 0 || sb->foundFast)
             debug_road();
         par++;
     }

@@ -61,6 +61,7 @@ typedef struct biker* Biker;
 
 struct scbr_s {
     Buffer *scores;
+    bool foundFast;
     u_int n;
     u_int tot_num_bikers, act_num_bikers;
     pthread_mutex_t scbr_mtx;
