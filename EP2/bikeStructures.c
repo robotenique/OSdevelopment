@@ -27,12 +27,11 @@ void print_dummy();
  * remapping every old buffer to a new position, then returning
  * the position of doubling the size.
  *
- * @args sb : the scoreboard
  * @args x  : The biker to insert the array
  *
  * @return  the new position for the buffer
  */
-u_int reallocate_scoreboard(Scoreboard sb, Biker x) {
+u_int reallocate_scoreboard(Biker x) {
     //printf("REALOCANDO SCOREBOARD....\n");
     u_int new_sz = sb.n * 2;
     Buffer *temp = emalloc(new_sz*sizeof(Buffer));
@@ -100,8 +99,7 @@ void print_buffer(Buffer b) {
  * --------------------------------------------------------
  * Add a new score to the Scoreboard, sending the new biker
  *
- * @args sb : the scoreboard
- *       x  : the biker
+ * @args x  : the biker
  *
  * @return
  */
@@ -111,12 +109,11 @@ void add_score(Biker x) {
     // TODO: LOCK A MUTEX of this position... maybe it's
     // better to keep the mtx list in the Scoreboard struct...
     if(sb.scores[pos] && sb.scores[pos]->lap != x->lap)
-        pos = reallocate_scoreboard(sb, x);
+        pos = reallocate_scoreboard(x);
     if(sb.scores[pos] == NULL)
         sb.scores[pos] = new_buffer(x->lap, sb.tot_num_bikers);
     Buffer prev_b = sb.scores[(pos - 1 + sb.n)%sb.n];
     Buffer b = sb.scores[pos];
-
     P(&(b->mtx));
     if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
