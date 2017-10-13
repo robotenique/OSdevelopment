@@ -20,7 +20,7 @@ void debug_road() {
     printf("+");
     for (size_t i = 0; i < speedway.length; printf("-"), i++);
     printf("+\n");
-    for (size_t i = 0; i < speedway.lanes; i++) {
+    for (size_t i = 0; i < NUM_LANES; i++) {
         printf("|");
         for (size_t j = 0; j < speedway.length; j++) {
             u_int id;

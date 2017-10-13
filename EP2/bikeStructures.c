@@ -171,7 +171,7 @@ void append(Buffer b, u_int id, u_int score, u_lint t) {
  * @return
  */
 bool exists(int i, int j) {
-    return (i >= 0 && i < speedway.length && j >= 0 && j < speedway.lanes);
+    return (i >= 0 && i < speedway.length && j >= 0 && j < NUM_LANES);
 }
 
 /*
@@ -218,7 +218,6 @@ void run_next(DummyThreads dt) {
 void create_speedway(u_int d, u_int laps, u_int num_bikers) {
     speedway.road = emalloc(d*sizeof(u_int*));
     speedway.length = d;
-    speedway.lanes = NUM_LANES;
     speedway.laps = laps;
     speedway.num_bikers = num_bikers;
     for (int i = 0; i < d; i++) {

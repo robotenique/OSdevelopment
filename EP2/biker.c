@@ -169,14 +169,15 @@ void* biker_loop(void *arg) {
         if (par%self->speed == 0) {
             // The superior diagonal
             if (speedway.exists(i, j - 1) && (self->moveType & TOP) && speedway.nbpl[j-1] < speedway.length-1) {
-                    P(&(speedway.mtxs[next_meter][j-1]));
-                    if((mem = speedway.road[next_meter][j-1]) != -1 && !(bikers[mem]->moved)){
-                            bikers[mem]->used_mtx[0] = true;
-                            V(&(speedway.mtxs[next_meter][j-1]));
-                            //printf("--> %sBiker %d%s locked %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
-                            P(&(bikers[mem]->mtxs[0]));
+                P(&(speedway.mtxs[next_meter][j-1]));
+                if((mem = speedway.road[next_meter][j-1]) != -1 && !(bikers[mem]->moved)){
+                    bikers[mem]->used_mtx[0] = true;
+                    V(&(speedway.mtxs[next_meter][j-1]));
+                    //printf("--> %sBiker %d%s locked %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
+                    P(&(bikers[mem]->mtxs[0]));
                 }
-                else{ V(&(speedway.mtxs[next_meter][j-1])); }
+                else
+                    V(&(speedway.mtxs[next_meter][j-1]));
                 //printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
             }
             P(&(speedway.mtxs[next_meter][j]));
@@ -188,19 +189,21 @@ void* biker_loop(void *arg) {
                 P(&(bikers[mem]->mtxs[1]));
                 //printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
             }
-            else{ V(&(speedway.mtxs[next_meter][j])); }
+            else
+                V(&(speedway.mtxs[next_meter][j]));
 
             // The inferior diagonal
             if (speedway.exists(i, j + 1) && (self->moveType & DOWN) && speedway.nbpl[j+1] < speedway.length-1){
-            P(&(speedway.mtxs[next_meter][j+1]));
-            if((mem = speedway.road[next_meter][j+1]) != -1 && !(bikers[mem]->moved)) {
-                bikers[mem]->used_mtx[2] = true;
-                //printf("--> %sBiker %d%s locked %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
-                V(&(speedway.mtxs[next_meter][j+1]));
-                P(&(bikers[mem]->mtxs[2]));
-                //printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
-            }
-            else{ V(&(speedway.mtxs[next_meter][j+1])); }
+                P(&(speedway.mtxs[next_meter][j+1]));
+                if((mem = speedway.road[next_meter][j+1]) != -1 && !(bikers[mem]->moved)) {
+                    bikers[mem]->used_mtx[2] = true;
+                    //printf("--> %sBiker %d%s locked %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
+                    V(&(speedway.mtxs[next_meter][j+1]));
+                    P(&(bikers[mem]->mtxs[2]));
+                    //printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
+                }
+                else
+                    V(&(speedway.mtxs[next_meter][j+1]));
             }
             // The lane just above
             if (speedway.exists(i, j - 1) && speedway.nbpl[j-1] < speedway.length-1){
@@ -211,7 +214,9 @@ void* biker_loop(void *arg) {
                     //printf("--> %sBiker %d%s locked %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
                     P(&(bikers[mem]->mtxs[3]));
                     //printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
-            }else{ V(&(speedway.mtxs[next_meter][j-1]));}
+                }
+                else
+                    V(&(speedway.mtxs[next_meter][j-1]));
             }
             //printf("Moving %sbiker %d%s\n", self->color, self->id, RESET);
             if (speedway.exists(i, j - 1) && (self->moveType & TOP) &&
@@ -345,8 +350,8 @@ Biker new_biker(u_int id) {
     }
     // Start the first row of bikers just after the starting line (meter 0) and
     // the other rows, behind them
-    u_int meter = (speedway.length - id/speedway.lanes)%speedway.length;
-    u_int lane = id%speedway.lanes;
+    u_int meter = (speedway.length - id/NUM_LANES)%speedway.length;
+    u_int lane = id%NUM_LANES;
     speedway.road[meter][lane] = id;
     b->i = meter;
     b->j = lane;
