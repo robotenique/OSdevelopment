@@ -10,8 +10,6 @@
 /* Simple types definition */
 typedef enum { false, true } bool;
 
-typedef enum { NONE, TOP, DOWN, TOPDOWN } Move;
-
 typedef unsigned int u_int;
 
 typedef unsigned long long int u_lint;

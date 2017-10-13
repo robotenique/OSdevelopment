@@ -39,7 +39,7 @@ AdjList new_adjacencyList(u_int num_vertex){
 }
 
 Grafinho new_grafinho(u_int num_vertex){
-    Grafinho g = emalloc(sizeof(struct graph_2));
+    Grafinho g = emalloc(sizeof(struct graph_s));
     g->V = num_vertex;
     g->adj = new_adjacencyList(g->V);
     return g;
