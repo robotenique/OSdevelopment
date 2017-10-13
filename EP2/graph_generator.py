@@ -1,6 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+# REQUIREMENTS: Networkx(for python), graphviz(for linux)
 #GENERATE the board with:
 """ void debug_coisa(){
      for (size_t i = 0; i < speedway.lanes; i++) {
@@ -16,18 +17,10 @@ import numpy as np
 
      }
  }"""
-board = (("12","9","4","0","6",0,"2",0,0,"16"),
-("13","10","8","1",0,0,"3",0,0,"17"),
-("14",0,"7","5",0,0,0,0,0,"18"),
-("15",0,"11",0,0,0,0,0,0,"19"),
-("12","9","4","0","6",0,"2",0,0,"16"),
-("13","10","8","1",0,0,"3",0,0,"17"),
-("14",0,"7","5",0,0,0,0,0,"18"),
-("15",0,"11",0,0,0,0,0,0,"19"),
-("12","9","4","0","6",0,"2",0,0,"16"),
-("13","10","8","1",0,0,"3",0,0,"17"),
-("14",0,"7","5",0,0,0,0,0,"18"),
-("15",0,"11",0,0,0,0,0,0,"19"),)
+board = (("8",0,"4","0","12"),
+(0,"9",0,"5","13"),
+(0,"10",0,"6","1"),
+("11",0,0,"7","3"))
 
 sz = lambda l : range(len(l))
 
@@ -56,10 +49,8 @@ for i in sz(board):
                 edges.append((str(x), str(board[i - 1][j])))
 
 
-val_map = {'A': 1.0,
-           'D': 0.5714285714285714,
-           'H': 0.0}
-
+val_map = {'A': 1.0}
+print(edges)
 
 # Create Directed Graph
 G=nx.DiGraph()
@@ -67,20 +58,21 @@ G=nx.DiGraph()
 # Add a list of nodes:
 G.add_nodes_from(nodes)
 G.add_edges_from(edges)
-values = [val_map.get(node, np.random.random()) for node in G.nodes()]
 # separate calls to draw nodes and edges
-pos = nx.spring_layout(G)
+nx.nx_agraph.write_dot(G, "test1.dot")
+
+#pos=nx.nx_agraph.graphviz_layout(G, prog='dot')
+pos = nx.shell_layout(G)
 plt.figure(figsize=(8, 8))
 plt.axis('off')
-nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'),
-                       node_color = values, node_size = 500)
+nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'), node_size = 500)
 nx.draw_networkx_labels(G, pos)
-nx.draw_networkx_edges(G, pos, edgelist=G.edges(), edge_color='k')
+nx.draw_networkx_edges(G, pos, edgelist=G.edges(), edge_color='k', alpha=0.3)
 plt.draw()
 plt.show()
 #Return a list of cycles described as a list o nodes
 i = 0
-for scc in nx.strongly_connected_components(G):
+for scc in nx.strongly_connected_components_recursive(G):
     for node in scc:
         val_map[node] = i
     i += 0.2
@@ -90,7 +82,9 @@ nx.nx_agraph.write_dot(G, "test.dot")
 
 values = [val_map.get(node, np.random.random()) for node in G.nodes()]
 # separate calls to draw nodes and edges
-pos=nx.nx_agraph.graphviz_layout(G, prog='dot')
+#pos=nx.nx_agraph.graphviz_layout(G, prog='dot')
+pos = nx.shell_layout(G)
+
 
 
 plt.figure(figsize=(8, 8))
