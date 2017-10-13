@@ -29,12 +29,12 @@ int main(int argc, char const *argv[]) {
     u_int road_sz = atoi(argv[1]);
     u_int num_bikers = atoi(argv[2]);
     u_int num_laps = atoi(argv[3]);
-    if(road_sz <= 249)
+    /*if(road_sz <= 249)
         die("Error in road size (d)");
     else if(num_bikers <= 5 || num_bikers > 5*road_sz)
         die("Error in number of bikers (n)");
     else if(num_laps%20 != 0)
-        die("Error in number of laps (v)");
+        die("Error in number of laps (v)");*/
     if (argc == 5)
         DEBUG_MODE = true;
     else
