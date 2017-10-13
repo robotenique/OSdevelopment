@@ -146,7 +146,7 @@ void init(u_int num_bikers, u_int num_laps, u_int road_sz) {
 
     // The main barrier
     pthread_barrier_init(&barr, NULL, num_bikers + 1);
-    // Debug barrier: wait the debugger, then proceed TODO: remove?
+    // Debug barrier: wait the debugger, then proceed
     pthread_barrier_init(&debugger_barr, NULL, num_bikers + 1);
     // Barrier that checks for any cycle
     pthread_barrier_init(&prep_barr, NULL, num_bikers + 1);

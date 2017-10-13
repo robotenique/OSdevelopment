@@ -72,7 +72,6 @@ Stacklist new_Stacklist(u_int threshold);
 
 void destroy_Stacklist(Stacklist sl);
 
-// TODO: Remove this two below
 void debugAdj(AdjList adj);
 
 void debugStacklist(Stacklist sl);
