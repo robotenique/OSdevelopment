@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include "macros.h"
 #include "graph.h"
+#include "biker.h"
 
 /* Complex types definition (structs) */
 struct dummy_s {
@@ -24,23 +25,7 @@ struct dummy_s {
     void(*run_next)(struct dummy_s*);
 };
 
-struct biker {
-    // TODO: remove color after finishing EP (or NOT!)
-    // Speed = 2 (90 km/h) , 3 (60 km/h),  6 (30 km/h)
-    u_int lap, i, j, id, score, speed;
-    bool fast, moved, *used_mtx;
-    char *color;
-    u_lint totalTime;
-    Move moveType;
-    pthread_t *thread;
-    pthread_mutex_t *mtxs;
-    bool (*try_move)(struct biker* self, u_int next_lane);
-    void(*calc_new_speed)(struct biker* self);
-
-    // In the end, to obtain the broken bikers
-    // if broken == true, get the lap the biker broke
-    bool broken;
-};
+typedef struct dummy_s* DummyThreads;
 
 struct score_s {
     u_int id, score;
@@ -55,21 +40,17 @@ struct buffer_s {
 };
 
 typedef struct buffer_s* Buffer;
-typedef struct dummy_s* DummyThreads;
-typedef struct biker* Biker;
 
-struct scbr_s {
+typedef struct scbr_s {
     Buffer *scores;
     bool foundFast;
     u_int n;
     u_int tot_num_bikers, act_num_bikers;
     pthread_mutex_t scbr_mtx;
-    void(*add_score)(struct scbr_s*, struct biker*);
-};
+    void(*add_score)(Biker);
+} Scoreboard;
 
-typedef struct scbr_s* Scoreboard;
-
-typedef struct {
+typedef struct road_s {
     pthread_mutex_t **mtxs; // Theirs (each road position)
     pthread_mutex_t mymtx; // Mine (the Road itself)
     u_int **road;
@@ -91,28 +72,6 @@ pthread_barrier_t barr;
 pthread_barrier_t debugger_barr;
 pthread_barrier_t prep_barr;
 pthread_barrier_t start_shot;
-
-/*
- * Function: new_bikers
- * --------------------------------------------------------
- * Creates the bikers, the global array of bikers
- *
- * @args numBikers : the number of bikers
- *
- * @return
- */
-void new_bikers(u_int numBikers);
-
-/*
- * Function: destroy_bikers
- * --------------------------------------------------------
- * Destroys the bikers global array
- *
- * @args numBikers : number of bikers in the global array
- *
- * @return
- */
-void destroy_bikers(u_int numBikers);
 
 /*
  * Function: create_speedway
@@ -141,25 +100,25 @@ void destroy_speedway();
 /*
  * Function: new_scoreboard
  * --------------------------------------------------------
- * Creates a new scoreboard, and returns it
+ * Create the global scoreboard
  *
  * @args laps : The quantity of laps
  *       num_bikers : The number of bikers
  *
- * @return the new scoreboard
+ * @return
  */
-Scoreboard new_scoreboard(u_int laps, u_int num_bikers);
+void new_scoreboard(u_int laps, u_int num_bikers);
 
 /*
  * Function: destroy_scoreboard
  * --------------------------------------------------------
- * Destroys the scoreboard, freeing the memory
+ * Destroy the global scoreboard, freeing the memory
  *
- * @args sb : the scoreboard to be destroyed
+ * @args
  *
  * @return
  */
-void destroy_scoreboard(Scoreboard sb);
+void destroy_scoreboard();
 
 /*
  * Function: new_buffer
@@ -183,30 +142,6 @@ Buffer new_buffer(u_int lap, u_int num_bikers);
  * @return
  */
 void destroy_buffer(Buffer b);
-
-/*
- * Function: append
- * --------------------------------------------------------
- * Function to add a new id and score to the buffer_s
- *
- * @args b : the buffer
- *       id: the id of the biker to add
- *       score : the score of the biker to add
- *
- * @return
- */
-void append(Buffer b, u_int id, u_int score, u_lint t);
-
-/*
- * Function: biker_loop
- * --------------------------------------------------------
- * Base function for biker threads
- *
- * @args arg : biker informations
- *
- * @return
- */
-void* biker_loop(void *arg);
 
 /*
  * Function: create_dummy_threads

@@ -26,12 +26,12 @@ struct adj_s {
 
 typedef struct adj_s* AdjList;
 
-struct graph_2 {
+struct graph_s {
   u_int V;
   AdjList adj;
 };
 
-typedef struct graph_2 * Grafinho;
+typedef struct graph_s * Grafinho;
 
 typedef struct snode_s{
   Stack scc;
@@ -44,8 +44,6 @@ struct stacklist_s{
 };
 
 typedef struct stacklist_s* Stacklist;
-
-typedef struct graph_s* Graph;
 
 /*---------------------------------------------------------------------*
  |                           Graph functions                           |

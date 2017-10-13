@@ -3,14 +3,12 @@
 #include "debugger.h"
 #include "randomizer.h"
 
-// TODO: In the end, wait for all threads to join
-
-bool try_move(Biker self, u_int next_lane);
-void calc_new_speed(Biker self);
-void break_biker(Biker self);
-void destroy_all();
-
 typedef enum {BROKEN, FINISHED, NORMAL} Status;
+
+static pthread_mutex_t broken_mtx;
+
+//TODO: remove these =========================
+static u_int color_num = 0;
 
 char* getspeed(Biker self) {
 
@@ -24,11 +22,6 @@ char* getspeed(Biker self) {
     return estrdup("QUE??");
 }
 
-static pthread_mutex_t broken_mtx;
-//TODO: remove this thing (?)
-static u_int color_num = 0;
-
-// TODO: Remove the function below
 char* getsymbol(int i){
     if (i == 0)
         return estrdup("↖");
@@ -41,57 +34,111 @@ char* getsymbol(int i){
     die("ERROR!");
     return estrdup("Error!");
 }
+//============================================
 
 /*
- * Function: new_biker
+ * Function: calc_new_speed
  * --------------------------------------------------------
- * Creates a new biker with the given id.
+ * Calculates the new speed of a biker
  *
- * @args id : the id of the biker
+ * @args self : the biker
  *
- * @return the newly created biker
+ * @return
  */
-Biker new_biker(u_int id) {
-    Biker b = emalloc(sizeof(struct biker));
-    b->lap = (id < NUM_LANES)? 0 : -1;
-    b->id = id;
-    b->score = 0;
-    b->speed = 6;
-    b->moved = false;
-    b->totalTime = 0;
-    b->fast = false;
-    b->moveType = TOPDOWN;
-    b->color = estrdup(get_color((color_num++)%230));
-    b->thread = emalloc(sizeof(pthread_t));
-    /* What each mutex is referring to (X is the biker):
-     *    0
-     *    1  X
-     *    2  3
-     */
-    // 0 -> top left, 1 -> left, 2 -> bottom left, 3 -> bottom
-    b->mtxs = emalloc(4*sizeof(pthread_mutex_t));
-    b->used_mtx = emalloc(4*sizeof(bool));
-    // Set all mutexes to 0 at first
-    for (int i = 0; i < 4; i++) {
-        pthread_mutex_init(&(b->mtxs[i]), NULL);
-        P(&(b->mtxs[i]));
-        b->used_mtx[i] = false;
-    }
-    // Start the first row of bikers just after the starting line (meter 0) and
-    // the other rows, behind them
-    u_int meter = (speedway.length - id/speedway.lanes)%speedway.length;
-    u_int lane = id%speedway.lanes;
-    speedway.road[meter][lane] = id;
-    b->i = meter;
-    b->j = lane;
-    speedway.nbpl[lane]++;
-    b->try_move = &try_move;
-    b->calc_new_speed = &calc_new_speed;
-    pthread_create(b->thread, NULL, &biker_loop, (void*)b);
-    pthread_detach(*(b->thread));
-    return b;
+void calc_new_speed(Biker self) {
+    if (self->speed == 6)
+        self->speed = (event(0.7))? 3 : 6;
+    else if (self->speed == 3)
+        self->speed = (event(0.5))? 3 : 6;
+    if (self->fast && self->lap + 1 >= speedway.laps - 2)
+        self->speed = 2;
 }
 
+/*
+ * Function: try_move
+ * --------------------------------------------------------
+ * Moves a biker on the road to the next row and to the "next_lane"
+ * column
+ *
+ * @args self : the biker
+ *       next_lane   : the next lane
+ *
+ * @return true if the biker were moved, false otherwise
+ */
+bool try_move(Biker self, u_int next_lane) {
+    u_int i = self->i;
+    u_int j = self->j;
+    u_int next_meter = (i+1)%speedway.length;
+    //printf("%d Lock %d %d (Up)\n", self->id, next_meter, next_lane);
+    // Lock the mutex of the next position
+    P(&(speedway.mtxs[next_meter][next_lane]));
+    // If the next position in the road is free
+    if (speedway.road[next_meter][next_lane] == -1) {
+        //printf("%d Lock %d %d (Self)\n", self->id, i, j);
+        // Lock the mutex of the current position
+        P(&(speedway.mtxs[i][j]));
+        //printf("id = %02d, speed = %s , next_meter = %02d, curr_lane = %02d, next_lane = %02d, %s\uf206%s\n", self->id, getspeed(self), next_meter, j, next_lane, self->color, RESET);
+        speedway.road[next_meter][next_lane] = self->id;
+        speedway.road[i][j] = -1;
+        if (j != next_lane) {
+            P(&(speedway.mymtx));
+            speedway.nbpl[j]--;
+            speedway.nbpl[next_lane]++;
+            V(&(speedway.mymtx));
+        }
+        self->i = next_meter;
+        self->j = next_lane;
+        self->moved = true;
+        //printf("%d Unlock %d %d (Self)\n", self->id, i, j);
+        V(&(speedway.mtxs[i][j]));
+    }
+    //printf("%d Unlock %d %d (Up)\n", self->id, next_meter, next_lane);
+    V(&(speedway.mtxs[next_meter][next_lane]));
+
+    return self->moved;
+}
+
+/*
+ * Function: break_biker
+ * --------------------------------------------------------
+ * Break a biker D:. The biker is removed from the race,
+ * added to the broken bikers buffer, and we call a
+ * dummy_thread to aid him. Also, we must destroy the
+ * thread of the biker.
+ *
+ * @args  self :  the biker that broke
+ *
+ * @return
+ */
+void break_biker(Biker self) {
+    u_int pos = 0;
+    Buffer b = new_buffer(-1, speedway.num_bikers);
+    P(&broken_mtx);
+    for (int i = 0; i < speedway.num_bikers; i++) {
+        if (!(bikers[i]->broken))
+            b->append(b, bikers[i]->id, bikers[i]->score, -1);
+    }
+    V(&broken_mtx);
+    qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
+    while (b->data[pos].id != self->id) pos++;
+    printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, pos + 1, self->lap + 1);
+    self->broken = true;
+    P(&broken_mtx);
+        broken->append(broken, self->id, self->score, self->totalTime);
+        dummy_threads->run_next(dummy_threads);
+    V(&broken_mtx);
+    destroy_buffer(b);
+}
+
+/*
+ * Function: biker_loop
+ * --------------------------------------------------------
+ * Base function for biker threads
+ *
+ * @args arg : biker informations
+ *
+ * @return
+ */
 void* biker_loop(void *arg) {
     Biker self = (Biker)arg;
     bool moved = false;
@@ -169,13 +216,13 @@ void* biker_loop(void *arg) {
         self->moveType = TOPDOWN;
         if (moved && self->i == 0) { // Trigger events each completed lap
             if (self->lap != -1) {
-                sb->add_score(sb, self);
+                sb.add_score(self);
                 self->calc_new_speed(self);
             }
             par = 1;
             (self->lap)++;
-            // TODO: Check if the sb->tot_num_bikers is correct....
-            if ((self->lap+1)%15 == 0 && event(0.01) && sb->tot_num_bikers > 5 && (self->lap+1) != 0) { // Break it down?
+            // TODO: Check if the sb.tot_num_bikers is correct....
+            if ((self->lap+1)%15 == 0 && event(0.01) && sb.tot_num_bikers > 5 && (self->lap+1) != 0) { // Break it down?
                 P(&(speedway.mtxs[self->i][self->j]));
                 speedway.road[self->i][self->j] = -1;
                 V(&(speedway.mtxs[self->i][self->j]));
@@ -183,10 +230,10 @@ void* biker_loop(void *arg) {
                 P(&(speedway.mymtx));
                 speedway.nbpl[self->j]--;
                 V(&(speedway.mymtx));
-                P(&(sb->scbr_mtx));
-                sb->act_num_bikers--;
-                sb->tot_num_bikers--;
-                V(&(sb->scbr_mtx));
+                P(&(sb.scbr_mtx));
+                sb.act_num_bikers--;
+                sb.tot_num_bikers--;
+                V(&(sb.scbr_mtx));
             }
             if (self->lap == speedway.laps) {
                 P(&(speedway.mtxs[self->i][self->j]));
@@ -196,9 +243,9 @@ void* biker_loop(void *arg) {
                 P(&(speedway.mymtx));
                 speedway.nbpl[self->j]--;
                 V(&(speedway.mymtx));
-                P(&(sb->scbr_mtx));
-                sb->act_num_bikers--;
-                V(&(sb->scbr_mtx));
+                P(&(sb.scbr_mtx));
+                sb.act_num_bikers--;
+                V(&(sb.scbr_mtx));
             }
         }
 
@@ -240,93 +287,53 @@ void* biker_loop(void *arg) {
 }
 
 /*
- * Function: break_biker
+ * Function: new_biker
  * --------------------------------------------------------
- * Break a biker D:. The biker is removed from the race,
- * added to the broken bikers buffer, and we call a
- * dummy_thread to aid him. Also, we must destroy the
- * thread of the biker.
+ * Creates a new biker with the given id.
  *
- * @args  self :  the biker that broke
+ * @args id : the id of the biker
  *
- * @return
+ * @return the newly created biker
  */
-void break_biker(Biker self) {
-    u_int pos = 0;
-    Buffer b = new_buffer(-1, speedway.num_bikers);
-    for (int i = 0; i < speedway.num_bikers; i++)
-        b->append(b, bikers[i]->id, bikers[i]->score, -1);
-    qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
-    while (b->data[pos].id != self->id) pos++;
-    printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, pos + 1, self->lap + 1);
-    self->broken = true;
-    P(&broken_mtx);
-        broken->append(broken, self->id, self->score, self->totalTime);
-        dummy_threads->run_next(dummy_threads);
-    V(&broken_mtx);
-    destroy_buffer(b);
-}
-
-/*
- * Function: try_move
- * --------------------------------------------------------
- * Moves a biker on the road to the next row and to the "next_lane"
- * column
- *
- * @args self : the biker
- *       next_lane   : the next lane
- *
- * @return true if the biker were moved, false otherwise
- */
-bool try_move(Biker self, u_int next_lane) {
-    u_int i = self->i;
-    u_int j = self->j;
-    u_int next_meter = (i+1)%speedway.length;
-    //printf("%d Lock %d %d (Up)\n", self->id, next_meter, next_lane);
-    // Lock the mutex of the next position
-    P(&(speedway.mtxs[next_meter][next_lane]));
-    // If the next position in the road is free
-    if (speedway.road[next_meter][next_lane] == -1) {
-        //printf("%d Lock %d %d (Self)\n", self->id, i, j);
-        // Lock the mutex of the current position
-        P(&(speedway.mtxs[i][j]));
-        //printf("id = %02d, speed = %s , next_meter = %02d, curr_lane = %02d, next_lane = %02d, %s\uf206%s\n", self->id, getspeed(self), next_meter, j, next_lane, self->color, RESET);
-        speedway.road[next_meter][next_lane] = self->id;
-        speedway.road[i][j] = -1;
-        if (j != next_lane) {
-            P(&(speedway.mymtx));
-            speedway.nbpl[j]--;
-            speedway.nbpl[next_lane]++;
-            V(&(speedway.mymtx));
-        }
-        self->i = next_meter;
-        self->j = next_lane;
-        self->moved = true;
-        //printf("%d Unlock %d %d (Self)\n", self->id, i, j);
-        V(&(speedway.mtxs[i][j]));
+Biker new_biker(u_int id) {
+    Biker b = emalloc(sizeof(struct biker));
+    b->lap = (id < NUM_LANES)? 0 : -1;
+    b->id = id;
+    b->score = 0;
+    b->speed = 6;
+    b->moved = false;
+    b->totalTime = 0;
+    b->fast = false;
+    b->moveType = TOPDOWN;
+    b->color = estrdup(get_color((color_num++)%230));
+    b->thread = emalloc(sizeof(pthread_t));
+    /* What each mutex is referring to (X is the biker):
+     *    0
+     *    1  X
+     *    2  3
+     */
+    // 0 -> top left, 1 -> left, 2 -> bottom left, 3 -> bottom
+    b->mtxs = emalloc(4*sizeof(pthread_mutex_t));
+    b->used_mtx = emalloc(4*sizeof(bool));
+    // Set all mutexes to 0 at first
+    for (int i = 0; i < 4; i++) {
+        pthread_mutex_init(&(b->mtxs[i]), NULL);
+        P(&(b->mtxs[i]));
+        b->used_mtx[i] = false;
     }
-    //printf("%d Unlock %d %d (Up)\n", self->id, next_meter, next_lane);
-    V(&(speedway.mtxs[next_meter][next_lane]));
-
-    return self->moved;
-}
-
-/*
- * Function: calc_new_speed
- * --------------------------------------------------------
- * Calculates the new speed of a biker
- *
- * @args self : the biker
- *
- * @return
- */
-void calc_new_speed(Biker self) {
-    if (self->speed == 6)
-        self->speed = (event(0.7))? 3 : 6;
-    else if (self->speed == 3)
-        self->speed = (event(0.5))? 3 : 6;
-    if (self->fast && self->lap + 1 >= speedway.laps - 2)
-        self->speed = 2;
+    // Start the first row of bikers just after the starting line (meter 0) and
+    // the other rows, behind them
+    u_int meter = (speedway.length - id/speedway.lanes)%speedway.length;
+    u_int lane = id%speedway.lanes;
+    speedway.road[meter][lane] = id;
+    b->i = meter;
+    b->j = lane;
+    speedway.nbpl[lane]++;
+    b->try_move = &try_move;
+    b->calc_new_speed = &calc_new_speed;
+    pthread_create(b->thread, NULL, &biker_loop, (void*)b);
+    pthread_detach(*(b->thread));
+    return b;
 }
 
 void new_bikers(u_int numBikers) {
@@ -348,9 +355,4 @@ void destroy_bikers(u_int numBikers) {
         }
     }
     free(bikers);
-}
-
-void destroy_all() {
-    for (size_t i = 0; i < dummy_threads->i; i++)
-        pthread_cancel(dummy_threads->dummyT[i]);
 }
