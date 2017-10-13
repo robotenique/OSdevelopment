@@ -58,17 +58,17 @@ int main(int argc, char const *argv[]) {
         debug_road();
     while (sb.act_num_bikers != 0) {
 
-        // Reset moveTypes array
-        speedway.moveTypes[0] = DOWN;
-        for (int i = 1; i < NUM_LANES-1; i++)
-            speedway.moveTypes[i] = TOPDOWN;
-        speedway.moveTypes[NUM_LANES-1] = TOP;
-
         //printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
         //printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
 
         if (sb.act_num_bikers >= speedway.length) {
+            // Reset moveTypes array
+            speedway.moveTypes[0] = DOWN;
+            for (int i = 1; i < NUM_LANES-1; i++)
+            speedway.moveTypes[i] = TOPDOWN;
+            speedway.moveTypes[NUM_LANES-1] = TOP;
+
             // Get the SCCs
             Stacklist sccl = new_Stacklist(speedway.length - 1);
             SCC(speedway.g, sccl);
