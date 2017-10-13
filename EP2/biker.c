@@ -1,3 +1,12 @@
+/*
+ * @author: João Gabriel Basi Nº USP: 9793801
+ * @author: Juliano Garcia de Oliveira Nº USP: 9277086
+ *
+ * MAC0422
+ * 16/10/17
+ *
+ * File for biker functions
+ */
 #include "biker.h"
 #include "error.h"
 #include "debugger.h"
@@ -55,7 +64,6 @@ Biker new_biker(u_int id) {
     b->id = id;
     b->score = 0;
     b->speed = 6;
-    b->lsp = 0;
     b->moved = false;
     b->totalTime = 0;
     b->fast = false;
@@ -250,13 +258,24 @@ void* biker_loop(void *arg) {
  * @return
  */
 void break_biker(Biker self) {
+<<<<<<< HEAD
     //TODO: UPDATE THE LSP IN SOME PLACE
     printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, self->lsp + 1, self->lap + 1);
+=======
+    u_int pos = 0;
+    Buffer b = new_buffer(-1, speedway.num_bikers);
+    for (int i = 0; i < speedway.num_bikers; i++)
+        b->append(b, bikers[i]->id, bikers[i]->score, -1);
+    qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
+    while (b->data[pos].id != self->id) pos++;
+    printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, pos + 1, self->lap + 1);
+>>>>>>> 1bae2ae93fd9062c0b1f93ab12a74bdeb8b53c4a
     self->broken = true;
     P(&broken_mtx);
         broken->append(broken, self->id, self->score, self->totalTime);
         dummy_threads->run_next(dummy_threads);
     V(&broken_mtx);
+    destroy_buffer(b);
 }
 
 /*

@@ -28,7 +28,6 @@ struct biker {
     // TODO: remove color after finishing EP (or NOT!)
     // Speed = 2 (90 km/h) , 3 (60 km/h),  6 (30 km/h)
     u_int lap, i, j, id, score, speed;
-    u_int lsp; // last sprint position
     bool fast, moved, *used_mtx;
     char *color;
     u_lint totalTime;
@@ -232,5 +231,7 @@ void create_dummy_threads(u_int numBikers);
  * @return
  */
 void destroy_dummy_threads();
+
+int compareTo(const void*, const void*);
 
 #endif

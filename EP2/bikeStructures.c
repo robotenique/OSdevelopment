@@ -74,6 +74,7 @@ void print_buffer(Buffer b) {
     for (size_t i = 0; i < b->i; i++)
         printf("%luº - Biker %u\n", i+1, b->data[i].id);
     if ((b->lap + 1)%10 == 0) {
+        printf("Pontuação na volta %d\n", b->lap + 1);
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
             printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
