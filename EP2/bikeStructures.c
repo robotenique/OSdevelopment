@@ -86,7 +86,7 @@ void print_buffer(Buffer b) {
             printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
         for (size_t i = 0; i < broken->i; i++) {
             Biker x = bikers[broken->data[i].id];
-            printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap, x->id, ((float)x->totalTime)/1000.0, x->score);
+            printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap + 1, x->id, ((float)x->totalTime)/1000.0, x->score);
         }
     }
 }
@@ -104,8 +104,6 @@ void print_buffer(Buffer b) {
 void add_score(Scoreboard sb, Biker x) {
     P(&(sb->scbr_mtx));
     u_int pos = x->lap % sb->n;
-    // TODO: LOCK A MUTEX of this position... maybe it's
-    // better to keep the mtx list in the Scoreboard struct...
     if(sb->scores[pos] && sb->scores[pos]->lap != x->lap)
         pos = reallocate_scoreboard(sb, x);
     if(sb->scores[pos] == NULL)
@@ -133,7 +131,6 @@ void add_score(Scoreboard sb, Biker x) {
     V(&(b->mtx));
 
     if(sb->scores[pos] != NULL && b->i == sb->tot_num_bikers) {
-        //printf("DESTRUINDO buffer\n"); // TODO: Delete this buffer and print everything...
         print_buffer(b);
         destroy_buffer(sb->scores[pos]);
         sb->scores[pos] = NULL;

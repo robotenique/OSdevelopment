@@ -3,8 +3,6 @@
 #include "debugger.h"
 #include "randomizer.h"
 
-// TODO: In the end, wait for all threads to join
-
 bool try_move(Biker self, u_int next_lane);
 void calc_new_speed(Biker self);
 void break_biker(Biker self);
@@ -175,7 +173,6 @@ void* biker_loop(void *arg) {
             }
             par = 1;
             (self->lap)++;
-            // TODO: Check if the sb->tot_num_bikers is correct....
             if ((self->lap+1)%15 == 0 && event(0.01) && sb->tot_num_bikers > 5 && (self->lap+1) != 0) { // Break it down?
                 P(&(speedway.mtxs[self->i][self->j]));
                 speedway.road[self->i][self->j] = -1;
@@ -253,6 +250,7 @@ void* biker_loop(void *arg) {
  * @return
  */
 void break_biker(Biker self) {
+    //TODO: UPDATE THE LSP IN SOME PLACE
     printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, self->lsp + 1, self->lap + 1);
     self->broken = true;
     P(&broken_mtx);
