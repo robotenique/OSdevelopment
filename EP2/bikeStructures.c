@@ -106,14 +106,13 @@ void print_buffer(Buffer b) {
 void add_score(Biker x) {
     P(&(sb.scbr_mtx));
     u_int pos = x->lap % sb.n;
-    // TODO: LOCK A MUTEX of this position... maybe it's
-    // better to keep the mtx list in the Scoreboard struct...
     if(sb.scores[pos] && sb.scores[pos]->lap != x->lap)
         pos = reallocate_scoreboard(x);
     if(sb.scores[pos] == NULL)
         sb.scores[pos] = new_buffer(x->lap, sb.tot_num_bikers);
     Buffer prev_b = sb.scores[(pos - 1 + sb.n)%sb.n];
     Buffer b = sb.scores[pos];
+
     P(&(b->mtx));
     if (prev_b != NULL && prev_b->lap + 1 == b->lap && prev_b->i == 1)
         x->score += 20;
@@ -134,7 +133,6 @@ void add_score(Biker x) {
     V(&(b->mtx));
 
     if(sb.scores[pos] != NULL && b->i == sb.tot_num_bikers) {
-        printf("DESTRUINDO buffer %u\n", sb.scores[pos]->lap);
         print_buffer(b);
         destroy_buffer(sb.scores[pos]);
         sb.scores[pos] = NULL;
