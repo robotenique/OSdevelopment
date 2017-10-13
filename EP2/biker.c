@@ -258,10 +258,6 @@ void* biker_loop(void *arg) {
  * @return
  */
 void break_biker(Biker self) {
-<<<<<<< HEAD
-    //TODO: UPDATE THE LSP IN SOME PLACE
-    printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, self->lsp + 1, self->lap + 1);
-=======
     u_int pos = 0;
     Buffer b = new_buffer(-1, speedway.num_bikers);
     for (int i = 0; i < speedway.num_bikers; i++)
@@ -269,7 +265,6 @@ void break_biker(Biker self) {
     qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
     while (b->data[pos].id != self->id) pos++;
     printf("Ciclista %u (%uº lugar na classificação) quebrou na volta %u\n", self->id, pos + 1, self->lap + 1);
->>>>>>> 1bae2ae93fd9062c0b1f93ab12a74bdeb8b53c4a
     self->broken = true;
     P(&broken_mtx);
         broken->append(broken, self->id, self->score, self->totalTime);
