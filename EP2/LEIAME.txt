@@ -1,4 +1,5 @@
-
+João Gabriel Basi Nº USP: 9793801
+Juliano Garcia de Oliveira Nº USP: 9277086
 
 Para compilar o simulador é só rodar "make all" no terminal.
 Para rodar o simulador, digite "./bikeSim <d> <n> <v> <debug>", onde d é o
