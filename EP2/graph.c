@@ -29,6 +29,15 @@ u_int min(u_int a, u_int b) {
  |                           Graph functions                           |
  *---------------------------------------------------------------------*/
 
+/*
+ * Function: new_adjacencyList
+ * --------------------------------------------------------
+ * Creates a new adjacency list with the given num. of vertices
+ *
+ * @args num_vertex : the number of vertices
+ *
+ * @return the created adjacency list
+ */
 AdjList new_adjacencyList(u_int num_vertex){
     AdjList ret = emalloc(sizeof(struct adj_s));
     ret->vertexList = emalloc(num_vertex*sizeof(List));
@@ -77,6 +86,14 @@ void add_edge(Grafinho g, u_int from, u_int to) {
     }
 }
 
+/*
+ * Function: SCC_aux
+ * --------------------------------------------------------
+ * Routine of the Tarjan Algorithm (see the impl.)
+ *
+ *
+ * @return
+ */
 void SCC_aux(Grafinho g, u_int u, u_int disc[], u_int low[],
              Stack st, bool stackMember[], Stacklist sl){
     disc[u] = low[u] = ++timeG;
