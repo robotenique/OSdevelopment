@@ -14,7 +14,7 @@
 #include "bikeStructures.h"
 #include "debugger.h"
 
-void add_SCCstack(Stacklist st, Stack newscc);
+void add_SCCstack(Stacklist st, Stack newscc, u_int size);
 
 // Global variable for the SCC
 static u_int timeG = 0;
@@ -86,6 +86,18 @@ void add_edge(Grafinho g, u_int from, u_int to) {
     }
 }
 
+Stack get_next_free_stack(Stacklist sl, u_int size) {
+    for (scc_node* x = sl->head; x != NULL; x = x->next) {
+        if (empty(x->scc))
+            return x->scc;
+    }
+    scc_node* t = emalloc(sizeof(scc_node));
+    t->scc = new_stack(size);
+    t->next = sl->head;
+    sl->head = t;
+    return t->scc;
+}
+
 /*
  * Function: SCC_aux
  * --------------------------------------------------------
@@ -110,7 +122,7 @@ void SCC_aux(Grafinho g, u_int u, u_int disc[], u_int low[],
     }
     u_int w = 0;
     if(low[u] == disc[u]) {
-        Stack newscc = new_stack(g->V);
+        Stack newscc = get_next_free_stack(sl, g->V);
         while (top(st) != u) {
             w = top(st);
             push(newscc, w);
@@ -121,7 +133,8 @@ void SCC_aux(Grafinho g, u_int u, u_int disc[], u_int low[],
         push(newscc, w);
         stackMember[w] = false;
         pop(st);
-        add_SCCstack(sl, newscc);
+        if (newscc->top < sl->threshold)
+            reset(newscc);
     }
 }
 
@@ -164,7 +177,7 @@ Stacklist new_Stacklist(u_int threshold){
     return sl;
 }
 
-void add_SCCstack(Stacklist sl, Stack newscc){
+void add_SCCstack(Stacklist sl, Stack newscc, u_int size){
     // Don't add if the SCC has more than the threshold number of components
     if(newscc->top < sl->threshold){
         destroy_stack(newscc);
@@ -172,8 +185,9 @@ void add_SCCstack(Stacklist sl, Stack newscc){
     }
     scc_node* t = emalloc(sizeof(scc_node));
     t->scc = newscc;
-    t->next = sl->head == NULL ? NULL : sl->head;
+    t->next = sl->head;
     sl->head = t;
+    newscc = new_stack(size);
 }
 
 void destroy_Stacklist(Stacklist sl){
@@ -190,11 +204,13 @@ void destroy_Stacklist(Stacklist sl){
 void debugStacklist(Stacklist sl){
     printf("Debug Stacklist {\n");
     for (scc_node* x = sl->head; x != NULL; x = x->next) {
-        for (size_t i = 0; i < x->scc->top - 1; i++) {
-            Biker b = bikers[x->scc->v[i]];
-            printf("%s%d%s , ", b->color, b->id, RESET);
+        if (!empty(x->scc)) {
+            for (size_t i = 0; i < x->scc->top - 1; i++) {
+                Biker b = bikers[x->scc->v[i]];
+                printf("%s%d%s , ", b->color, b->id, RESET);
+            }
+            printf("%d\n", x->scc->v[x->scc->top - 1]);
         }
-        printf("%d\n", x->scc->v[x->scc->top - 1]);
     }
     printf("}\n");
 }

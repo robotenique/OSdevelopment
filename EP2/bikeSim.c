@@ -70,16 +70,15 @@ int main(int argc, char const *argv[]) {
             speedway.moveTypes[NUM_LANES-1] = TOP;
 
             // Get the SCCs
-            Stacklist sccl = new_Stacklist(speedway.length - 1);
-            SCC(speedway.g, sccl);
+            SCC(speedway.g, speedway.sccl);
 
-            //if (sccl->head != NULL) {
+            //if (speedway.sccl->head != NULL) {
             //    debugAdj(speedway.g->adj);
-            //    debugStacklist(sccl);
+            //    debugStacklist(speedway.sccl);
             //}
 
             // Put NONE at all cycle vertices' lines
-            for (scc_node* x = sccl->head; x != NULL; x = x->next)
+            for (scc_node* x = speedway.sccl->head; x != NULL; x = x->next)
                 for (int i = 0; i < x->scc->top; i++)
                     speedway.moveTypes[bikers[x->scc->v[i]]->j] = NONE;
 
@@ -95,14 +94,12 @@ int main(int argc, char const *argv[]) {
                 }
             }
 
-            for (scc_node* x = sccl->head; x != NULL; x = x->next) {
+            for (scc_node* x = speedway.sccl->head; x != NULL; x = x->next) {
                 while (!empty(x->scc)) {
                     Biker b = bikers[pop(x->scc)];
                     b->moveType = speedway.moveTypes[b->j];
                 }
             }
-
-            destroy_Stacklist(sccl);
 
             // Reset the graph
             reset_grafinho(speedway.g);

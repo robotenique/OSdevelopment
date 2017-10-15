@@ -42,6 +42,7 @@ u_int reallocate_scoreboard(Biker x) {
             temp[new_pos] = sb.scores[i];
         }
     }
+    free(sb.scores);
     sb.scores = temp;
     sb.n = new_sz;
 
@@ -236,6 +237,7 @@ void create_speedway(u_int d, u_int laps, u_int num_bikers) {
         speedway.moveTypes[i] = TOPDOWN;
     speedway.moveTypes[NUM_LANES-1] = TOP;
     speedway.g = new_grafinho(num_bikers);
+    speedway.sccl = new_Stacklist(speedway.length - 1);
     speedway.exists = &exists;
 }
 
@@ -248,6 +250,7 @@ void destroy_speedway() {
     free(speedway.moveTypes);
     free(speedway.road);
     free(speedway.mtxs);
+    destroy_Stacklist(speedway.sccl);
     destroy_grafinho(speedway.g);
 }
 

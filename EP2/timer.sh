@@ -31,6 +31,7 @@ for i in {1..30};
 do
     $(/usr/bin/time -f "%e" ./bikeSim $fixed_size $short_bikers $short_laps > /dev/null)
     $(./memusage.sh --progname="bikeSim" ./bikeSim $fixed_size $short_bikers $short_laps > /dev/null 2> coisa.out && head -n2 coisa.out >> output)
+    echo "End test $i"
 done
 
 echo "     ----> MED_BIKERS" && echo "MED_BIKERS" >> output
@@ -38,6 +39,7 @@ for i in {1..30};
 do
     $(/usr/bin/time -f "%e" ./bikeSim $fixed_size $med_bikers $short_laps > /dev/null)
     $(./memusage.sh --progname="bikeSim" ./bikeSim $fixed_size $med_bikers $short_laps > /dev/null 2> coisa.out && head -n2 coisa.out >> output)
+    echo "End test $i"
 done
 
 echo "     ----> LONG_BIKERS" && echo "LONG_BIKERS" >> output
@@ -45,7 +47,7 @@ for i in {1..30};
 do
     $(/usr/bin/time -f "%e" ./bikeSim $fixed_size $long_bikers $short_laps > /dev/null)
     $(./memusage.sh --progname="bikeSim" ./bikeSim $fixed_size $long_bikers $short_laps > /dev/null 2> coisa.out && head -n2 coisa.out >> output)
-
+    echo "End test $i"
 done
 
 #################################################################
@@ -58,6 +60,7 @@ for i in {1..30};
 do
     $(/usr/bin/time -f "%e" ./bikeSim $fixed_size $short_bikers $med_laps > /dev/null)
     $(./memusage.sh --progname="bikeSim" ./bikeSim $fixed_size $short_bikers $med_laps > /dev/null 2> coisa.out && head -n2 coisa.out >> output)
+    echo "End test $i"
 done
 
 echo "     ----> MED_BIKERS" && echo "MED_BIKERS" >> output
@@ -65,6 +68,7 @@ for i in {1..30};
 do
     $(/usr/bin/time -f "%e" ./bikeSim $fixed_size $med_bikers $med_laps > /dev/null)
     $(./memusage.sh --progname="bikeSim" ./bikeSim $fixed_size $med_bikers $med_laps > /dev/null 2> coisa.out && head -n2 coisa.out >> output)
+    echo "End test $i"
 done
 
 echo "     ----> LONG_BIKERS" && echo "LONG_BIKERS" >> output
@@ -72,7 +76,7 @@ for i in {1..30};
 do
     $(/usr/bin/time -f "%e" ./bikeSim $fixed_size $long_bikers $med_laps > /dev/null)
     $(./memusage.sh --progname="bikeSim" ./bikeSim $fixed_size $long_bikers $med_laps > /dev/null 2> coisa.out && head -n2 coisa.out >> output)
-
+    echo "End test $i"
 done
 
 #################################################################
@@ -86,6 +90,7 @@ for i in {1..30};
 do
     $(/usr/bin/time -f "%e" ./bikeSim $fixed_size $short_bikers $long_laps > /dev/null)
     $(./memusage.sh --progname="bikeSim" ./bikeSim $fixed_size $short_bikers $long_laps > /dev/null 2> coisa.out && head -n2 coisa.out >> output)
+    echo "End test $i"
 done
 
 echo "     ----> MED_BIKERS" && echo "MED_BIKERS" >> output
@@ -93,6 +98,7 @@ for i in {1..30};
 do
     $(/usr/bin/time -f "%e" ./bikeSim $fixed_size $med_bikers $long_laps > /dev/null)
     $(./memusage.sh --progname="bikeSim" ./bikeSim $fixed_size $med_bikers $long_laps > /dev/null 2> coisa.out && head -n2 coisa.out >> output)
+    echo "End test $i"
 done
 
 echo "     ----> LONG_BIKERS" && echo "LONG_BIKERS" >> output
@@ -100,5 +106,5 @@ for i in {1..30};
 do
     $(/usr/bin/time -f "%e" ./bikeSim $fixed_size $long_bikers $long_laps > /dev/null)
     $(./memusage.sh --progname="bikeSim" ./bikeSim $fixed_size $long_bikers $long_laps > /dev/null 2> coisa.out && head -n2 coisa.out >> output)
-
+    echo "End test $i"
 done

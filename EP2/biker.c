@@ -341,6 +341,7 @@ Biker new_biker(u_int id) {
     b->totalTime = 0;
     b->fast = false;
     b->moveType = TOPDOWN;
+    b->broken = false;
     b->color = estrdup(get_color((color_num++)%230));
     b->thread = emalloc(sizeof(pthread_t));
     /* What each mutex is referring to (X is the biker):
