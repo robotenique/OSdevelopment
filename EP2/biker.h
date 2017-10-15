@@ -16,11 +16,9 @@
 typedef enum { NONE, TOP, DOWN, TOPDOWN } Move;
 
 struct biker {
-    // TODO: remove color after finishing EP (or NOT!)
     // Speed = 2 (90 km/h) , 3 (60 km/h),  6 (30 km/h)
     u_int lap, i, j, id, score, speed;
     bool fast, moved, *used_mtx;
-    char *color;
     u_lint totalTime;
     Move moveType;
     pthread_t *thread;

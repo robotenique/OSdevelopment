@@ -44,8 +44,8 @@ typedef struct buffer_s* Buffer;
 typedef struct scbr_s {
     Buffer *scores;
     bool foundFast;
-    u_int n;
-    u_int tot_num_bikers, act_num_bikers;
+    u_int n, act_num_bikers;
+    u_int *tot_num_bikers;
     pthread_mutex_t scbr_mtx;
     void(*add_score)(Biker);
 } Scoreboard;

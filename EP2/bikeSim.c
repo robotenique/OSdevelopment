@@ -42,14 +42,14 @@ int main(int argc, char const *argv[]) {
 
     init(num_bikers, num_laps, road_sz);
     if(DEBUG_MODE)
-        debug_road_better();
+        debug_road();
     pthread_barrier_wait(&start_shot);
     u_int par = 1;
 
     pthread_barrier_wait(&barr);
 
     if(DEBUG_MODE)
-        debug_road_better();
+        debug_road();
     while (sb.act_num_bikers != 0) {
 
         pthread_barrier_wait(&debugger_barr);
@@ -97,7 +97,7 @@ int main(int argc, char const *argv[]) {
         pthread_barrier_wait(&barr);
 
         if (DEBUG_MODE && (par%3 == 0 || sb.foundFast) && sb.act_num_bikers != 0)
-            debug_road_better();
+            debug_road();
         par++;
     }
 

@@ -209,8 +209,9 @@ void* biker_loop(void *arg) {
                 self->calc_new_speed(self);
             }
             par = 1;
+            u_int interval = (self->lap+1)/15;
             (self->lap)++;
-            if ((self->lap+1)%15 == 0 && event(0.01) && sb.tot_num_bikers > 5 &&
+            if ((self->lap+1)%15 == 0 && event(0.01) && sb.tot_num_bikers[interval] > 5 &&
                 (self->lap+1) != 0) { // Break it down?
                 P(&(speedway.mtxs[self->i][self->j]));
                 speedway.road[self->i][self->j] = -1;
@@ -221,7 +222,7 @@ void* biker_loop(void *arg) {
                 V(&(speedway.mymtx));
                 P(&(sb.scbr_mtx));
                 sb.act_num_bikers--;
-                sb.tot_num_bikers--;
+                for (int i = interval+1; i <= (speedway.laps/15); sb.tot_num_bikers[i]--, i++)
                 V(&(sb.scbr_mtx));
             }
             if (self->lap == speedway.laps) {
@@ -293,7 +294,6 @@ Biker new_biker(u_int id) {
     b->fast = false;
     b->moveType = TOPDOWN;
     b->broken = false;
-    //b->color = estrdup(get_color((color_num++)%230));
     b->thread = emalloc(sizeof(pthread_t));
     /* What each mutex is referring to (X is the biker):
      *    0
@@ -338,7 +338,6 @@ void destroy_bikers(u_int numBikers) {
             free(b->thread);
             free(b->mtxs);
             free(b->used_mtx);
-            free(b->color);
             free(b);
         }
     }

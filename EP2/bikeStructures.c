@@ -115,10 +115,13 @@ void print_buffer(Buffer b) {
 void add_score(Biker x) {
     P(&(sb.scbr_mtx));
     u_int pos = x->lap % sb.n;
-    if(sb.scores[pos] && sb.scores[pos]->lap != x->lap)
+    u_int interval = (x->lap + 1)/15;
+    if (sb.scores[pos] && sb.scores[pos]->lap != x->lap)
         pos = reallocate_scoreboard(x);
-    if(sb.scores[pos] == NULL)
-        sb.scores[pos] = new_buffer(x->lap, sb.tot_num_bikers);
+    if (sb.scores[pos] == NULL) {
+        sb.scores[pos] = new_buffer(x->lap, sb.tot_num_bikers[interval]);
+        printf("%d %d\n", interval, sb.tot_num_bikers[interval]);
+    }
     Buffer prev_b = sb.scores[(pos - 1 + sb.n)%sb.n];
     Buffer b = sb.scores[pos];
 
@@ -141,7 +144,8 @@ void add_score(Biker x) {
     }
     V(&(b->mtx));
 
-    if(sb.scores[pos] != NULL && b->i == sb.tot_num_bikers) {
+    if(sb.scores[pos] != NULL && b->i == sb.tot_num_bikers[interval]) {
+        printf("%d == %d %d\n", b->i, interval, sb.tot_num_bikers[interval]);
         print_buffer(b);
         destroy_buffer(sb.scores[pos]);
         sb.scores[pos] = NULL;
@@ -268,7 +272,8 @@ void new_scoreboard(u_int laps, u_int num_bikers) {
     for (size_t i = 0; i < init_sz; sb.scores[i++] = NULL);
     sb.n = init_sz;
     sb.foundFast = false;
-    sb.tot_num_bikers = num_bikers;
+    sb.tot_num_bikers = emalloc((num_bikers/15 + 2)*sizeof(u_int));
+    for (int i = 0; i <= (num_bikers/15 + 1); sb.tot_num_bikers[i] = num_bikers, i++)
     sb.act_num_bikers = num_bikers;
     pthread_mutex_init(&(sb.scbr_mtx), NULL);
     sb.add_score = &add_score;
@@ -280,6 +285,7 @@ void destroy_scoreboard() {
             destroy_buffer(sb.scores[i]);
     }
     free(sb.scores);
+    free(sb.tot_num_bikers);
 }
 
 Buffer new_buffer(u_int lap, u_int num_bikers) {

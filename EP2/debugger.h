@@ -10,13 +10,18 @@
 #ifndef __DEBUGGER_H__
 #define __DEBUGGER_H__
 
-#include "bikeStructures.h"
-
 #define RESET "\x1b[0m"
 
+/*
+ * Function: debug_road
+ * --------------------------------------------------------
+ * Prints out a formatted road with bikers' ids
+ *
+ * @args
+ *
+ * @return
+ */
 void debug_road();
-void debug_road_better();
-void debug_buffer(Buffer);
 
 /*
  * Function: print_prog_name
@@ -28,5 +33,4 @@ void debug_buffer(Buffer);
  * @return
  */
 void print_prog_name();
-const char *get_color(u_int);
 #endif
