@@ -39,28 +39,20 @@ int main(int argc, char const *argv[]) {
         DEBUG_MODE = true;
     else
         DEBUG_MODE = false;
-    /*u_int num_bikers = 400;
-    u_int num_laps = 2;
-    u_int road_sz = 80;
-    DEBUG_MODE = true;*/
 
     init(num_bikers, num_laps, road_sz);
     if(DEBUG_MODE)
-        debug_road();
+        debug_road_better();
     pthread_barrier_wait(&start_shot);
     u_int par = 1;
 
-    //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb.act_num_bikers);
-    //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
     pthread_barrier_wait(&barr);
-    //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
+
     if(DEBUG_MODE)
-        debug_road();
+        debug_road_better();
     while (sb.act_num_bikers != 0) {
 
-        //printf("\t ---> ****MAIN***** ESPERANDO BARR2\n");
         pthread_barrier_wait(&debugger_barr);
-        //printf("\t <--- ****MAIN***** CHEGOU BARR2\n");
 
         if (sb.act_num_bikers >= speedway.length) {
             // Reset moveTypes array
@@ -72,12 +64,7 @@ int main(int argc, char const *argv[]) {
             // Get the SCCs
             SCC(speedway.g, speedway.sccl);
 
-            //if (speedway.sccl->head != NULL) {
-            //    debugAdj(speedway.g->adj);
-            //    debugStacklist(speedway.sccl);
-            //}
-
-            // Put NONE at all cycle vertices' lines
+            // Put NONE at all lines that have a vertice that belongs to some SCC
             for (scc_node* x = speedway.sccl->head; x != NULL; x = x->next)
                 for (int i = 0; i < x->scc->top; i++)
                     speedway.moveTypes[bikers[x->scc->v[i]]->j] = NONE;
@@ -94,6 +81,7 @@ int main(int argc, char const *argv[]) {
                 }
             }
 
+            // Assign move types to all SCC's vertices
             for (scc_node* x = speedway.sccl->head; x != NULL; x = x->next) {
                 while (!empty(x->scc)) {
                     Biker b = bikers[pop(x->scc)];
@@ -105,18 +93,11 @@ int main(int argc, char const *argv[]) {
             reset_grafinho(speedway.g);
         }
 
-        //printf("\t ---> ****MAIN***** ESPERANDO BARR3\n");
         pthread_barrier_wait(&prep_barr);
-        //printf("\t <--- ****MAIN***** CHEGOU BARR3\n");
-
-        //printf("****MAIN***** ACTIVE BIKERS = %u\n", sb.act_num_bikers);
-        //printf("\t ---> ****MAIN***** ESPERANDO BARR1\n");
         pthread_barrier_wait(&barr);
-        //printf("\t <--- ****MAIN***** CHEGOU BARR1\n");
-        //double dt = 0.03;
-        //nanosleep(&(struct timespec){floor(dt),(long)((dt-floor(dt))/1e-9)}, NULL);
+
         if (DEBUG_MODE && (par%3 == 0 || sb.foundFast) && sb.act_num_bikers != 0)
-            debug_road();
+            debug_road_better();
         par++;
     }
 
@@ -145,7 +126,7 @@ void init(u_int num_bikers, u_int num_laps, u_int road_sz) {
     pthread_barrier_init(&barr, NULL, num_bikers + 1);
     // Debug barrier: wait the debugger, then proceed
     pthread_barrier_init(&debugger_barr, NULL, num_bikers + 1);
-    // Barrier that checks for any cycle
+    // Barrier that makes all bikers finish at the same time
     pthread_barrier_init(&prep_barr, NULL, num_bikers + 1);
     // Make all bikers start at the same time
     pthread_barrier_init(&start_shot, NULL, num_bikers + 1);

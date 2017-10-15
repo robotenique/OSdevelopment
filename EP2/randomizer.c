@@ -10,9 +10,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <pthread.h>
 #include "randomizer.h"
+#include "macros.h"
 
 static bool initRandom = false;
+static pthread_mutex_t rmtx = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * Function: initSeed
@@ -32,14 +35,19 @@ void initSeed(){
 }
 
 u_int randint(u_int a, u_int b){
+    P(rmtx);
     initSeed();
-    return a + rand()%b;
+    u_int ret = a + rand()%b;
+    V(rmtx);
+    return ret;
 }
 
 bool event(double probability) {
+    P(rmtx);
     initSeed();
-    u_int roll = randint(0, 100); // Don't change this
-    if(roll < probability*100) // Don't change this
+    u_int roll = randint(0, 100);
+    V(rmtx);
+    if(roll < probability*100)
         return true;
     return false;
 }

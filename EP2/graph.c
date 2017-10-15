@@ -159,35 +159,11 @@ void SCC(Grafinho g, Stacklist sl) {
     free(stackMember);
 }
 
-void debugAdj(AdjList adj) {
-    for (u_int i = 0; i < adj->size; i++) {
-        printf("FROM = %d :  ", i);
-        if(adj->vertexList[i] == NULL)
-            printf("Nothing from vertex %d...\n", i);
-        for (List t = adj->vertexList[i]; t != NULL ; t = t->next)
-            printf("%d, ", t->to);
-        printf("\n");
-    }
-}
-
 Stacklist new_Stacklist(u_int threshold){
     Stacklist sl = emalloc(sizeof(struct stacklist_s));
     sl->head = NULL;
     sl->threshold = threshold;
     return sl;
-}
-
-void add_SCCstack(Stacklist sl, Stack newscc, u_int size){
-    // Don't add if the SCC has more than the threshold number of components
-    if(newscc->top < sl->threshold){
-        destroy_stack(newscc);
-        return;
-    }
-    scc_node* t = emalloc(sizeof(scc_node));
-    t->scc = newscc;
-    t->next = sl->head;
-    sl->head = t;
-    newscc = new_stack(size);
 }
 
 void destroy_Stacklist(Stacklist sl){
@@ -199,20 +175,6 @@ void destroy_Stacklist(Stacklist sl){
         free(tmp);
      }
      free(sl);
-}
-
-void debugStacklist(Stacklist sl){
-    printf("Debug Stacklist {\n");
-    for (scc_node* x = sl->head; x != NULL; x = x->next) {
-        if (!empty(x->scc)) {
-            for (size_t i = 0; i < x->scc->top - 1; i++) {
-                Biker b = bikers[x->scc->v[i]];
-                printf("%s%d%s , ", b->color, b->id, RESET);
-            }
-            printf("%d\n", x->scc->v[x->scc->top - 1]);
-        }
-    }
-    printf("}\n");
 }
 
 /*---------------------------------------------------------------------

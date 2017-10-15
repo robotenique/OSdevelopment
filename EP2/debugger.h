@@ -15,6 +15,7 @@
 #define RESET "\x1b[0m"
 
 void debug_road();
+void debug_road_better();
 void debug_buffer(Buffer);
 
 /*

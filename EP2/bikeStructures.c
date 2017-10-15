@@ -18,7 +18,6 @@
 #include "randomizer.h"
 #include "graph.h"
 
-void print_dummy();
 
 /*
  * Function: reallocate_scoreboard
@@ -32,7 +31,6 @@ void print_dummy();
  * @return  the new position for the buffer
  */
 u_int reallocate_scoreboard(Biker x) {
-    //printf("REALOCANDO SCOREBOARD....\n");
     u_int new_sz = sb.n * 2;
     Buffer *temp = emalloc(new_sz*sizeof(Buffer));
     for (size_t i = 0; i < new_sz; temp[i] = NULL, i++);
@@ -75,22 +73,32 @@ int compareTo(const void *a, const void *b) {
 void print_buffer(Buffer b) {
     printf("Relatório da volta %u\n", b->lap + 1);
     for (size_t i = 0; i < b->i; i++)
-        printf("%luº - Biker %u\n", i+1, b->data[i].id);
+        printf("%luº - Ciclista %u\n", i+1, b->data[i].id);
+    for (size_t i = 0; i < broken->i; i++) {
+        Biker x = bikers[broken->data[i].id];
+        if (x->lap <= b->lap)
+            printf("Quebrou na volta %u - Ciclista %u\n", x->lap + 1, x->id);
+    }
     if ((b->lap + 1)%10 == 0) {
         printf("Pontuação na volta %d\n", b->lap + 1);
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         for (size_t i = 0; i < b->i; i++)
-            printf("%luº - Biker %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+            printf("%luº - Ciclista %u - %upts\n", i+1, b->data[i].id, b->data[i].score);
+        for (size_t i = 0; i < broken->i; i++) {
+            Biker x = bikers[broken->data[i].id];
+            if (x->lap <= b->lap)
+                printf("Quebrou na volta %u - Ciclista %u - %upts\n", x->lap + 1, x->id, x->score);
+        }
     }
     if (b->lap == speedway.laps - 1) {
         qsort(b->data, b->i, sizeof(struct score_s), &compareTo);
         qsort(broken->data, broken->i, sizeof(struct score_s), &compareTo);
         printf("==== Relatório Final ====\n");
         for (size_t i = 0; i < b->i; i++)
-            printf("%luº - Biker %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
+            printf("%luº - Ciclista %u - %gs - %upts\n", i+1, b->data[i].id, ((float)b->data[i].time)/1000.0, b->data[i].score);
         for (size_t i = 0; i < broken->i; i++) {
             Biker x = bikers[broken->data[i].id];
-            printf("Quebrou na volta %u - Biker %u - %gs - %upts\n", x->lap + 1, x->id, ((float)x->totalTime)/1000.0, x->score);
+            printf("Quebrou na volta %u - Ciclista %u - %gs - %upts\n", x->lap + 1, x->id, ((float)x->totalTime)/1000.0, x->score);
         }
     }
 }
@@ -207,7 +215,7 @@ void run_next(DummyThreads dt) {
     P(&(dt->dummy_mtx));
     pthread_create(&(dt->dummyT[dt->i]), NULL, dt->dummy_func, NULL);
     dt->i++;
-    print_dummy();
+    //print_dummy();
     V(&(dt->dummy_mtx));
 }
 
@@ -304,9 +312,4 @@ void destroy_dummy_threads(){
     pthread_mutex_destroy(&(dummy_threads->dummy_mtx));
     free(dummy_threads->dummyT);
     free(dummy_threads);
-}
-
-void print_dummy() {
-    return;
-    //printf("NO MOMENTO TEMOS = %u ...........\n", dummy_threads->i);
 }

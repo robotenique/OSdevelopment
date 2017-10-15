@@ -143,28 +143,6 @@ Stacklist new_Stacklist(u_int threshold);
  */
 void destroy_Stacklist(Stacklist sl);
 
-/*
- * Function: debugAdj
- * --------------------------------------------------------
- * Receives an adjacency list and prints out its content
- *
- * @args adj : the AdjList
- *
- * @return
- */
-void debugAdj(AdjList adj);
-
-/*
- * Function: debugStacklist
- * --------------------------------------------------------
- * Receives a stacklist and prints out its content
- *
- * @args sl : the stacklist
- *
- * @return
- */
-void debugStacklist(Stacklist sl);
-
 /*---------------------------------------------------------------------*
  |                           Stack functions                           |
  *---------------------------------------------------------------------*/

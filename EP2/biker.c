@@ -16,35 +16,6 @@ typedef enum {BROKEN, FINISHED, NORMAL} Status;
 
 static pthread_mutex_t broken_mtx;
 
-//TODO: remove these =========================
-static u_int color_num = 0;
-
-char* getspeed(Biker self) {
-
-  if (self->speed == 2)
-    return estrdup("\x1b[38;5;240m90 km/h\x1b[0m");
-  else if(self->speed == 3)
-    return estrdup("\x1b[38;5;214m60 km/h\x1b[0m");
-  else if(self->speed == 6)
-    return estrdup("\x1b[38;5;105m30 km/h\x1b[0m");
-  else
-    return estrdup("QUE??");
-}
-
-char* getsymbol(int i){
-    if (i == 0)
-        return estrdup("↖");
-    else if(i == 1)
-        return estrdup("←");
-    else if(i == 2)
-        return estrdup("↙");
-    else if(i == 3)
-        return estrdup("↓");
-    die("ERROR!");
-    return estrdup("Error!");
-}
-//============================================
-
 /*
  * Function: calc_new_speed
  * --------------------------------------------------------
@@ -78,15 +49,12 @@ bool try_move(Biker self, u_int next_lane) {
     u_int i = self->i;
     u_int j = self->j;
     u_int next_meter = (i+1)%speedway.length;
-    //printf("%d Lock %d %d (Up)\n", self->id, next_meter, next_lane);
     // Lock the mutex of the next position
     P(&(speedway.mtxs[next_meter][next_lane]));
     // If the next position in the road is free
     if (speedway.road[next_meter][next_lane] == -1) {
-        //printf("%d Lock %d %d (Self)\n", self->id, i, j);
         // Lock the mutex of the current position
         P(&(speedway.mtxs[i][j]));
-        //printf("id = %02d, speed = %s , next_meter = %02d, curr_lane = %02d, next_lane = %02d, %s\uf206%s\n", self->id, getspeed(self), next_meter, j, next_lane, self->color, RESET);
         speedway.road[next_meter][next_lane] = self->id;
         speedway.road[i][j] = -1;
         if (j != next_lane) {
@@ -98,10 +66,8 @@ bool try_move(Biker self, u_int next_lane) {
         self->i = next_meter;
         self->j = next_lane;
         self->moved = true;
-        //printf("%d Unlock %d %d (Self)\n", self->id, i, j);
         V(&(speedway.mtxs[i][j]));
     }
-    //printf("%d Unlock %d %d (Up)\n", self->id, next_meter, next_lane);
     V(&(speedway.mtxs[next_meter][next_lane]));
 
     return self->moved;
@@ -182,21 +148,17 @@ void* biker_loop(void *arg) {
                 if((mem = speedway.road[next_meter][j-1]) != -1 && !(bikers[mem]->moved)){
                     bikers[mem]->used_mtx[0] = true;
                     V(&(speedway.mtxs[next_meter][j-1]));
-                    //printf("--> %sBiker %d%s locked %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
                     P(&(bikers[mem]->mtxs[0]));
                 }
                 else
                     V(&(speedway.mtxs[next_meter][j-1]));
-                //printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
             }
             P(&(speedway.mtxs[next_meter][j]));
             // The meter just ahead
             if ((mem = speedway.road[next_meter][j]) != -1 && !(bikers[mem]->moved)) {
                 bikers[mem]->used_mtx[1] = true;
-                //printf("--> %sBiker %d%s locked %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
                 V(&(speedway.mtxs[next_meter][j]));
                 P(&(bikers[mem]->mtxs[1]));
-                //printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
             }
             else
                 V(&(speedway.mtxs[next_meter][j]));
@@ -206,10 +168,8 @@ void* biker_loop(void *arg) {
                 P(&(speedway.mtxs[next_meter][j+1]));
                 if((mem = speedway.road[next_meter][j+1]) != -1 && !(bikers[mem]->moved)) {
                     bikers[mem]->used_mtx[2] = true;
-                    //printf("--> %sBiker %d%s locked %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
                     V(&(speedway.mtxs[next_meter][j+1]));
                     P(&(bikers[mem]->mtxs[2]));
-                    //printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
                 }
                 else
                     V(&(speedway.mtxs[next_meter][j+1]));
@@ -220,14 +180,11 @@ void* biker_loop(void *arg) {
                 if((mem = speedway.road[i][j - 1]) != -1 && !(bikers[mem]->moved)) {
                     bikers[mem]->used_mtx[3] = true;
                     V(&(speedway.mtxs[next_meter][j-1]));
-                    //printf("--> %sBiker %d%s locked %s%d%s\n", self->color, self->id, RESET, bikers[mem]->color, mem, RESET);
                     P(&(bikers[mem]->mtxs[3]));
-                    //printf("<-- %sBiker %d%s proceed\n", self->color, self->id, RESET);
                 }
                 else
                     V(&(speedway.mtxs[next_meter][j-1]));
             }
-            //printf("Moving %sbiker %d%s\n", self->color, self->id, RESET);
             if (speedway.exists(i, j - 1) && (self->moveType & TOP) &&
                 speedway.nbpl[j-1] < speedway.length-1 &&
                 speedway.road[next_meter][j] == -1)
@@ -240,13 +197,9 @@ void* biker_loop(void *arg) {
                 moved = self->try_move(self, j + 1);
             self->moved = true;
         }
-        //else
-        //    printf("___%sBiker %d%s___ cant't move!\n", self->color, self->id, RESET);
 
-        for (size_t i = 0; i < 4; i++) {
-            //printf("%sBiker %d%s unlocked %s\n", self->color, self->id, RESET, getsymbol(i));
+        for (size_t i = 0; i < 4; i++)
             V(&(self->mtxs[i]));
-        }
         par++;
         self->totalTime += 20;
         self->moveType = TOPDOWN;
@@ -285,7 +238,6 @@ void* biker_loop(void *arg) {
             }
         }
 
-        //printf("ESPERANDOOOOOOOOOOO 1 %d\n", self->id);
         // Wait all other bikers move
         pthread_barrier_wait(&barr);
         if(biker_status == BROKEN){
@@ -315,7 +267,6 @@ void* biker_loop(void *arg) {
                 add_edge(speedway.g, self->id, mem);
         }
         V(&(speedway.mymtx));
-        //printf("ESPERANDOOOOOOOOOOO 2 %d\n", self->id);
         pthread_barrier_wait(&debugger_barr);
         pthread_barrier_wait(&prep_barr);
     }
@@ -342,7 +293,7 @@ Biker new_biker(u_int id) {
     b->fast = false;
     b->moveType = TOPDOWN;
     b->broken = false;
-    b->color = estrdup(get_color((color_num++)%230));
+    //b->color = estrdup(get_color((color_num++)%230));
     b->thread = emalloc(sizeof(pthread_t));
     /* What each mutex is referring to (X is the biker):
      *    0
