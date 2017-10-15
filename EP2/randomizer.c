@@ -35,18 +35,15 @@ void initSeed(){
 }
 
 u_int randint(u_int a, u_int b){
-    P(rmtx);
+    P(&rmtx);
     initSeed();
     u_int ret = a + rand()%b;
-    V(rmtx);
+    V(&rmtx);
     return ret;
 }
 
 bool event(double probability) {
-    P(rmtx);
-    initSeed();
     u_int roll = randint(0, 100);
-    V(rmtx);
     if(roll < probability*100)
         return true;
     return false;
