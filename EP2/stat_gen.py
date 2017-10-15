@@ -4,12 +4,13 @@ import scipy.stats as st
 import matplotlib.pyplot as plt
 
 def get_CI(v, opt=False):
+    # If opt == true, returns the 't' value, not the [avg - t, avg + t]
     if opt:
         ci = st.t.interval(0.95, len(v) - 1, loc=np.mean(v), scale=st.sem(v))
         arr = [0, 0]
         arr[0] = np.mean(v) - ci[0]
         arr[1] =ci[1] - np.mean(v)
-        return arr
+        return arr #[t, t]
     return st.t.interval(0.95, len(v) - 1, loc=np.mean(v), scale=st.sem(v))
 
 def plot_bar(vals, xlabel ,ylabel, xticklabels, title):
