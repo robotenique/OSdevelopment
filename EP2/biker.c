@@ -285,7 +285,7 @@ void* biker_loop(void *arg) {
  */
 Biker new_biker(u_int id) {
     Biker b = emalloc(sizeof(struct biker));
-    b->lap = (id < NUM_LANES)? 0 : -1;
+    b->lap = -1;
     b->id = id;
     b->score = 0;
     b->speed = 6;
@@ -311,7 +311,7 @@ Biker new_biker(u_int id) {
     }
     // Start the first row of bikers just after the starting line (meter 0) and
     // the other rows, behind them
-    u_int meter = (speedway.length - id/NUM_LANES)%speedway.length;
+    u_int meter = (speedway.length - id/NUM_LANES - 1)%speedway.length;
     u_int lane = id%NUM_LANES;
     speedway.road[meter][lane] = id;
     b->i = meter;
