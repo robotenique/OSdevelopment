@@ -24,4 +24,4 @@ bikeSim: bikeSim.o error.o randomizer.o bikeStructures.o biker.o debugger.o grap
 
 
 clean:
-	rm -f *.o *~ *.out bikeSim graph
+	rm -f *.o *~ *.out bikeSim
