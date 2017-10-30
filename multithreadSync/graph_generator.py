@@ -1,6 +1,15 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+
+'''
+This file is used to generate a graph of the speedway!
+
+Just add the function below to bikeSim.c loop, then call it
+to print the board. Then copy the board and replace the value of
+the 'board' variable below.
+'''
+
 # REQUIREMENTS: Networkx(for python), graphviz(for linux)
 #GENERATE the board with:
 """ void debug_coisa(){

@@ -2,6 +2,13 @@ import math
 import numpy as np
 import scipy.stats as st
 import matplotlib.pyplot as plt
+'''
+This file is used to generate the statistics and the bar plots
+of the biking race simulator.
+
+The data was obtained by running timer.sh, and added to the 
+lists below.
+'''
 
 def get_CI(v, opt=False):
     # If opt == true, returns the 't' value, not the [avg - t, avg + t]
