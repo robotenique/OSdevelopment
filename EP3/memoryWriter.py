@@ -11,19 +11,19 @@ This is the MemoryWriter object file.
 class MemoryWriter(object):
     def __init__(self, filename, page_size):
         """Creates the instance and opens the file"""
-        this.file = open(filename, "rb+")
-        this.page_size = page_size
+        self.file = open(filename, "rb+")
+        self.page_size = page_size
 
-    def write(pid, pos, size):
+    def write(self, pid, pos, size):
         """Writes a pid 'size' times, beginning at 'pos'"""
-        this.file.seek(pos)
-        this.file.write(bytes((pid for i in range(size))))
+        self.file.seek(pos)
+        self.file.write(bytes((pid for i in range(size))))
 
-    def clean(page):
+    def clean(self, page):
         """Cleans a page"""
-        this.file.seek(page*this.page_size)
-        this.file.write(bytes((254 for i in range(this.page_size))))
+        self.file.seek(page*self.page_size)
+        self.file.write(bytes((254 for i in range(self.page_size))))
 
-    def close():
+    def close(self):
         """Closes the file"""
-        this.file.close()
+        self.file.close()
