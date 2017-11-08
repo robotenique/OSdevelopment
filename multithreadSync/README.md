@@ -1,4 +1,5 @@
-# Feito por:
+EP2 - (Threads & Barreiras de Sincronização)
+#### Feito por:
 - João Gabriel Basi
 - Juliano Garcia de Oliveira
 
