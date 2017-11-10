@@ -9,6 +9,7 @@ MAC0422
 This is the main file, with the interactive shell of the memory simulator.
 """
 import cmd, sys
+from simulator import Simulator
 
 class MemoryShell(cmd.Cmd):
     intro = "Welcome to the Memory Simulator! Type help or ? to list commands.\n"
@@ -17,24 +18,34 @@ class MemoryShell(cmd.Cmd):
     # EP3 shell methods
     def do_carrega(self, file):
         """Loads the file specified as argument for the simulation. Can be either relative or absolute path"""
-        pass
+        self.file = open(file, "r")
+        print(f"File \'{file}\' loaded!")
+
 
     def do_espaco(self, num):
         """Informs the memory simulator the algorithm to run for free space management."""
-        pass
+        self.fspc_id = num
+        print(f"Free space manager loaded: \'{num}\'.")
 
     def do_substitui(self, num):
         """Informs the memory simulator the algorithm to run for pages substitution."""
-        pass
+        self.pmem_id = num
+        print(f"Page substitution manager loaded: \'{num}\'.")
 
     def do_executa(self, interval):
         """Runs the simulator and prints the memory state in 'interval' to 'interval' seconds, together with the bitmap content of the memory state"""
-        pass
+        sim = Simulator(self.file, self.fspc_id, self.pmem_id, interval)
+        #sim.loop()
 
     def do_sai(self, arg):
         """Exists the memory simulator interactive shell"""
         # TODO: close files then exit
+        self.file.close()
         exit()
+
+    def do_fullinit(self, arg):
+        sim = Simulator(open("input.in", "r"), 1, 1, 10)
+
 
 if __name__ == '__main__':
     MemoryShell().cmdloop()
