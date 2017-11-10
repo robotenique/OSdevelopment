@@ -10,15 +10,15 @@ This is the Simulator object file.
 
 class Simulator(object):
 
-    def __init__(self, fs, vs, s, p, fsm, psm, ffile, vfile, pfile):
+    def __init__(self, fs, vs, s, p, fsm, psm, pfile):
         self.fs = fs
         self.vs = vs
         self.s = s
         self.p = p
         self.fsm = FreeSpaceMan[fsm]
         self.psm = PageSubstitutionMan[psm]
-        self.ffile = MemoryWriter(ffile, p)
-        self.vfile = MemoryWriter(vfile, p)
+        self.ffile = MemoryWriter("/tmp/ep3.mem", p)
+        self.vfile = MemoryWriter("/tmp/ep3.vir", p)
         with open(pfile, "r+") as f:
             lines = f.readlines()
         (self.procs_stack, self.compacts) = parse(lines)
