@@ -102,8 +102,8 @@ class BestFit(FreeSpaceManager):
         proc.size = ua_used
         if self.memmap[idx + 1][2] == 0:
             self.memmap.pop(idx + 1)
-
         first_page = new_entry[1]
+
         debug_vmem(self.memmap)
 
     @doc_inherit

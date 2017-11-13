@@ -23,7 +23,7 @@ class Process(object):
         vals = list(map(int, vals))
         self.t0 = vals[0]
         self.tf = vals[1]
-        self.b  = math.ceil(vals[2]/ua_size)
+        self.b  = math.ceil(vals[2]/ua_size)*ua_size
         self.pid = Process.next_pid
         self.base = 0
         self.size = 0
