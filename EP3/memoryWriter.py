@@ -11,7 +11,7 @@ This is the MemoryWriter object file.
 class MemoryWriter(object):
     def __init__(self, filename, page_size):
         """Creates the instance and opens the file"""
-        self.file = open(filename, "rb+")
+        self.file = open(filename, "wb+")
         self.page_size = page_size
 
     def write(self, pid, pos, size):

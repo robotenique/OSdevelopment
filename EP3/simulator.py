@@ -8,6 +8,10 @@ MAC0422
 This is the Simulator object file.
 """
 from collections import deque
+from memoryWriter import MemoryWriter
+from freeSpace import BestFit
+
+freespace_managers = [None, BestFit]
 
 class Process(object):
 
@@ -22,8 +26,6 @@ class Process(object):
         for i in range(3, len(vals)-1, 2):
             self.mem_access.append((vals[i], vals[i + 1]))
 
-    def __repr__(self):
-        return f"{self.name} ([t0, tf] = ({self.t0}, {self.tf}), [size] : {self.b}, mem_acess : {self.mem_access}"
     def __str__(self):
         return f"{self.name} ([t0, tf] = ({self.t0}, {self.tf}), [size] : {self.b}, mem_acess : {self.mem_access}"
 
@@ -54,10 +56,10 @@ class Simulator(object):
         self.parse()
         for i in self.procs:
             print(i)
-        #self.fspc_manager = freespace_managers[fspc_id]()
+        self.pfile = MemoryWriter(self.PMEMORY_PATH, self.page_size)
+        self.fspc_manager = freespace_managers[fspc_id](self.total_memory, self.ua_size, self.pfile)
         #self.pmem_manager = pagination_managers[pmem_id]()
-        #self.ffile = MemoryWriter(self.VMEMORY_PATH, self.page_size)
-        #self.vfile = MemoryWriter(self.PMEMORY_PATH, self.page_size)
+        #self.vfile = MemoryWriter(self.VMEMORY_PATH, self.page_size)
 
     def loop():
         act_procs = []
