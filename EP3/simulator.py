@@ -27,11 +27,15 @@ class Process(object):
         Process.next_pid += 1
         for i in range(3, len(vals) - 1, 2):
             self.mem_access.append((vals[i], vals[i + 1]))
-            
+
     def __repr__(self):
         return f"<pid: {self.pid}>"
+
     def __str__(self):
         return f"{self.name} ([t0, tf] = ({self.t0}, {self.tf}), [size] : {self.b}, mem_acess : {self.mem_access}"
+
+    def reset_pids():
+        Process.next_pid = 0
 
 class Simulator(object):
     VMEMORY_PATH = "/tmp/ep3.mem"
@@ -42,6 +46,7 @@ class Simulator(object):
         self.interval = dt
         self.compact_list = deque()
         self.procs = deque()
+        Process.reset_pids()
         self.init_dict = dict() # Initialization dictionary
         self.parse()
         for i in self.procs:

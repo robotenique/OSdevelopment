@@ -10,7 +10,7 @@ Implementation of the Free Space memory manager algorithms
 
 from abc import ABC, abstractmethod
 from collections import deque
-from memsimWrapper import doc_inherit, LinkedList, Node
+from memsimWrapper import doc_inherit
 import math
 
 
@@ -30,10 +30,8 @@ class FreeSpaceManager(ABC):
         self.used_memory = 0
         """Actually, we'll have to use a list... Can't remove something inside
         a deque, only in both ends... #TODO: Change to simple list, or make a linked list."""
-        self.memory = LinkedList()
-        # ('L' or 'P', position, quantity)
-        self.memory.add_node(['L', 0, total_memory//alloc_unit])
-        self.memory.print_nodes()
+        self.memmap = [['L', 0, total_memory//alloc_unit]]
+        # ('L' or 'P', position, quantity)        
 
     @abstractmethod
     def malloc(self, proc):
@@ -56,49 +54,35 @@ class BestFit(FreeSpaceManager):
     @doc_inherit
     def malloc(self, proc):
         mem_conv = lambda u: u*self.alloc_unit
-        curr = self.memory.head
-        ant = None
-        bf_node = None
-        bf_ant = None
-        bf_value = math.inf
-        print("")
-        while curr:
-            if curr.data[0] == 'L':
-                #print("Looking node: ", curr.data)
-                node_mem = mem_conv(curr.data[2])
-                #print("Current node memory: ", node_mem)
-                if proc.b <= node_mem and node_mem < bf_value:
-                    # We found a best fit
-                    bf_node = curr
-                    bf_value = node_mem
-                    bf_ant = ant
-            ant = curr
-            curr = curr.next_node()
-            #print("")
-        if bf_value == math.inf:
+        bf_val = math.inf
+        bf_pos = -1
+        for idx, curr in enumerate(list(self.memmap)):
+            if curr[0] == 'L':
+                curr_mem = mem_conv(curr[2])
+                if proc.b <= curr_mem and curr_mem < bf_val:
+                    bf_pos = idx
+                    bf_val = curr_mem
+
+        if bf_val == math.inf:
             print("No space left! Exiting simulator...")
             exit()
-        #print("Best fit found!")
-        #print(bf_node.data)
-        #print("ANT: ",end="")
-        #print(bf_ant)
-        mem_slots = math.ceil(proc.b/self.alloc_unit)        
-        memory = Node(['P', bf_node.data[1], mem_slots, proc])
-        bf_node.data[1] += mem_slots
-        bf_node.data[2] -= mem_slots
-        if bf_node.data[2] == 0: # We used all space, so bf_node get's deleted
-            memory.nextNode = bf_node.nextNode
-        else:
-            memory.nextNode = bf_node
-        if bf_ant:
-            bf_ant.nextNode = memory
-        else:
-            self.memory.head = memory
-        self.memory.print_nodes()
 
+        ua_used = math.ceil(proc.b/self.alloc_unit)
+        new_entry = ['P', self.memmap[idx][1], ua_used, proc]
+        self.memmap[idx][1] += ua_used
+        self.memmap[idx][2] -= ua_used
+        self.memmap.insert(idx, new_entry)
+        if self.memmap[idx + 1][2] == 0:
+            self.memmap.pop(idx + 1)
+        debug_vmem(self.memmap)
 
 
 
 
     def free(self, process):
         print('Tope')
+
+def debug_vmem(mmem):
+    for i in range(len(mmem) - 1):
+        print(f"{mmem[i]} -> ", end="")
+    print(mmem[-1])
