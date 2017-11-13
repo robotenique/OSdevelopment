@@ -9,7 +9,7 @@ This is the MemoryWriter object file.
 """
 
 class MemoryWriter(object):
-    def __init__(self, filename, page_size):
+    def __init__(self, filename, page_size, ua_size):
         """Creates the instance and opens the file"""
         self.file = open(filename, "wb+")
         self.page_size = page_size

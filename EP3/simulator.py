@@ -15,15 +15,17 @@ fspc_managers = [None, BestFit]
 
 class Process(object):
     next_pid = 0
-    def __init__(self, vals):
+    def __init__(self, vals, ua_size):
         self.name = vals.pop(3)
         self.mem_access = deque()
         print(vals)
         vals = list(map(int, vals))
         self.t0 = vals[0]
         self.tf = vals[1]
-        self.b  = vals[2]
+        self.b  = math.ceil(vals[2]/self.ua_size)
         self.pid = Process.next_pid
+        self.base = 0
+        self.size = 0
         Process.next_pid += 1
         for i in range(3, len(vals) - 1, 2):
             self.mem_access.append((vals[i], vals[i + 1]))
@@ -42,13 +44,12 @@ class Simulator(object):
     PMEMORY_PATH = "/tmp/ep3.vir"
 
     def __init__(self, input_file, fspc_id, pmem_id, dt):
-        self.input_file = input_file
         self.interval = dt
         self.compact_list = deque()
         self.procs = deque()
         Process.reset_pids()
         self.init_dict = dict() # Initialization dictionary
-        self.parse()
+        self.parse(input_file)
         for i in self.procs:
             print(i)
         # TODO: One of these should use the ua_size...
@@ -72,8 +73,8 @@ class Simulator(object):
                 self.fspc_manager.malloc(p)
 
 
-    def parse(self):
-        for num_line, line in enumerate(self.input_file):
+    def parse(self, input_file):
+        for num_line, line in enumerate(input_file):
             vals = line.split()
             if vals[0] == '#' or vals[0][0] == '#':
                 continue
@@ -86,7 +87,7 @@ class Simulator(object):
             elif "COMPACTAR" in line:
                 self.compact_list.append(int(vals[0]))
             else:
-                proc = Process(vals)
+                proc = Process(vals, self.ua_size)
                 self.procs.append(proc)
                 if self.init_dict.get(proc.t0):
                     self.init_dict[proc.t0].append(proc)

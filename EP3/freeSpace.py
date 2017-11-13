@@ -30,7 +30,7 @@ class FreeSpaceManager(ABC):
         """Creates a new FreeSpaceManager.
            \ttotal_memory = Total physical memory
            \talloc_unit = The 'ua' of the memory
-           \tpfile = MemoryWriter instance of physical memory file
+           \tvfile = MemoryWriter instance of physical memory file
         """
         self.alloc_unit = alloc_unit
         self.total_memory = total_memory
@@ -51,43 +51,107 @@ class FreeSpaceManager(ABC):
 
     @abstractmethod
     def free(self, proc):
-        pass
+        idx = 0
+        while (self.memmap[idx][1] != proc.base):
+            idx += 1
+        if (idx != 0 and self.memmap[idx-1][0] == 'L'):
+            self.memmap[idx-1][2] += self.memmap[idx][2]
+            self.memmap.pop(idx)
+        elif (idx != len(self.memmap)-1 and self.memmap[idx+1][0] == 'L'):
+            self.memmap[idx+1][2] += self.memmap[idx][2]
+            self.memmap[idx+1][1] -= self.memmap[idx][2]
+            self.memmap.pop(idx)
+        else:
+            self.memmap[idx][0] = 'L'
 
 
 class BestFit(FreeSpaceManager):
 
     @doc_inherit
-    def __init__(self, total_memory, alloc_unit, pfile, page_size):
-        super().__init__(total_memory, alloc_unit, pfile, page_size)
+    def __init__(self, total_memory, alloc_unit, vfile, page_size):
+        super().__init__(total_memory, alloc_unit, vfile, page_size)
 
     @doc_inherit
     def malloc(self, proc):
         mem_conv = lambda u: u*self.alloc_unit
         bf_val = math.inf
         bf_pos = -1
+        ua_used = math.ceil(proc.b/self.alloc_unit)
         for idx, curr in enumerate(list(self.memmap)):
-            if curr[0] == 'L':
-                curr_mem = mem_conv(curr[2])
-                if proc.b <= curr_mem and curr_mem < bf_val:
-                    bf_pos = idx
-                    bf_val = curr_mem
+            if curr[0] == 'L' and ua_used <= curr[2] and curr[2] < bf_val:
+                bf_pos = idx
+                bf_val = curr[2]
+                if ua_used == curr[2]:
+                    break
 
         if bf_val == math.inf:
             print("No space left! Exiting simulator...")
             exit()
 
-        ua_used = math.ceil(proc.b/self.alloc_unit)
-        new_entry = ['P', self.memmap[idx][1], ua_used, proc]
+        new_entry = ['P', self.memmap[idx][1], ua_used]
         self.memmap[idx][1] += ua_used
         self.memmap[idx][2] -= ua_used
         self.memmap.insert(idx, new_entry)
+        proc.base = new_entry[1]
+        proc.size = ua_used
         if self.memmap[idx + 1][2] == 0:
             self.memmap.pop(idx + 1)
         debug_vmem(self.memmap)
 
+    @doc_inherit
+    def free(self, proc):
+        super().free(proc)
 
-    def free(self, process):
-        print('Tope')
+
+class WorstFit(FreeSpaceManager):
+
+    @doc_inherit
+    def __init__(self, total_memory, alloc_unit, vfile, page_size):
+        super().__init__(total_memory, alloc_unit, vfile, page_size)
+
+    @doc_inherit
+    def malloc(self, proc):
+        mem_conv = lambda u: u*self.alloc_unit
+        bf_val = math.inf
+        bf_pos = -1
+        ua_used = math.ceil(proc.b/self.alloc_unit)
+        for idx, curr in enumerate(list(self.memmap)):
+            if curr[0] == 'L' and ua_used <= curr[2] and curr[2] > bf_val:
+                bf_pos = idx
+                bf_val = curr[2]
+
+        if bf_val == math.inf:
+            print("No space left! Exiting simulator...")
+            exit()
+
+        new_entry = ['P', self.memmap[idx][1], ua_used]
+        self.memmap[idx][1] += ua_used
+        self.memmap[idx][2] -= ua_used
+        self.memmap.insert(idx, new_entry)
+        proc.base = new_entry[1]
+        proc.size = ua_used
+        if self.memmap[idx + 1][2] == 0:
+            self.memmap.pop(idx + 1)
+        debug_vmem(self.memmap)
+
+    @doc_inherit
+    def free(self, proc):
+        super().free(proc)
+
+
+class QuickFit(FreeSpaceManager):
+
+    @doc_inherit
+    def __init__(self, total_memory, alloc_unit, vfile, page_size):
+        super().__init__(total_memory, alloc_unit, vfile, page_size)
+
+    @doc_inherit
+    def malloc(self, proc):
+        print('Kek')
+
+    @doc_inherit
+    def free(self, proc):
+        super().free(proc)
 
 # TODO: remove this at the end
 def debug_vmem(mmem):
