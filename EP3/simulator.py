@@ -23,6 +23,7 @@ class Process(object):
         vals = list(map(int, vals))
         self.t0 = vals[0]
         self.tf = vals[1]
+        self.original_sz = vals[2]
         self.b  = ceil(vals[2]/ua_size)*ua_size
         self.pid = Process.next_pid
         self.base = 0
@@ -53,10 +54,13 @@ class Simulator(object):
         self.parse(input_file)
         for i in self.procs:
             print(i)
-        # TODO: One of these should use the ua_size...
-        self.pfile = MemoryWriter(self.PMEMORY_PATH, self.page_size, self.ua_size)
-        self.vfile = MemoryWriter(self.VMEMORY_PATH, self.page_size, self.ua_size)
-        self.fspc_manager = fspc_managers[fspc_id](self.virtual_memory, self.ua_size, self.vfile, self.page_size)
+        # TODO: One of these should use the ua_size(?)
+        self.pfile = MemoryWriter(self.PMEMORY_PATH, self.page_size,
+                                  self.ua_size, self.phys_memory)
+        self.vfile = MemoryWriter(self.VMEMORY_PATH, self.page_size,
+                                  self.ua_size, self.virt_memory)
+        self.fspc_manager = fspc_managers[fspc_id](self.virt_memory,
+                            self.ua_size, self.vfile, self.page_size)
         #self.pmem_manager = pagination_managers[pmem_id]()
 
     def debug_loop(self):
@@ -81,8 +85,8 @@ class Simulator(object):
                 continue
             if num_line == 0:
                 vals = list(map(int, vals))
-                self.total_memory = vals[0]
-                self.virtual_memory = vals[1]
+                self.phys_memory = vals[0]
+                self.virt_memory = vals[1]
                 self.ua_size = vals[2]
                 self.page_size = vals[3]
             elif "COMPACTAR" in line:
