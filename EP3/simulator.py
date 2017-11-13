@@ -10,6 +10,7 @@ This is the Simulator object file.
 from collections import deque
 from memoryWriter import MemoryWriter
 from freeSpace import BestFit
+from math import ceil
 
 fspc_managers = [None, BestFit]
 
@@ -22,7 +23,7 @@ class Process(object):
         vals = list(map(int, vals))
         self.t0 = vals[0]
         self.tf = vals[1]
-        self.b  = math.ceil(vals[2]/self.ua_size)
+        self.b  = ceil(vals[2]/ua_size)*ua_size
         self.pid = Process.next_pid
         self.base = 0
         self.size = 0
@@ -53,8 +54,8 @@ class Simulator(object):
         for i in self.procs:
             print(i)
         # TODO: One of these should use the ua_size...
-        self.pfile = MemoryWriter(self.PMEMORY_PATH, self.page_size)
-        self.vfile = MemoryWriter(self.VMEMORY_PATH, self.page_size)
+        self.pfile = MemoryWriter(self.PMEMORY_PATH, self.page_size, self.ua_size)
+        self.vfile = MemoryWriter(self.VMEMORY_PATH, self.page_size, self.ua_size)
         self.fspc_manager = fspc_managers[fspc_id](self.virtual_memory, self.ua_size, self.vfile, self.page_size)
         #self.pmem_manager = pagination_managers[pmem_id]()
 
