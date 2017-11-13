@@ -17,7 +17,16 @@ import math
 #TODO: Implement the FreeSpaceManagers algorithms
 
 class FreeSpaceManager(ABC):
-    def __init__(self, total_memory, alloc_unit, vfile):
+    class Page(object):
+        def __init__(self):
+            self.pid = -1
+            self.page_frame = 0
+            self.bit_p = False
+            self.bit_r = False
+            self.label = ''
+            self.lruC = 0
+
+    def __init__(self, total_memory, alloc_unit, vfile, page_size):
         """Creates a new FreeSpaceManager.
            \ttotal_memory = Total physical memory
            \talloc_unit = The 'ua' of the memory
@@ -28,10 +37,10 @@ class FreeSpaceManager(ABC):
         self.free_memory = total_memory
         self.vfile = vfile
         self.used_memory = 0
-        """Actually, we'll have to use a list... Can't remove something inside
-        a deque, only in both ends... #TODO: Change to simple list, or make a linked list."""
+        # ('L' or 'P', position, quantity)
         self.memmap = [['L', 0, total_memory//alloc_unit]]
-        # ('L' or 'P', position, quantity)        
+        self.pages_table = [self.Page() for _ in range(total_memory//page_size)]
+
 
     @abstractmethod
     def malloc(self, proc):
@@ -48,8 +57,8 @@ class FreeSpaceManager(ABC):
 class BestFit(FreeSpaceManager):
 
     @doc_inherit
-    def __init__(self, total_memory, alloc_unit, pfile):
-        super().__init__(total_memory, alloc_unit, pfile)
+    def __init__(self, total_memory, alloc_unit, pfile, page_size):
+        super().__init__(total_memory, alloc_unit, pfile, page_size)
 
     @doc_inherit
     def malloc(self, proc):
@@ -77,11 +86,10 @@ class BestFit(FreeSpaceManager):
         debug_vmem(self.memmap)
 
 
-
-
     def free(self, process):
         print('Tope')
 
+# TODO: remove this at the end
 def debug_vmem(mmem):
     for i in range(len(mmem) - 1):
         print(f"{mmem[i]} -> ", end="")

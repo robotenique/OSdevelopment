@@ -54,7 +54,7 @@ class Simulator(object):
         # TODO: One of these should use the ua_size...
         self.pfile = MemoryWriter(self.PMEMORY_PATH, self.page_size)
         self.vfile = MemoryWriter(self.VMEMORY_PATH, self.page_size)
-        self.fspc_manager = fspc_managers[fspc_id](self.virtual_memory, self.ua_size, self.vfile)
+        self.fspc_manager = fspc_managers[fspc_id](self.virtual_memory, self.ua_size, self.vfile, self.page_size)
         #self.pmem_manager = pagination_managers[pmem_id]()
 
     def debug_loop(self):
