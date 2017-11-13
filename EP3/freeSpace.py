@@ -18,6 +18,7 @@ import math
 
 class FreeSpaceManager(ABC):
     class Page(object):
+        page_size = 0
         def __init__(self):
             self.pid = -1
             self.page_frame = 0
@@ -25,6 +26,10 @@ class FreeSpaceManager(ABC):
             self.bit_r = False
             self.label = ''
             self.lruC = 0
+
+        def __str__(self):
+            return f"[{self.pid}  frame: {self.page_frame}   p: {self.bit_p}  r: {self.bit_r}]"
+
 
     def __init__(self, total_memory, alloc_unit, vfile, page_size):
         """Creates a new FreeSpaceManager.
@@ -39,8 +44,9 @@ class FreeSpaceManager(ABC):
         self.used_memory = 0
         # ('L' or 'P', position, quantity)
         self.memmap = [['L', 0, total_memory//alloc_unit]]
-        self.pages_table = [self.Page() for _ in range(total_memory//page_size)]
-
+        self.Page.page_size = page_size
+        self.pages_table = [self.Page() for _ in range(math.ceil(total_memory/page_size))]
+        debug_ptable(self.pages_table, page_size)
 
     @abstractmethod
     def malloc(self, proc):
@@ -96,6 +102,8 @@ class BestFit(FreeSpaceManager):
         proc.size = ua_used
         if self.memmap[idx + 1][2] == 0:
             self.memmap.pop(idx + 1)
+        first_page = new_entry[1]
+
         debug_vmem(self.memmap)
 
     @doc_inherit
@@ -158,3 +166,9 @@ def debug_vmem(mmem):
     for i in range(len(mmem) - 1):
         print(f"{mmem[i]} -> ", end="")
     print(mmem[-1])
+
+def debug_ptable(ptable, page_size):
+    print(f"== PAGES TABLE == -> {page_size}")
+    for p in ptable:
+        print(p)
+    print("")
