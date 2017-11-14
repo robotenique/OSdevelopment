@@ -74,13 +74,11 @@ class FrameTable(object):
         page_size = 0
         def __init__(self):
             self.page = -1
-            self.bit_m = False
-            self.bit_r = False
             self.label = ''
             self.lruC = 0
 
         def __str__(self):
-            return f"[{str(self.page).zfill(3)}  m: {self.bit_m}  r: {self.bit_r}]"
+            return f"[Page: {str(self.page).zfill(3)}]"
 
     def __init__(self, total_memory, page_size):
         self.table = [self.PageFrame() for _ in range(ceil(total_memory/page_size))]
@@ -97,5 +95,4 @@ class FrameTable(object):
 
     def reset_frame(self, frame):
         self.table[frame].page = -1
-        self.table[frame].bit_m = False
-        self.table[frame].bit_r = False
+        self.file.clean(frame)
