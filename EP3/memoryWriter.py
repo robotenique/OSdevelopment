@@ -10,12 +10,19 @@ This is the MemoryWriter object file.
 
 MINUS_1 = 255
 class MemoryWriter(object):
-    def __init__(self, filename, page_size, ua_size, fsize):
+    def __init__(self, filename, page_size, fsize):
         """Creates the instance and opens the file"""
         self.file = open(filename, "wb+")
         self.page_size = page_size
         self.write(MINUS_1, 0, fsize)
 
+    def read(self, page):
+        self.file.seek(page*self.page_size)
+        return self.read(self.page_size)
+
+    def write_stream(self, pos, stream):
+        self.seek(pos)
+        self.file.write(stream)
 
     def write(self, pid, pos, size):
         """Writes a pid 'size' times, beginning at 'pos'"""

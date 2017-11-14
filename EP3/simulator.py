@@ -9,10 +9,13 @@ This is the Simulator object file.
 """
 from collections import deque
 from memoryWriter import MemoryWriter
-from freeSpace import BestFit
+from freeSpace import BestFit, WorstFit, QuickFit
+from LRU2 import LRU2
 from math import ceil
+from tables import PageTable, FrameTable
 
-fspc_managers = [None, BestFit]
+fspc_managers = [None, BestFit, WorstFit, QuickFit]
+pagination_managers = [None, None, None, LRU2]
 
 class Process(object):
     next_pid = 0
@@ -59,11 +62,14 @@ class Simulator(object):
             print(i)
         # TODO: One of these should use the ua_size(?)
         self.pfile = MemoryWriter(self.PMEMORY_PATH, self.page_size,
-                                  self.ua_size, self.phys_memory)
+                                  self.phys_memory)
         self.vfile = MemoryWriter(self.VMEMORY_PATH, self.page_size,
-                                  self.ua_size, self.virt_memory)
+                                  self.virt_memory)
+        self.ptable = PageTable(self.virt_memory, self.page_size)
+        self.ftable = FrameTable(self.phys_memory, self.page_size)
         self.fspc_manager = fspc_managers[fspc_id](self.virt_memory,
-                            self.ua_size, self.vfile, self.page_size)
+                            self.ua_size, self.page_size, self.vfile,
+                            self.ptable, self.ftable)
         #self.pmem_manager = pagination_managers[pmem_id]()
 
     def debug_loop(self):
@@ -104,22 +110,25 @@ class Simulator(object):
 
 
 
-
-
-    def loop():
+    def loop(self):
         act_procs = []
         t = 0
         while (len(self.procs) != 0 or len(act_procs) != 0):
-            while (self.procs[0].t0 == t):
-                act_procs.push(self.procs.pop(0))
+            print(t)
+            while (len(self.procs) != 0 and self.procs[0].t0 == t):
+                proc = self.procs.popleft()
+                act_procs.append(proc)
+                self.fspc_manager.malloc(proc)
             for p in act_procs:
-                if (len(p.mem_access) != 0 and p.mem_access[0].t == t):
+                if (len(p.mem_access) != 0 and p.mem_access[0][1] == t):
                     # Access the page that contains the position p.accesses[0].p
-                    p.mem_access.pop(0)
+                    #self.pmem_manager.access(proc)
+                    p.mem_access.popleft()
             for i in range(len(act_procs)-1, -1, -1):
-                if (act_procs.tf == t):
-                    act_procs.pop(i)
-            if (len(sel.compact_list) != 0 and self.compact_list[0] == t):
+                if (act_procs[i].tf == t):
+                    self.fspc_manager.free(act_procs.pop(i))
+                    #act_procs.pop(i)
+            if (len(self.compact_list) != 0 and self.compact_list[0] == t):
                 # Compacts physical and virtual memory
-                self.compact_list.pop(0)
+                self.compact_list.popleft()
             t += 1
