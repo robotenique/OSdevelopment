@@ -8,7 +8,7 @@ MAC0422
 This is the MemoryWriter object file.
 """
 
-MINUS_1 = 254
+MINUS_1 = 255
 class MemoryWriter(object):
     def __init__(self, filename, page_size, ua_size, fsize):
         """Creates the instance and opens the file"""
@@ -21,6 +21,7 @@ class MemoryWriter(object):
         """Writes a pid 'size' times, beginning at 'pos'"""
         self.file.seek(pos)
         self.file.write(bytes((pid for i in range(size))))
+        self.file.flush()
 
     def clean(self, page):
         """Cleans a page"""
