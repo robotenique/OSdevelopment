@@ -65,7 +65,6 @@ class FreeSpaceManager(ABC):
 
 
 class BestFit(FreeSpaceManager):
-
     @doc_inherit
     def __init__(self, total_memory, ua, page_size, ptable, ftable):
         super().__init__(total_memory, ua, page_size, ptable, ftable)
