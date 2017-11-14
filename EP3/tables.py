@@ -31,14 +31,17 @@ class PageTable(object):
             return f"[{str(self.pid).zfill(3)}  frame: {self.page_frame}  p: {self.bit_p}]"
 
     def __init__(self, total_memory, page_size):
+        """Constructor method"""
         self.table = [self.Page() for _ in range(ceil(total_memory/page_size))]
         self.page_size = page_size
         self.file = MemoryWriter(self.VMEMORY_PATH, page_size, total_memory)
 
     def read(self, page):
+        """Reads a page from the file and returns it"""
         return self.file.read(page)
 
     def palloc(self, pid, pos, size):
+        """Reserves the memory for a process"""
         self.file.write(pid, pos, size)
         base_page = pos//self.page_size
         pages = ceil(size/self.page_size)
@@ -46,17 +49,21 @@ class PageTable(object):
             self.table[i].pid = pid
 
     def set_frame(self, page, frame):
+        """A setter method to bind a frame to a page"""
         self.table[page].page_frame = frame
 
     def set_presence(self, page, val):
+        """A setter method to set if a page is at the physical memory or not"""
         self.table[page].bit_p = val
 
     def get_frame(self, page):
+        """A getter method that returns the frame where a page is"""
         if (not self.table[page].bit_p):
             return -1
         return self.table[page].page_frame
 
     def reset_page(self, page):
+        """Resets a page"""
         self.table[page].pid = -1
         self.table[page].bit_p = False
         self.page_frame = -1
@@ -86,6 +93,7 @@ class FrameTable(object):
         self.file = MemoryWriter(self.PMEMORY_PATH, page_size, total_memory)
 
     def get_page(self, frame):
+        """A getter method that returns the page which is at the frame"""
         return self.table[frame].page
 
     def write_stream(self, pos, page, stream):
