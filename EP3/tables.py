@@ -15,6 +15,8 @@ from memoryWriter import MemoryWriter
 MINUS_1 = 255
 
 class PageTable(object):
+    # TODO: At the end, set back to original file
+    #VMEMORY_PATH = "/tmp/ep3.vir"
     VMEMORY_PATH = "ep3.vir"
     class Page(object):
         page_size = 0
@@ -65,6 +67,9 @@ class PageTable(object):
         self.file.close()
 
 class FrameTable(object):
+    # TODO: At the end, set back to original file
+    #PMEMORY_PATH = "/tmp/ep3.mem"
+    PMEMORY_PATH = "ep3.mem"
     class PageFrame(object):
         page_size = 0
         def __init__(self):
@@ -79,13 +84,16 @@ class FrameTable(object):
 
     def __init__(self, total_memory, page_size):
         self.table = [self.PageFrame() for _ in range(ceil(total_memory/page_size))]
+        self.page_size = page_size
+        self.file = MemoryWriter(self.PMEMORY_PATH, page_size, total_memory)
 
     def get_page(self, frame):
         return self.table[frame].page
 
-    def write_stream(self, pos, stream):
-        self.seek(pos)
-        self.file.write(stream)
+    def write_stream(self, pos, page, stream):
+        self.file.write_stream(pos, stream)
+        frame = pos//self.page_size
+        self.table[frame].page = page
 
     def reset_frame(self, frame):
         self.table[frame].page = -1

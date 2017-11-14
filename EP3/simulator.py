@@ -45,11 +45,6 @@ class Process(object):
         Process.next_pid = 0
 
 class Simulator(object):
-    # TODO: At the end, set back to original files
-    #VMEMORY_PATH = "/tmp/ep3.vir"
-    #PMEMORY_PATH = "/tmp/ep3.mem"
-    VMEMORY_PATH = "ep3.vir"
-    PMEMORY_PATH = "ep3.mem"
 
     def __init__(self, input_file, fspc_id, pmem_id, dt):
         self.interval = dt
@@ -60,17 +55,13 @@ class Simulator(object):
         self.parse(input_file)
         for i in self.procs:
             print(i)
-        # TODO: One of these should use the ua_size(?)
-        self.pfile = MemoryWriter(self.PMEMORY_PATH, self.page_size,
-                                  self.phys_memory)
-        self.vfile = MemoryWriter(self.VMEMORY_PATH, self.page_size,
-                                  self.virt_memory)
         self.ptable = PageTable(self.virt_memory, self.page_size)
         self.ftable = FrameTable(self.phys_memory, self.page_size)
         self.fspc_manager = fspc_managers[fspc_id](self.virt_memory,
-                            self.ua_size, self.page_size, self.vfile,
-                            self.ptable, self.ftable)
-        #self.pmem_manager = pagination_managers[pmem_id]()
+                            self.ua_size, self.page_size, self.ptable,
+                            self.ftable)
+        self.pmem_manager = pagination_managers[pmem_id](self.virt_memory,
+                            self.ua_size, self.page_size, self.ptable, self.ftable)
 
     def debug_loop(self):
         tf = max([x.tf for x in self.procs])
@@ -114,15 +105,15 @@ class Simulator(object):
         act_procs = []
         t = 0
         while (len(self.procs) != 0 or len(act_procs) != 0):
-            print(t)
+            print("t =", t)
             while (len(self.procs) != 0 and self.procs[0].t0 == t):
                 proc = self.procs.popleft()
                 act_procs.append(proc)
                 self.fspc_manager.malloc(proc)
             for p in act_procs:
                 if (len(p.mem_access) != 0 and p.mem_access[0][1] == t):
-                    # Access the page that contains the position p.accesses[0].p
-                    #self.pmem_manager.access(proc)
+                    # Access the page that contains the position p.accesses[0][0]
+                    self.pmem_manager.access(p, p.mem_access[0][0])
                     p.mem_access.popleft()
             for i in range(len(act_procs)-1, -1, -1):
                 if (act_procs[i].tf == t):

@@ -18,7 +18,7 @@ import math
 
 class FreeSpaceManager(ABC):
 
-    def __init__(self, total_memory, ua, page_size, vfile, ptable, ftable):
+    def __init__(self, total_memory, ua, page_size, ptable, ftable):
         """Creates a new FreeSpaceManager.
            \ttotal_memory = Total physical memory
            \tua = The 'ua' of the memory
@@ -28,7 +28,6 @@ class FreeSpaceManager(ABC):
         self.ua = ua
         self.total_memory = total_memory
         self.free_memory = total_memory
-        self.vfile = vfile
         self.used_memory = 0
         # ('L' or 'P', position, quantity)
         self.memmap = [['L', 0, total_memory//ua]]
@@ -68,8 +67,8 @@ class FreeSpaceManager(ABC):
 class BestFit(FreeSpaceManager):
 
     @doc_inherit
-    def __init__(self, total_memory, ua, page_size, vfile, ptable, ftable):
-        super().__init__(total_memory, ua, page_size, vfile, ptable, ftable)
+    def __init__(self, total_memory, ua, page_size, ptable, ftable):
+        super().__init__(total_memory, ua, page_size, ptable, ftable)
 
     @doc_inherit
     def malloc(self, proc):
@@ -115,8 +114,8 @@ class BestFit(FreeSpaceManager):
 class WorstFit(FreeSpaceManager):
 
     @doc_inherit
-    def __init__(self, total_memory, ua, page_size, vfile, ptable, ftable):
-        super().__init__(total_memory, ua, page_size, vfile, ptable, ftable)
+    def __init__(self, total_memory, ua, page_size, ptable, ftable):
+        super().__init__(total_memory, ua, page_size, ptable, ftable)
 
     @doc_inherit
     def malloc(self, proc):
@@ -144,11 +143,11 @@ class WorstFit(FreeSpaceManager):
         self.memmap[idx][1] += ua_used
         self.memmap[idx][2] -= ua_used
         self.memmap.insert(idx, new_entry)
-        proc.base = new_entry[1]
+        inipos = self.memmap[idx][1]
+        proc.base = inipos
         proc.size = ua_used
         if self.memmap[idx + 1][2] == 0:
             self.memmap.pop(idx + 1)
-        inipos = self.memmap[idx][1]
         self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
         debug_vmem(self.memmap)
         debug_ptable(self.pages_table.table, self.pg_size)
@@ -161,8 +160,8 @@ class WorstFit(FreeSpaceManager):
 class QuickFit(FreeSpaceManager):
 
     @doc_inherit
-    def __init__(self, total_memory, ua, page_size, vfile, ptable, ftable):
-        super().__init__(total_memory, ua, page_size, vfile, ptable, ftable)
+    def __init__(self, total_memory, ua, page_size, ptable, ftable):
+        super().__init__(total_memory, ua, page_size, ptable, ftable)
 
     @doc_inherit
     def malloc(self, proc):

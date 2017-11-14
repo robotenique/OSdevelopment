@@ -18,10 +18,10 @@ class MemoryWriter(object):
 
     def read(self, page):
         self.file.seek(page*self.page_size)
-        return self.read(self.page_size)
+        return self.file.read(self.page_size)
 
     def write_stream(self, pos, stream):
-        self.seek(pos)
+        self.file.seek(pos)
         self.file.write(stream)
 
     def write(self, pid, pos, size):
