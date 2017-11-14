@@ -10,12 +10,12 @@ This is the Simulator object file.
 from collections import deque
 from memoryWriter import MemoryWriter
 from freeSpace import BestFit, WorstFit, QuickFit
-from paginators import LRU2, LRU4
+from paginators import FIFO, LRU2, LRU4
 from math import ceil
 from tables import PageTable, FrameTable
 
 fspc_managers = [None, BestFit, WorstFit, QuickFit]
-pagination_managers = [None, None, None, LRU2, LRU4]
+pagination_managers = [None, None, FIFO, LRU2, LRU4]
 
 class Process(object):
     next_pid = 0
