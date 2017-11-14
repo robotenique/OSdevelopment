@@ -42,6 +42,37 @@ class FreeSpaceManager(ABC):
         """
         pass
 
+    def calc_units(self, proc):
+        """Calculates the units of allocations required for the free space
+        managers to allocate the memory corrrectly"""
+        # The REAL number of ua's used, to be written into the vfile
+        real_ua_used = math.ceil(proc.b/self.ua)
+        # Get number of pages a process will use, then convert to ua_used
+        pg_to_ua = math.ceil(self.pg_size/self.ua)
+        pgs_used = math.ceil(proc.original_sz/self.pg_size)
+        ua_used = pgs_used*pg_to_ua
+        return real_ua_used, pg_to_ua, pgs_used, ua_used
+
+
+    def ptable_alloc(self, proc, idx, ua_used, real_ua_used):
+       """Allocate a given set of pages in the pages table and correctly
+       adds to the memory list representation"""
+       new_entry = ['P', self.memmap[idx][1], ua_used]
+       self.memmap[idx][1] += ua_used
+       self.memmap[idx][2] -= ua_used
+       self.memmap.insert(idx, new_entry)
+       inipos = self.memmap[idx][1]
+       proc.base = inipos
+       proc.size = ua_used
+       if self.memmap[idx + 1][2] == 0:
+           self.memmap.pop(idx + 1)
+       self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
+       debug_vmem(self.memmap)
+       debug_ptable(self.pages_table.table, self.pg_size)
+
+
+
+
     def free(self, proc):
         idx = 0
         while (self.memmap[idx][1] != proc.base):
@@ -71,38 +102,23 @@ class BestFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
+        real_ua_used, pg_to_ua, pgs_used, ua_used = super().calc_units(proc)
+
         mem_conv = lambda u: u*self.ua
         bf_val = math.inf
         bf_pos = -1
-        # The REAL number of ua's used, to be written into the vfile
-        real_ua_used = math.ceil(proc.b/self.ua)
-        # Get number of pages a process will use, then convert to ua_used
-        pg_to_ua = math.ceil(self.pg_size/self.ua)
-        pgs_used = math.ceil(proc.original_sz/self.pg_size)
-        ua_used = pgs_used*pg_to_ua
         for idx, curr in enumerate(list(self.memmap)):
             if curr[0] == 'L' and ua_used <= curr[2] and curr[2] < bf_val:
                 bf_pos = idx
                 bf_val = curr[2]
                 if ua_used == curr[2]:
                     break
-
         if bf_pos == -1:
             print("No space left! Exiting simulator...")
             exit()
 
-        new_entry = ['P', self.memmap[idx][1], ua_used]
-        self.memmap[idx][1] += ua_used
-        self.memmap[idx][2] -= ua_used
-        self.memmap.insert(idx, new_entry)
-        proc.base = new_entry[1]
-        proc.size = ua_used
-        if self.memmap[idx + 1][2] == 0:
-            self.memmap.pop(idx + 1)
-        inipos = self.memmap[idx][1]
-        self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
-        debug_vmem(self.memmap)
-        debug_ptable(self.pages_table.table, self.pg_size)
+        super().ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
+
 
 
     @doc_inherit
@@ -118,15 +134,11 @@ class WorstFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
+        real_ua_used, pg_to_ua, pgs_used, ua_used = super().calc_units(proc)
+
         mem_conv = lambda u: u*self.ua
         bf_val = -math.inf
         bf_pos = -1
-        # The REAL number of ua's used, to be written into the vfile
-        real_ua_used = math.ceil(proc.b/self.ua)
-        # Get number of pages a process will use, then convert to ua_used
-        pg_to_ua = math.ceil(self.pg_size/self.ua)
-        pgs_used = math.ceil(proc.original_sz/self.pg_size)
-        ua_used = pgs_used*pg_to_ua
         for idx, curr in enumerate(list(self.memmap)):
             if curr[0] == 'L' and ua_used <= curr[2] and curr[2] > bf_val:
                 bf_pos = idx
@@ -137,19 +149,8 @@ class WorstFit(FreeSpaceManager):
         if bf_pos == -1:
             print("No space left! Exiting simulator...")
             exit()
-
-        new_entry = ['P', self.memmap[idx][1], ua_used]
-        self.memmap[idx][1] += ua_used
-        self.memmap[idx][2] -= ua_used
-        self.memmap.insert(idx, new_entry)
-        inipos = self.memmap[idx][1]
-        proc.base = inipos
-        proc.size = ua_used
-        if self.memmap[idx + 1][2] == 0:
-            self.memmap.pop(idx + 1)
-        self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
-        debug_vmem(self.memmap)
-        debug_ptable(self.pages_table.table, self.pg_size)
+        
+        super().ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
 
     @doc_inherit
     def free(self, proc):
