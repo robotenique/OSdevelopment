@@ -42,8 +42,11 @@ class Process(object):
         Process.next_pid = 0
 
 class Simulator(object):
-    VMEMORY_PATH = "/tmp/ep3.mem"
-    PMEMORY_PATH = "/tmp/ep3.vir"
+    # TODO: At the end, set back to original files
+    #VMEMORY_PATH = "/tmp/ep3.vir"
+    #PMEMORY_PATH = "/tmp/ep3.mem"
+    VMEMORY_PATH = "ep3.vir"
+    PMEMORY_PATH = "ep3.mem"
 
     def __init__(self, input_file, fspc_id, pmem_id, dt):
         self.interval = dt
