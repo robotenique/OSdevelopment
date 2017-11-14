@@ -8,7 +8,7 @@ MAC0422
 This is the Least Recently Used version 2 object file.
 """
 
-from math import ceil
+import math
 from tables import FrameTable
 from abc import ABC, abstractmethod
 from memsimWrapper import doc_inherit
@@ -31,7 +31,7 @@ class PaginationManager(ABC):
         pass
 
     @abstractmethod
-    def access(self, proc, pos):
+    def access(self, proc):
         pass
 
     def delete_frame(self, frame):
@@ -39,6 +39,61 @@ class PaginationManager(ABC):
            Used to delete a page from a finished process"""
         self.frame_table.reset_frame(frame)
 
+
+class Optimal(PaginationManager):
+
+    @doc_inherit
+    def __init__(self, total_memory, ua, page_size, ptable, ftable):
+        super().__init__(total_memory, ua, page_size, ptable, ftable)
+        self.next_access = [math.inf for i in range(self.tot_pages)]
+        self.time = 0
+
+    @doc_inherit
+    def get_new_frame(self):
+        frame = 0
+        mx = self.next_access[0]
+        for i in range(1, len(self.next_access)):
+            if (self.next_access[i] > mx):
+                frame = i
+                mx = self.next_access[i]
+                if mx == math.inf:
+                    break
+        return frame
+
+    @doc_inherit
+    def access(self, proc):
+        """Updates the matrix as if an access to 'page' just happened"""
+        pos = proc.mem_access[0][0]
+        page = (proc.base*self.ua + pos)//self.page_size
+        frame = self.pages_table.get_frame(page)
+        print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
+        dt = proc.mem_access[0][1] - self.time
+        for i in range(self.tot_pages):
+            self.next_access[i] -= dt
+            if (self.next_access[i] == 0):
+                self.next_access[i] = math.inf
+        if (frame == -1):
+            frame = self.get_new_frame()
+            out_page = self.frame_table.get_page(frame)
+            if (out_page != -1):
+                self.pages_table.set_presence(out_page, False)
+            self.pages_table.set_presence(page, True)
+            frame_pos = frame*self.page_size
+            self.frame_table.write_stream(frame_pos, page, self.pages_table.read(page))
+            self.pages_table.set_frame(page, frame)
+        self.time = proc.mem_access[0][1]
+        if (len(proc.mem_access) == 1):
+            self.next_access[frame] = math.inf
+        else:
+            self.next_access[frame] = proc.mem_access[1][1] - self.time
+        print(f"Process: {proc.pid}\nFrame accessed: {frame}")
+        print(self.next_access)
+        debug_ptable(self.frame_table.table, self.page_size)
+
+    @doc_inherit
+    def delete_frame(self, frame):
+        self.next_access[frame] = math.inf
+        super().free(frame)
 
 class FIFO(PaginationManager):
 
@@ -53,8 +108,9 @@ class FIFO(PaginationManager):
         return self.fifo.popleft()
 
     @doc_inherit
-    def access(self, proc, pos):
+    def access(self, proc):
         """Updates the matrix as if an access to 'page' just happened"""
+        pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
         print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
@@ -99,8 +155,9 @@ class LRU2(PaginationManager):
         return frame
 
     @doc_inherit
-    def access(self, proc, pos):
+    def access(self, proc):
         """Updates the matrix as if an access to 'page' just happened"""
+        pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
         print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
@@ -147,8 +204,9 @@ class LRU4(PaginationManager):
         return frame
 
     @doc_inherit
-    def access(self, proc, pos):
+    def access(self, proc):
         """Updates the timer as if an access to 'page' just happened"""
+        pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
         print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")

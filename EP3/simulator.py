@@ -10,12 +10,12 @@ This is the Simulator object file.
 from collections import deque
 from memoryWriter import MemoryWriter
 from freeSpace import BestFit, WorstFit, QuickFit
-from paginators import FIFO, LRU2, LRU4
+from paginators import Optimal, FIFO, LRU2, LRU4
 from math import ceil
 from tables import PageTable, FrameTable
 
 fspc_managers = [None, BestFit, WorstFit, QuickFit]
-pagination_managers = [None, None, FIFO, LRU2, LRU4]
+pagination_managers = [None, Optimal, FIFO, LRU2, LRU4]
 
 class Process(object):
     next_pid = 0
@@ -115,7 +115,7 @@ class Simulator(object):
             for p in act_procs:
                 if (len(p.mem_access) != 0 and p.mem_access[0][1] == t):
                     # Access the page that contains the position p.accesses[0][0]
-                    self.pmem_manager.access(p, p.mem_access[0][0])
+                    self.pmem_manager.access(p)
                     p.mem_access.popleft()
             for i in range(len(act_procs)-1, -1, -1):
                 if (act_procs[i].tf == t):
