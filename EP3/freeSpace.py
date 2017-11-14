@@ -9,7 +9,7 @@ Implementation of the Free Space memory manager algorithms
 """
 
 from abc import ABC, abstractmethod
-from collections import deque
+from collections import deque, Counter
 from memsimWrapper import doc_inherit
 import math
 
@@ -42,7 +42,7 @@ class FreeSpaceManager(ABC):
         """
         pass
 
-    def calc_units(self, proc):
+    def __calc_units(self, proc):
         """Calculates the units of allocations required for the free space
         managers to allocate the memory corrrectly"""
         # The REAL number of ua's used, to be written into the vfile
@@ -54,7 +54,7 @@ class FreeSpaceManager(ABC):
         return real_ua_used, pg_to_ua, pgs_used, ua_used
 
 
-    def ptable_alloc(self, proc, idx, ua_used, real_ua_used):
+    def __ptable_alloc(self, proc, idx, ua_used, real_ua_used):
        """Allocate a given set of pages in the pages table and correctly
        adds to the memory list representation"""
        new_entry = ['P', self.memmap[idx][1], ua_used]
@@ -101,7 +101,7 @@ class BestFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
-        real_ua_used, pg_to_ua, pgs_used, ua_used = super().calc_units(proc)
+        real_ua_used, pg_to_ua, pgs_used, ua_used = super().__calc_units(proc)
 
         mem_conv = lambda u: u*self.ua
         bf_val = math.inf
@@ -116,7 +116,7 @@ class BestFit(FreeSpaceManager):
             print("No space left! Exiting simulator...")
             exit()
 
-        super().ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
+        super().__ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
 
 
 
@@ -132,7 +132,7 @@ class WorstFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
-        real_ua_used, pg_to_ua, pgs_used, ua_used = super().calc_units(proc)
+        real_ua_used, pg_to_ua, pgs_used, ua_used = super().__calc_units(proc)
 
         mem_conv = lambda u: u*self.ua
         bf_val = -math.inf
@@ -148,7 +148,7 @@ class WorstFit(FreeSpaceManager):
             print("No space left! Exiting simulator...")
             exit()
 
-        super().ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
+        super().__ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
 
     @doc_inherit
     def free(self, proc):
@@ -169,7 +169,13 @@ class QuickFit(FreeSpaceManager):
         super().free(proc)
 
     def analize_processes(self, proc_deque):
-        proc_list = list(proc_deque)
+        plist = list(proc_deque)
+        pg_to_ua = math.ceil(self.pg_size/self.ua)
+        total_uas = lambda p: math.ceil(p.original_sz/self.pg_size)*pg_to_ua
+        pcount = Counter(map(total_uas, plist))
+        fspc_list = [(math.inf, self.memmap)]
+        print(fspc_list)
+        print(pcount)
         exit()
 
 # TODO: remove this at the end
