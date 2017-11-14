@@ -42,20 +42,21 @@ class LRU2(object):
 
     def access(self, proc, pos):
         """Updates the matrix as if an access to 'page' just happened"""
-        page = (proc.base + pos)//self.page_size
-        print(f"base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
+        page = (proc.base*self.ua + pos)//self.page_size
+        print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         frame = self.pages_table.get_frame(page)
         if (frame == -1):
             out_page, frame = self.get_new_frame(page)
             if (out_page != -1):
                 self.pages_table.set_presence(out_page, False)
             self.pages_table.set_presence(page, True)
-            page_pos = page*self.page_size
-            self.frame_table.write_stream(page_pos, page, self.pages_table.read(page))
+            frame_pos = frame*self.page_size
+            self.frame_table.write_stream(frame_pos, page, self.pages_table.read(page))
+            self.pages_table.set_frame(page, frame)
         num = self.MAX_VAL
         self.matrix[frame] = num
         num ^= (1 << frame)                # Turns off the 'frame' bit
-        for i in range(frame):
+        for i in range(len(self.matrix)):
             self.matrix[i] &= num
         print(f"Process: {proc.pid}\nFrame accessed: {frame}")
         print(list(map(lambda a: format(a, f"#0{self.tot_pages}b"),self.matrix)))
@@ -67,8 +68,6 @@ class LRU2(object):
            Used to delete a page from a finished process"""
         self.matrix[frame] = 0
         self.frame_table.reset_frame(frame)
-        self.pfile.clean(frame)
-        # self.M[frame] = False
 
 def debug_ptable(ptable, page_size):
     print(f"== FRAMES TABLE == -> {page_size}")
