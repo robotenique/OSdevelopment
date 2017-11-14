@@ -8,10 +8,11 @@ MAC0422
 Implementation of the Free Space memory manager algorithms
 """
 
+import math
+import bisect as bst
 from abc import ABC, abstractmethod
 from collections import deque, Counter
 from memsimWrapper import doc_inherit
-import math
 
 
 #TODO: Implement the FreeSpaceManagers algorithms
@@ -155,6 +156,7 @@ class WorstFit(FreeSpaceManager):
         super().free(proc)
 
 class QuickFit(FreeSpaceManager):
+    MAX_SIZE = 10
 
     @doc_inherit
     def __init__(self, total_memory, ua, page_size, ptable, ftable):
@@ -173,8 +175,15 @@ class QuickFit(FreeSpaceManager):
         pg_to_ua = math.ceil(self.pg_size/self.ua)
         total_uas = lambda p: math.ceil(p.original_sz/self.pg_size)*pg_to_ua
         pcount = Counter(map(total_uas, plist))
-        fspc_list = [(math.inf, self.memmap)]
-        print(fspc_list)
+        fspc_sizes = [math.inf]
+        fspc_ref = [self.memmap]
+        for size, _ in pcount.most_common(self.MAX_SIZE):
+            pos = bst.bisect(fspc_sizes, size)
+            fspc_sizes.insert(pos, size)
+            fspc_ref.insert(pos, None)
+        
+        print(fspc_sizes)
+        print(fspc_ref)
         print(pcount)
         exit()
 

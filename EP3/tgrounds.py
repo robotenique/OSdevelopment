@@ -1,3 +1,21 @@
+class Pai():
+
+
+    def __init__(self):
+        pass
+
+    def coisinha(self):
+        tope = 3
+        gege = 4
+
+class Filho(Pai):
+    def __init__(self):
+        pass
+    def coisinha(self):
+        super().coisinha()
+        print(tope)
+
+
 #Testing grounds file, TODO: remove this thing after all
 def coisa(func):
     print('ALO: ', end="")
@@ -15,6 +33,5 @@ class Teste(object):
 g.testador("HMMM")"""
 
 from collections import deque
-h = deque([('A', 0), ('B', 1), ('C', 2), ('D', 3), ('E', 4)])
-
-print(h)
+f = Filho()
+f.coisinha()
