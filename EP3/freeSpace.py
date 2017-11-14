@@ -94,7 +94,6 @@ class FreeSpaceManager(ABC):
         debug_vmem(self.memmap)
         debug_ptable(self.pages_table.table, self.pg_size)
 
-
 class BestFit(FreeSpaceManager):
     @doc_inherit
     def __init__(self, total_memory, ua, page_size, ptable, ftable):
@@ -125,7 +124,6 @@ class BestFit(FreeSpaceManager):
     def free(self, proc):
         super().free(proc)
 
-
 class WorstFit(FreeSpaceManager):
 
     @doc_inherit
@@ -149,13 +147,12 @@ class WorstFit(FreeSpaceManager):
         if bf_pos == -1:
             print("No space left! Exiting simulator...")
             exit()
-        
+
         super().ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
 
     @doc_inherit
     def free(self, proc):
         super().free(proc)
-
 
 class QuickFit(FreeSpaceManager):
 
@@ -170,6 +167,10 @@ class QuickFit(FreeSpaceManager):
     @doc_inherit
     def free(self, proc):
         super().free(proc)
+
+    def analize_processes(self, proc_deque):
+        proc_list = list(proc_deque)
+        exit()
 
 # TODO: remove this at the end
 def debug_vmem(mmem):

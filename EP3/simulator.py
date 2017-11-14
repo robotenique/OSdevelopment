@@ -62,6 +62,8 @@ class Simulator(object):
                             self.ftable)
         self.pmem_manager = pagination_managers[pmem_id](self.virt_memory,
                             self.ua_size, self.page_size, self.ptable, self.ftable)
+        if fspc_id == 3: # Analysis of the processes if it's quick fit
+            self.fspc_manager.analize_processes(self.procs)
 
     def debug_loop(self):
         tf = max([x.tf for x in self.procs])
