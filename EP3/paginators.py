@@ -12,6 +12,7 @@ from math import ceil
 from tables import FrameTable
 from abc import ABC, abstractmethod
 from memsimWrapper import doc_inherit
+from collections import deque
 
 
 class PaginationManager(ABC):
@@ -26,6 +27,7 @@ class PaginationManager(ABC):
 
     @abstractmethod
     def get_new_frame(self):
+        """Apply the algorithm to find the best page to be given to a process"""
         pass
 
     @abstractmethod
@@ -38,6 +40,44 @@ class PaginationManager(ABC):
         self.frame_table.reset_frame(frame)
 
 
+class FIFO(PaginationManager):
+
+    @doc_inherit
+    def __init__(self, total_memory, ua, page_size, ptable, ftable):
+        super().__init__(total_memory, ua, page_size, ptable, ftable)
+        self.fifo = deque()
+        self.fifo.extend(range(total_memory//page_size))
+
+    @doc_inherit
+    def get_new_frame(self):
+        return self.fifo.popleft()
+
+    @doc_inherit
+    def access(self, proc, pos):
+        """Updates the matrix as if an access to 'page' just happened"""
+        page = (proc.base*self.ua + pos)//self.page_size
+        frame = self.pages_table.get_frame(page)
+        print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
+        if (frame == -1):
+            frame = self.get_new_frame()
+            out_page = self.frame_table.get_page(frame)
+            if (out_page != -1):
+                self.pages_table.set_presence(out_page, False)
+            self.pages_table.set_presence(page, True)
+            frame_pos = frame*self.page_size
+            self.frame_table.write_stream(frame_pos, page, self.pages_table.read(page))
+            self.pages_table.set_frame(page, frame)
+            self.fifo.append(frame)
+        print(f"Process: {proc.pid}\nFrame accessed: {frame}")
+        print(self.fifo)
+        debug_ptable(self.frame_table.table, self.page_size)
+
+    @doc_inherit
+    def delete_frame(self, frame):
+        super().free(frame)
+
+
+
 class LRU2(PaginationManager):
 
     @doc_inherit
@@ -48,7 +88,6 @@ class LRU2(PaginationManager):
 
     @doc_inherit
     def get_new_frame(self):
-        """Apply the algorithm to find the best page to be given to a process"""
         frame = 0
         bit_mask = self.matrix[0]
         for i in range(1, len(self.matrix)):
@@ -63,8 +102,8 @@ class LRU2(PaginationManager):
     def access(self, proc, pos):
         """Updates the matrix as if an access to 'page' just happened"""
         page = (proc.base*self.ua + pos)//self.page_size
-        print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         frame = self.pages_table.get_frame(page)
+        print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
             frame = self.get_new_frame()
             out_page = self.frame_table.get_page(frame)
@@ -82,7 +121,6 @@ class LRU2(PaginationManager):
         print(f"Process: {proc.pid}\nFrame accessed: {frame}")
         print(list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.matrix)))
         debug_ptable(self.frame_table.table, self.page_size)
-        # self.frame_table[frame].bit_m = True
 
     @doc_inherit
     def delete_frame(self, frame):
@@ -100,7 +138,6 @@ class LRU4(PaginationManager):
 
     @doc_inherit
     def get_new_frame(self):
-        """Apply the algorithm to find the best page to be given to a process"""
         frame = 0
         timer = self.timer[0]
         for i in range(1, len(self.timer)):
@@ -113,8 +150,8 @@ class LRU4(PaginationManager):
     def access(self, proc, pos):
         """Updates the timer as if an access to 'page' just happened"""
         page = (proc.base*self.ua + pos)//self.page_size
-        print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         frame = self.pages_table.get_frame(page)
+        print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
             frame = self.get_new_frame()
             out_page = self.frame_table.get_page(frame)
@@ -130,7 +167,6 @@ class LRU4(PaginationManager):
         print(f"Process: {proc.pid}\nFrame accessed: {frame}")
         print(list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.timer)))
         debug_ptable(self.frame_table.table, self.page_size)
-        # self.frame_table[frame].bit_m = True
 
     @doc_inherit
     def delete_frame(self, frame):

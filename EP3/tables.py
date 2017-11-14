@@ -97,10 +97,14 @@ class FrameTable(object):
         return self.table[frame].page
 
     def write_stream(self, pos, page, stream):
+        """Writes a stream of bytes to a frame.
+           Used to copy the content of a page from the virtual to the
+           pysical memory"""
         self.file.write_stream(pos, stream)
         frame = pos//self.page_size
         self.table[frame].page = page
 
     def reset_frame(self, frame):
+        """Resets a frame"""
         self.table[frame].page = -1
         self.file.clean(frame)
