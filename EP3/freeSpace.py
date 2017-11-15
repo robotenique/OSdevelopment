@@ -19,7 +19,7 @@ from memsimWrapper import doc_inherit
 
 class FreeSpaceManager(ABC):
 
-    def __init__(self, total_memory, ua, page_size, ptable, ftable):
+    def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
         """Creates a new FreeSpaceManager.
            \ttotal_memory = Total physical memory
            \tua = The 'ua' of the memory
@@ -31,7 +31,7 @@ class FreeSpaceManager(ABC):
         self.free_memory = total_memory
         self.used_memory = 0
         # ('L' or 'P', position, quantity)
-        self.memmap = [['L', 0, total_memory//ua]]
+        self.memmap = memmap
         self.pages_table = ptable
         self.frames_table = ftable
         debug_ptable(self.pages_table.table, self.pg_size)
@@ -54,7 +54,6 @@ class FreeSpaceManager(ABC):
         ua_used = pgs_used*pg_to_ua
         return real_ua_used, pg_to_ua, pgs_used, ua_used
 
-
     def __ptable_alloc(self, proc, idx, ua_used, real_ua_used):
        """Allocate a given set of pages in the pages table and correctly
        adds to the memory list representation"""
@@ -68,11 +67,7 @@ class FreeSpaceManager(ABC):
        if self.memmap[idx + 1][2] == 0:
            self.memmap.pop(idx + 1)
        self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
-       debug_vmem(self.memmap)
-       debug_ptable(self.pages_table.table, self.pg_size)
-
-
-
+       #self.print_table()
 
     def free(self, proc):
         idx = 0
@@ -91,18 +86,26 @@ class FreeSpaceManager(ABC):
         base_page = proc.base//pg_to_ua
         num_pages = proc.size//pg_to_ua
         for i in range(num_pages):
+            frame = self.pages_table.get_frame(base_page+i)
+            if (frame != -1):
+                self.frames_table.reset_frame(frame)
             self.pages_table.reset_page(base_page+i)
+        #self.print_table()
+
+    def print_table(self):
         debug_vmem(self.memmap)
         debug_ptable(self.pages_table.table, self.pg_size)
 
+
+
 class BestFit(FreeSpaceManager):
     @doc_inherit
-    def __init__(self, total_memory, ua, page_size, ptable, ftable):
-        super().__init__(total_memory, ua, page_size, ptable, ftable)
+    def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
+        super().__init__(total_memory, ua, page_size, ptable, ftable, memmap)
 
     @doc_inherit
     def malloc(self, proc):
-        real_ua_used, pg_to_ua, pgs_used, ua_used = super().__calc_units(proc)
+        real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
 
         mem_conv = lambda u: u*self.ua
         bf_val = math.inf
@@ -117,23 +120,27 @@ class BestFit(FreeSpaceManager):
             print("No space left! Exiting simulator...")
             exit()
 
-        super().__ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
-
-
+        super()._FreeSpaceManager__ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
 
     @doc_inherit
     def free(self, proc):
         super().free(proc)
 
+    @doc_inherit
+    def print_table(self):
+        super().print_table()
+
+
+
 class WorstFit(FreeSpaceManager):
 
     @doc_inherit
-    def __init__(self, total_memory, ua, page_size, ptable, ftable):
-        super().__init__(total_memory, ua, page_size, ptable, ftable)
+    def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
+        super().__init__(total_memory, ua, page_size, ptable, ftable, memmap)
 
     @doc_inherit
     def malloc(self, proc):
-        real_ua_used, pg_to_ua, pgs_used, ua_used = super().__calc_units(proc)
+        real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
 
         mem_conv = lambda u: u*self.ua
         bf_val = -math.inf
@@ -149,18 +156,24 @@ class WorstFit(FreeSpaceManager):
             print("No space left! Exiting simulator...")
             exit()
 
-        super().__ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
+        super()._FreeSpaceManager__ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
 
     @doc_inherit
     def free(self, proc):
         super().free(proc)
 
+    @doc_inherit
+    def print_table(self):
+        super().print_table()
+
+
+
 class QuickFit(FreeSpaceManager):
     MAX_SIZE = 10
 
     @doc_inherit
-    def __init__(self, total_memory, ua, page_size, ptable, ftable):
-        super().__init__(total_memory, ua, page_size, ptable, ftable)
+    def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
+        super().__init__(total_memory, ua, page_size, ptable, ftable, memmap)
 
     @doc_inherit
     def malloc(self, proc):
@@ -181,11 +194,15 @@ class QuickFit(FreeSpaceManager):
             pos = bst.bisect(fspc_sizes, size)
             fspc_sizes.insert(pos, size)
             fspc_ref.insert(pos, None)
-        
+
         print(fspc_sizes)
         print(fspc_ref)
         print(pcount)
         exit()
+
+    @doc_inherit
+    def print_table(self):
+        super().print_table()
 
 # TODO: remove this at the end
 def debug_vmem(mmem):

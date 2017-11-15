@@ -26,11 +26,11 @@ class Process(object):
         vals = list(map(int, vals))
         self.t0 = vals[0]
         self.tf = vals[1]
-        self.original_sz = vals[2]
-        self.b  = ceil(vals[2]/ua_size)*ua_size
+        self.original_sz = vals[2] # Bytes
+        self.b  = ceil(vals[2]/ua_size)*ua_size # Bytes
         self.pid = Process.next_pid
-        self.base = 0
-        self.size = 0
+        self.base = 0 # UA
+        self.size = 0 # UA
         Process.next_pid += 1
         for i in range(3, len(vals) - 1, 2):
             self.mem_access.append((vals[i], vals[i + 1]))
@@ -55,22 +55,16 @@ class Simulator(object):
         self.parse(input_file)
         for i in self.procs:
             print(i)
+        self.memmap = [['L', 0, self.virt_memory//self.ua_size]]
         self.ptable = PageTable(self.virt_memory, self.page_size)
         self.ftable = FrameTable(self.phys_memory, self.page_size)
         self.fspc_manager = fspc_managers[fspc_id](self.virt_memory,
                             self.ua_size, self.page_size, self.ptable,
-                            self.ftable)
+                            self.ftable, self.memmap)
         self.pmem_manager = pagination_managers[pmem_id](self.virt_memory,
                             self.ua_size, self.page_size, self.ptable, self.ftable)
         if fspc_id == 3: # Analysis of the processes if it's quick fit
             self.fspc_manager.analize_processes(self.procs)
-
-    def debug_loop(self):
-        tf = max([x.tf for x in self.procs])
-        for t in range(tf):
-            self.init_procs(t)
-
-
 
     def init_procs(self, t):
         """Allocate memory for all processes which arrived at time t"""
@@ -81,6 +75,7 @@ class Simulator(object):
 
 
     def parse(self, input_file):
+        """Parse the input file"""
         for num_line, line in enumerate(input_file):
             vals = line.split()
             if vals[0] == '#' or vals[0][0] == '#':
@@ -101,27 +96,76 @@ class Simulator(object):
                 else:
                     self.init_dict[proc.t0] = [proc]
 
-
-
     def loop(self):
-        act_procs = []
+        """Main loop of the simulator"""
+        act_procs = {}
         t = 0
         while (len(self.procs) != 0 or len(act_procs) != 0):
             print("t =", t)
             while (len(self.procs) != 0 and self.procs[0].t0 == t):
                 proc = self.procs.popleft()
-                act_procs.append(proc)
+                act_procs[proc.pid] = proc
                 self.fspc_manager.malloc(proc)
-            for p in act_procs:
+            for p in act_procs.values():
                 if (len(p.mem_access) != 0 and p.mem_access[0][1] == t):
                     # Access the page that contains the position p.accesses[0][0]
                     self.pmem_manager.access(p)
                     p.mem_access.popleft()
-            for i in range(len(act_procs)-1, -1, -1):
-                if (act_procs[i].tf == t):
-                    self.fspc_manager.free(act_procs.pop(i))
-                    #act_procs.pop(i)
+            for p in list(act_procs.values()):
+                if (p.tf == t):
+                    self.fspc_manager.free(act_procs.pop(p.pid))
+                    #act_procs.pop(p.pid)
             if (len(self.compact_list) != 0 and self.compact_list[0] == t):
                 # Compacts physical and virtual memory
+                self.compact(act_procs)
                 self.compact_list.popleft()
+            self.fspc_manager.print_table()
+            self.pmem_manager.print_table()
             t += 1
+
+    def compact(self, procs):
+        """Compacts the physical and virtual memories"""
+        proc = 0
+        top = 0
+        new_memmap = deque()
+        total_pages = self.virt_memory//self.page_size
+        total_frames = self.phys_memory//self.page_size
+        pg_to_ua = self.page_size//self.ua_size
+        # Compact virtual memory
+        pid = -1
+        last_pid = -1
+        for i in range(total_pages):
+            pid = self.ptable.get_pid(i)
+            if (top == i and pid != -1):
+                top += 1
+            elif (pid != -1):
+                self.ptable.swap_pages(top, i)
+                if (pid != last_pid):
+                    procs[pid].base = top*pg_to_ua
+                top += 1
+            last_pid = pid
+        # Compact memory map
+        page = 0
+        while (self.ptable.get_pid(page) == -1 and page < total_pages):
+            pid = self.ptable.get_pid(page)
+            size = 0
+            while (self.ptable.get_pid(page+size) == pid):
+                size += 1
+            new_memmap.append(["P", page*pg_to_ua, size*pg_to_ua])
+            page += size
+        new_memmap.append(["L", page*pg_to_ua, (total_pages - page)*pg_to_ua])
+        self.memmap = list(new_memmap)
+        # Compact physical memory
+        page = 0
+        frame = 0
+        while (self.ptable.get_pid(page) != -1 and page < total_pages):
+            pg_to_frame = self.ptable.get_frame(page)
+            if (pg_to_frame != -1):
+                while (self.ftable.get_page(frame) != -1 and frame < total_frames):
+                    frame += 1
+                if (pg_to_frame > frame):
+                    print(f"Swap {frame} with {pg_to_frame}")
+                    self.ftable.swap_frames(frame, pg_to_frame)
+                    self.pmem_manager.swap_frames(frame, pg_to_frame)
+                    self.ptable.set_frame(page, frame)
+            page += 1

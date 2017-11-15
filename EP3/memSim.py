@@ -40,12 +40,13 @@ class MemoryShell(cmd.Cmd):
     def do_sai(self, arg):
         """Exists the memory simulator interactive shell"""
         # TODO: close files then exit
-        self.file.close()
+        if (getattr(self, "file", None)):
+            self.file.close()
         exit()
 
     def do_fullinit(self, arg):
         self.file = open("input.in", "r")
-        sim = Simulator(self.file, 1, 1, 10)
+        sim = Simulator(self.file, 1, 4, 10)
         sim.loop()
 
 

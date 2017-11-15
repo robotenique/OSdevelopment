@@ -32,12 +32,23 @@ class PaginationManager(ABC):
 
     @abstractmethod
     def access(self, proc):
+        """Updates the matrix as if an access to process 'proc' just happened"""
+        pass
+
+    @abstractmethod
+    def swap_frames(self, frame1, frame2):
+        """Lets the object know that two frames were swaped"""
         pass
 
     def delete_frame(self, frame):
         """Delete all the information at a page.
            Used to delete a page from a finished process"""
         self.frame_table.reset_frame(frame)
+
+    @abstractmethod
+    def print_table(self):
+        pass
+
 
 
 class Optimal(PaginationManager):
@@ -62,7 +73,6 @@ class Optimal(PaginationManager):
 
     @doc_inherit
     def access(self, proc):
-        """Updates the matrix as if an access to 'page' just happened"""
         pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
@@ -87,13 +97,22 @@ class Optimal(PaginationManager):
         else:
             self.next_access[frame] = proc.mem_access[1][1] - self.time
         print(f"Process: {proc.pid}\nFrame accessed: {frame}")
-        print(self.next_access)
-        debug_ptable(self.frame_table.table, self.page_size)
+        self.print_table()
+
+    @doc_inherit
+    def swap_frames(self, frame1, frame2):
+        na1 = self.next_access[frame1]
+        self.next_access[frame1] = self.next_access[frame2]
+        self.next_access[frame2] = na1
 
     @doc_inherit
     def delete_frame(self, frame):
         self.next_access[frame] = math.inf
         super().free(frame)
+
+    @doc_inherit
+    def print_table(self):
+        debug_ptable(self.frame_table.table, self.page_size, self.next_access)
 
 class FIFO(PaginationManager):
 
@@ -109,7 +128,6 @@ class FIFO(PaginationManager):
 
     @doc_inherit
     def access(self, proc):
-        """Updates the matrix as if an access to 'page' just happened"""
         pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
@@ -126,11 +144,26 @@ class FIFO(PaginationManager):
             self.fifo.append(frame)
         print(f"Process: {proc.pid}\nFrame accessed: {frame}")
         print(self.fifo)
-        debug_ptable(self.frame_table.table, self.page_size)
+        self.print_table()
+
+    @doc_inherit
+    def swap_frames(self, frame1, frame2):
+        def f(i):
+            if (i == frame1):
+                return frame2
+            elif (i == frame2):
+                return frame1
+            return i
+        self.fifo = daque(map(f, self.fifo))
+
 
     @doc_inherit
     def delete_frame(self, frame):
         super().free(frame)
+
+    @doc_inherit
+    def print_table(self):
+        debug_ptable(self.frame_table.table, self.page_size)
 
 
 
@@ -156,7 +189,6 @@ class LRU2(PaginationManager):
 
     @doc_inherit
     def access(self, proc):
-        """Updates the matrix as if an access to 'page' just happened"""
         pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
@@ -176,13 +208,22 @@ class LRU2(PaginationManager):
         for i in range(len(self.matrix)):
             self.matrix[i] &= num
         print(f"Process: {proc.pid}\nFrame accessed: {frame}")
-        print(list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.matrix)))
-        debug_ptable(self.frame_table.table, self.page_size)
+        self.print_table
+
+    @doc_inherit
+    def swap_frames(self, frame1, frame2):
+        bm1 = self.matrix[frame1]
+        self.matrix[frame1] = self.matrix[frame2]
+        self.matrix[frame2] = bm1
 
     @doc_inherit
     def delete_frame(self, frame):
         self.matrix[frame] = 0
         super().free(frame)
+
+    @doc_inherit
+    def print_table(self):
+        debug_ptable(self.frame_table.table, self.page_size, list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.matrix)))
 
 
 class LRU4(PaginationManager):
@@ -205,7 +246,6 @@ class LRU4(PaginationManager):
 
     @doc_inherit
     def access(self, proc):
-        """Updates the timer as if an access to 'page' just happened"""
         pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
@@ -219,21 +259,34 @@ class LRU4(PaginationManager):
             frame_pos = frame*self.page_size
             self.frame_table.write_stream(frame_pos, page, self.pages_table.read(page))
             self.pages_table.set_frame(page, frame)
+        self.timer[frame] = 0
         for i in range(len(self.timer)):
             self.timer[i] >>= 1
         self.timer[frame] += self.ADD_BIT
-        print(f"Process: {proc.pid}\nFrame accessed: {frame}")
-        print(list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.timer)))
-        debug_ptable(self.frame_table.table, self.page_size)
+        #print(f"Process: {proc.pid}\nFrame accessed: {frame}")
+        #self.print_table()
+
+    @doc_inherit
+    def swap_frames(self, frame1, frame2):
+        t1 = self.timer[frame1]
+        self.timer[frame1] = self.timer[frame2]
+        self.timer[frame2] = t1
 
     @doc_inherit
     def delete_frame(self, frame):
         self.timer = 0
         super().free(frame)
 
+    @doc_inherit
+    def print_table(self):
+        debug_ptable(self.frame_table.table, self.page_size, list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.timer)))
 
-def debug_ptable(ptable, page_size):
+
+
+def debug_ptable(ptable, page_size, aux_bits=None):
+    if (not aux_bits):
+        aux_bits = [None for i in range(len(ptable))]
     print(f"== FRAMES TABLE == -> {page_size}")
-    for p in ptable:
-        print(p)
+    for p, bm in zip(ptable, aux_bits):
+        print("[", p, " aux:", bm, "]")
     print("")

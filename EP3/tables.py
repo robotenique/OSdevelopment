@@ -40,6 +40,15 @@ class PageTable(object):
         """Reads a page from the file and returns it"""
         return self.file.read(page)
 
+    def swap_pages(self, page1, page2):
+        """Swap two pages"""
+        page1_cont = self.file.read(page1)
+        self.file.write_stream(page1*self.page_size, self.file.read(page2))
+        self.file.write_stream(page2*self.page_size, page1_cont)
+        page1_obj = self.table[page1]
+        self.table[page1] = self.table[page2]
+        self.table[page2] = page1_obj
+
     def palloc(self, pid, pos, size):
         """Reserves the memory for a process"""
         self.file.write(pid, pos, size)
@@ -47,6 +56,9 @@ class PageTable(object):
         pages = ceil(size/self.page_size)
         for i in range(base_page, base_page + pages):
             self.table[i].pid = pid
+
+    def get_pid(self, page):
+        return self.table[page].pid
 
     def set_frame(self, page, frame):
         """A setter method to bind a frame to a page"""
@@ -85,7 +97,7 @@ class FrameTable(object):
             self.lruC = 0
 
         def __str__(self):
-            return f"[Page: {str(self.page).zfill(3)}]"
+            return f"Page: {str(self.page).zfill(3)}"
 
     def __init__(self, total_memory, page_size):
         self.table = [self.PageFrame() for _ in range(ceil(total_memory/page_size))]
@@ -103,6 +115,15 @@ class FrameTable(object):
         self.file.write_stream(pos, stream)
         frame = pos//self.page_size
         self.table[frame].page = page
+
+    def swap_frames(self, frame1, frame2):
+        """Swap two frames"""
+        frame1_cont = self.file.read(frame1)
+        self.file.write_stream(frame1*self.page_size, self.file.read(frame2))
+        self.file.write_stream(frame2*self.page_size, frame1_cont)
+        frame1_obj = self.table[frame1]
+        self.table[frame1] = self.table[frame2]
+        self.table[frame2] = frame1_obj
 
     def reset_frame(self, frame):
         """Resets a frame"""
