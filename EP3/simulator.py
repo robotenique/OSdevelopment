@@ -53,6 +53,8 @@ class Simulator(object):
         Process.reset_pids()
         self.init_dict = dict() # Initialization dictionary
         self.parse(input_file)
+        if sum((p.original_sz for p in self.procs)) > self.virt_memory:
+            print("Wrong pattern in input file!")
         for i in self.procs:
             print(i)
         self.memmap = [['L', 0, self.virt_memory//self.ua_size]]
