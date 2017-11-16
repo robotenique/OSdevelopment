@@ -146,7 +146,7 @@ class Simulator(object):
             last_pid = pid
         # Compact memory map
         page = 0
-        while (self.ptable.get_pid(page) == -1 and page < total_pages):
+        while (page < total_pages and self.ptable.get_pid(page) == -1):
             pid = self.ptable.get_pid(page)
             size = 0
             while (self.ptable.get_pid(page+size) == pid):
@@ -158,10 +158,10 @@ class Simulator(object):
         # Compact physical memory
         page = 0
         frame = 0
-        while (self.ptable.get_pid(page) != -1 and page < total_pages):
+        while (page < total_pages and self.ptable.get_pid(page) != -1):
             pg_to_frame = self.ptable.get_frame(page)
             if (pg_to_frame != -1):
-                while (self.ftable.get_page(frame) != -1 and frame < total_frames):
+                while (frame < total_frames and self.ftable.get_page(frame) != -1):
                     frame += 1
                 if (pg_to_frame > frame):
                     print(f"Swap {frame} with {pg_to_frame}")
