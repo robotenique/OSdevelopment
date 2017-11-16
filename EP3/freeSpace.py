@@ -169,7 +169,6 @@ class WorstFit(FreeSpaceManager):
 
 
 class QuickFit(FreeSpaceManager):
-    MAX_SIZE = 10
 
     @doc_inherit
     def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
@@ -177,28 +176,77 @@ class QuickFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
-        print('Kek')
+        real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
+        slist = self.fspc_sizes
+        rlist = self.fspc_ref
+        pos = bst.bisect_left(slist, ua_used)
+        debug_vmem(self.memmap)
+
+        while pos < len(rlist) and rlist[pos] == []:
+            pos += 1
+        if pos == len(rlist):
+            # We didn't found a free space, so let's do a WorstFit
+            mem_conv = lambda u: u*self.ua
+            bf_val = -math.inf
+            bf_pos = -1
+            for idx, curr in enumerate(list(self.memmap)):
+                if curr[0] == 'L' and ua_used <= curr[2] and curr[2] > bf_val:
+                    bf_pos = idx
+                    bf_val = curr[2]
+                    if ua_used == curr[2]:
+                        break
+
+            if bf_pos == -1:
+                print("No space left! Exiting simulator...")
+                exit()
+        else: # We found some free space
+            bf_pos = rlist[pos].pop()
+        self.__ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
+        debug_vmem(self.memmap)
+
+    def __ptable_alloc(self, proc, idx, ua_used, real_ua_used):
+       new_entry = ['P', self.memmap[idx][1], ua_used]
+       self.memmap[idx][1] += ua_used
+       self.memmap[idx][2] -= ua_used
+       self.memmap.insert(idx, new_entry)
+       inipos = self.memmap[idx][1]
+       proc.base = inipos
+       proc.size = ua_used
+       if self.memmap[idx + 1][2] == 0:
+           self.memmap.pop(idx + 1)
+       else:
+           b = bst.bisect_left(self.fspc_sizes, self.memmap[idx + 1][2])
+           if b < len(self.fspc_sizes) and self.fspc_sizes[b] == self.memmap[idx + 1][2]:
+               self.fspc_ref[b].append(idx + 1)
+       self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
 
     @doc_inherit
     def free(self, proc):
         super().free(proc)
 
     def analize_processes(self, proc_deque):
+        MAX_SIZE = 1
         plist = list(proc_deque)
         pg_to_ua = math.ceil(self.pg_size/self.ua)
         total_uas = lambda p: math.ceil(p.original_sz/self.pg_size)*pg_to_ua
-        pcount = Counter(map(total_uas, plist))
-        fspc_sizes = [math.inf]
-        fspc_ref = [self.memmap]
-        for size, _ in pcount.most_common(self.MAX_SIZE):
-            pos = bst.bisect(fspc_sizes, size)
-            fspc_sizes.insert(pos, size)
-            fspc_ref.insert(pos, None)
+        self.fspc_sizes = []
+        self.fspc_ref = []
+        for size, _ in Counter(map(total_uas, plist)).most_common(MAX_SIZE):
+            pos = bst.bisect(self.fspc_sizes, size)
+            self.fspc_sizes.insert(pos, size)
+            self.fspc_ref.insert(pos, [])
+        # If the most requested size is already the size of vmemory
+        i = bst.bisect(self.fspc_sizes, self.memmap[0][2])
+        if i < len(self.fspc_sizes) and self.fspc_sizes[i] == self.memmap[0][2]:
+            self.fspc_ref[i].append(0)
 
+
+        """
         print(fspc_sizes)
         print(fspc_ref)
         print(pcount)
         exit()
+        """
 
     @doc_inherit
     def print_table(self):
