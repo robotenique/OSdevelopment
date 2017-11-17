@@ -63,7 +63,7 @@ class Simulator(object):
         self.fspc_manager = fspc_managers[fspc_id](self.virt_memory,
                             self.ua_size, self.page_size, self.ptable,
                             self.ftable, self.memmap)
-        self.pmem_manager = pagination_managers[pmem_id](self.virt_memory,
+        self.pmem_manager = pagination_managers[pmem_id](self.phys_memory,
                             self.ua_size, self.page_size, self.ptable, self.ftable)
         if fspc_id == 3: # Analysis of the processes if it's quick fit
             self.fspc_manager.analize_processes(self.procs)
@@ -121,6 +121,7 @@ class Simulator(object):
                 # Compacts physical and virtual memory
                 self.compact(act_procs)
                 self.compact_list.popleft()
+            self.pmem_manager.update()
             self.fspc_manager.print_table()
             self.pmem_manager.print_table()
             t += 1
@@ -148,7 +149,7 @@ class Simulator(object):
             last_pid = pid
         # Compact memory map
         page = 0
-        while (page < total_pages and self.ptable.get_pid(page) == -1):
+        while (page < total_pages and self.ptable.get_pid(page) != -1):
             pid = self.ptable.get_pid(page)
             size = 0
             while (self.ptable.get_pid(page+size) == pid):
@@ -157,6 +158,7 @@ class Simulator(object):
             page += size
         new_memmap.append(["L", page*pg_to_ua, (total_pages - page)*pg_to_ua])
         self.memmap = list(new_memmap)
+        self.fspc_manager.memmap = self.memmap
         # Compact physical memory
         page = 0
         frame = 0
@@ -166,7 +168,6 @@ class Simulator(object):
                 while (frame < total_frames and self.ftable.get_page(frame) != -1):
                     frame += 1
                 if (pg_to_frame > frame):
-                    print(f"Swap {frame} with {pg_to_frame}")
                     self.ftable.swap_frames(frame, pg_to_frame)
                     self.pmem_manager.swap_frames(frame, pg_to_frame)
                     self.ptable.set_frame(page, frame)

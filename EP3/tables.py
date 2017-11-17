@@ -70,7 +70,7 @@ class PageTable(object):
 
     def get_frame(self, page):
         """A getter method that returns the frame where a page is"""
-        if (not self.table[page].bit_p):
+        if (page == -1 or (not self.table[page].bit_p)):
             return -1
         return self.table[page].page_frame
 
@@ -106,6 +106,8 @@ class FrameTable(object):
 
     def get_page(self, frame):
         """A getter method that returns the page which is at the frame"""
+        if (frame == -1):
+            return -1
         return self.table[frame].page
 
     def write_stream(self, pos, page, stream):

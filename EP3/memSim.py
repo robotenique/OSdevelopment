@@ -45,8 +45,8 @@ class MemoryShell(cmd.Cmd):
         exit()
 
     def do_fullinit(self, arg):
-        self.file = open("input.in", "r")
-        sim = Simulator(self.file, 1, 4, 10)
+        self.file = open("input3.in", "r")
+        sim = Simulator(self.file, 1, 1, 10)
         sim.loop()
 
 

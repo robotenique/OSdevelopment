@@ -23,7 +23,12 @@ class PaginationManager(ABC):
         self.page_size = page_size
         self.ua = ua
         self.pages_table = ptable
-        self.frame_table = ftable
+        self.frames_table = ftable
+
+    @abstractmethod
+    def update(self):
+        """Updates the control table when needed"""
+        pass
 
     @abstractmethod
     def get_new_frame(self):
@@ -43,7 +48,7 @@ class PaginationManager(ABC):
     def delete_frame(self, frame):
         """Delete all the information at a page.
            Used to delete a page from a finished process"""
-        self.frame_table.reset_frame(frame)
+        self.frames_table.reset_frame(frame)
 
     @abstractmethod
     def print_table(self):
@@ -58,6 +63,14 @@ class Optimal(PaginationManager):
         super().__init__(total_memory, ua, page_size, ptable, ftable)
         self.next_access = [math.inf for i in range(self.tot_pages)]
         self.time = 0
+
+    @doc_inherit
+    def update(self):
+        self.time += 1
+        for i in range(len(self.next_access)):
+            self.next_access[i] -= 1
+            if (self.next_access[i] == -1):
+                self.next_access[i] = math.inf
 
     @doc_inherit
     def get_new_frame(self):
@@ -77,27 +90,20 @@ class Optimal(PaginationManager):
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
         print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
-        dt = proc.mem_access[0][1] - self.time
-        for i in range(self.tot_pages):
-            self.next_access[i] -= dt
-            if (self.next_access[i] == 0):
-                self.next_access[i] = math.inf
         if (frame == -1):
             frame = self.get_new_frame()
-            out_page = self.frame_table.get_page(frame)
+            out_page = self.frames_table.get_page(frame)
             if (out_page != -1):
                 self.pages_table.set_presence(out_page, False)
             self.pages_table.set_presence(page, True)
             frame_pos = frame*self.page_size
-            self.frame_table.write_stream(frame_pos, page, self.pages_table.read(page))
+            self.frames_table.write_stream(frame_pos, page, self.pages_table.read(page))
             self.pages_table.set_frame(page, frame)
-        self.time = proc.mem_access[0][1]
         if (len(proc.mem_access) == 1):
             self.next_access[frame] = math.inf
         else:
             self.next_access[frame] = proc.mem_access[1][1] - self.time
         print(f"Process: {proc.pid}\nFrame accessed: {frame}")
-        self.print_table()
 
     @doc_inherit
     def swap_frames(self, frame1, frame2):
@@ -112,7 +118,7 @@ class Optimal(PaginationManager):
 
     @doc_inherit
     def print_table(self):
-        debug_ptable(self.frame_table.table, self.page_size, self.next_access)
+        debug_ptable(self.frames_table.table, self.page_size, self.next_access)
 
 class FIFO(PaginationManager):
 
@@ -121,6 +127,10 @@ class FIFO(PaginationManager):
         super().__init__(total_memory, ua, page_size, ptable, ftable)
         self.fifo = deque()
         self.fifo.extend(range(total_memory//page_size))
+
+    @doc_inherit
+    def update(self):
+        pass
 
     @doc_inherit
     def get_new_frame(self):
@@ -134,12 +144,12 @@ class FIFO(PaginationManager):
         print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
             frame = self.get_new_frame()
-            out_page = self.frame_table.get_page(frame)
+            out_page = self.frames_table.get_page(frame)
             if (out_page != -1):
                 self.pages_table.set_presence(out_page, False)
             self.pages_table.set_presence(page, True)
             frame_pos = frame*self.page_size
-            self.frame_table.write_stream(frame_pos, page, self.pages_table.read(page))
+            self.frames_table.write_stream(frame_pos, page, self.pages_table.read(page))
             self.pages_table.set_frame(page, frame)
             self.fifo.append(frame)
         print(f"Process: {proc.pid}\nFrame accessed: {frame}")
@@ -163,7 +173,7 @@ class FIFO(PaginationManager):
 
     @doc_inherit
     def print_table(self):
-        debug_ptable(self.frame_table.table, self.page_size)
+        debug_ptable(self.frames_table.table, self.page_size)
 
 
 
@@ -174,6 +184,10 @@ class LRU2(PaginationManager):
         super().__init__(total_memory, ua, page_size, ptable, ftable)
         self.MAX_VAL = (1 << self.tot_pages) - 1     # Generates a number with 'tot_pages' ones
         self.matrix = [0 for i in range(self.tot_pages)]
+
+    @doc_inherit
+    def update(self):
+        pass
 
     @doc_inherit
     def get_new_frame(self):
@@ -195,12 +209,12 @@ class LRU2(PaginationManager):
         print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
             frame = self.get_new_frame()
-            out_page = self.frame_table.get_page(frame)
+            out_page = self.frames_table.get_page(frame)
             if (out_page != -1):
                 self.pages_table.set_presence(out_page, False)
             self.pages_table.set_presence(page, True)
             frame_pos = frame*self.page_size
-            self.frame_table.write_stream(frame_pos, page, self.pages_table.read(page))
+            self.frames_table.write_stream(frame_pos, page, self.pages_table.read(page))
             self.pages_table.set_frame(page, frame)
         num = self.MAX_VAL
         self.matrix[frame] = num
@@ -223,7 +237,7 @@ class LRU2(PaginationManager):
 
     @doc_inherit
     def print_table(self):
-        debug_ptable(self.frame_table.table, self.page_size, list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.matrix)))
+        debug_ptable(self.frames_table.table, self.page_size, list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.matrix)))
 
 
 class LRU4(PaginationManager):
@@ -233,6 +247,14 @@ class LRU4(PaginationManager):
         super().__init__(total_memory, ua, page_size, ptable, ftable)
         self.ADD_BIT = (1 << (self.tot_pages - 1))   # Generates a number with a one at 'tot_pages'
         self.timer = [0 for i in range(self.tot_pages)]
+        self.bit_r = [False for i in range(self.tot_pages)]
+
+    @doc_inherit
+    def update(self):
+        for i in range(len(self.timer)):
+            self.timer[i] >>= 1
+            self.timer[i] += self.ADD_BIT if (self.bit_r[i]) else 0
+            self.bit_r[i] = False
 
     @doc_inherit
     def get_new_frame(self):
@@ -252,19 +274,14 @@ class LRU4(PaginationManager):
         print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
             frame = self.get_new_frame()
-            out_page = self.frame_table.get_page(frame)
+            out_page = self.frames_table.get_page(frame)
             if (out_page != -1):
                 self.pages_table.set_presence(out_page, False)
             self.pages_table.set_presence(page, True)
             frame_pos = frame*self.page_size
-            self.frame_table.write_stream(frame_pos, page, self.pages_table.read(page))
+            self.frames_table.write_stream(frame_pos, page, self.pages_table.read(page))
             self.pages_table.set_frame(page, frame)
-        self.timer[frame] = 0
-        for i in range(len(self.timer)):
-            self.timer[i] >>= 1
-        self.timer[frame] += self.ADD_BIT
-        #print(f"Process: {proc.pid}\nFrame accessed: {frame}")
-        #self.print_table()
+        self.bit_r[frame] = True
 
     @doc_inherit
     def swap_frames(self, frame1, frame2):
@@ -279,7 +296,7 @@ class LRU4(PaginationManager):
 
     @doc_inherit
     def print_table(self):
-        debug_ptable(self.frame_table.table, self.page_size, list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.timer)))
+        debug_ptable(self.frames_table.table, self.page_size, list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.timer)))
 
 
 
