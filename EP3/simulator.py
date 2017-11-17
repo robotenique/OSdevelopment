@@ -13,6 +13,7 @@ from freeSpace import BestFit, WorstFit, QuickFit
 from paginators import Optimal, FIFO, LRU2, LRU4
 from math import ceil
 from tables import PageTable, FrameTable
+from memsimWrapper import LinkedList
 
 fspc_managers = [None, BestFit, WorstFit, QuickFit]
 pagination_managers = [None, Optimal, FIFO, LRU2, LRU4]
@@ -57,7 +58,9 @@ class Simulator(object):
             print("Wrong pattern in input file!")
         for i in self.procs:
             print(i)
-        self.memmap = [['L', 0, self.virt_memory//self.ua_size]]
+        #self.memmap = [['L', 0, self.virt_memory//self.ua_size]]
+        self.memmap = LinkedList()
+        self.memmap.add_node("L", 0, self.virt_memory//self.ua_size)
         self.ptable = PageTable(self.virt_memory, self.page_size)
         self.ftable = FrameTable(self.phys_memory, self.page_size)
         self.fspc_manager = fspc_managers[fspc_id](self.virt_memory,

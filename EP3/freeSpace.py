@@ -54,34 +54,44 @@ class FreeSpaceManager(ABC):
         ua_used = pgs_used*pg_to_ua
         return real_ua_used, pg_to_ua, pgs_used, ua_used
 
-    def __ptable_alloc(self, proc, idx, ua_used, real_ua_used):
-       """Allocate a given set of pages in the pages table and correctly
-       adds to the memory list representation"""
-       new_entry = ['P', self.memmap[idx][1], ua_used]
-       self.memmap[idx][1] += ua_used
-       self.memmap[idx][2] -= ua_used
-       self.memmap.insert(idx, new_entry)
-       inipos = self.memmap[idx][1]
-       proc.base = inipos
-       proc.size = ua_used
-       if self.memmap[idx + 1][2] == 0:
-           self.memmap.pop(idx + 1)
-       self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
-       #self.print_table()
+    def __ptable_alloc(self, proc, node, ua_used, real_ua_used):
+        """Allocate a given set of pages in the pages table and correctly
+        adds to the memory list representation"""
+        if (self.memmap.head == node and not node.next):
+            curr = self.memmap.head
+            new_entry = LinkedList.Node('P', node.base, ua_used)
+            self.memmap.head = new_entry
+        else:
+            curr = node.next
+            new_entry = LinkedList.Node('P', curr.base, ua_used)
+            node.next = new_entry
+        new_entry.next = curr
+
+        curr.base += ua_used
+        curr.qtd -= ua_used
+        if (curr.qtd == 0):
+            new_entry.next = curr.next
+
+        inipos = new_entry.base
+        proc.base = inipos
+        proc.size = ua_used
+        self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
 
     def free(self, proc):
-        idx = 0
-        while (self.memmap[idx][1] != proc.base):
-            idx += 1
-        if (idx != 0 and self.memmap[idx-1][0] == 'L'):
-            self.memmap[idx-1][2] += self.memmap[idx][2]
-            self.memmap.pop(idx)
-        elif (idx != len(self.memmap)-1 and self.memmap[idx+1][0] == 'L'):
-            self.memmap[idx+1][2] += self.memmap[idx][2]
-            self.memmap[idx+1][1] -= self.memmap[idx][2]
-            self.memmap.pop(idx)
+        curr = self.memmap.head
+        prev = None
+        while (curr.base != proc.base):
+            prev = curr
+            curr = curr.next
+        if (prev and prev.status == 'L'):
+            prev.qtd += curr.qtd
+            prev.next = curr.next
+        elif (curr.next and curr.next.status == 'L'):
+            curr.next.qtd += curr.qtd
+            curr.next.base -= curr.qtd
+            prev.next = curr.next
         else:
-            self.memmap[idx][0] = 'L'
+            curr.status = 'L'
         pg_to_ua = math.ceil(self.pg_size/self.ua)
         base_page = proc.base//pg_to_ua
         num_pages = proc.size//pg_to_ua
@@ -109,22 +119,31 @@ class BestFit(FreeSpaceManager):
 
         mem_conv = lambda u: u*self.ua
         bf_val = math.inf
-        bf_pos = -1
-        for idx, curr in enumerate(list(self.memmap)):
-            if curr[0] == 'L' and ua_used <= curr[2] and curr[2] < bf_val:
-                bf_pos = idx
-                bf_val = curr[2]
-                if ua_used == curr[2]:
+        bf_node = None
+        bf_prev = None
+        curr = self.memmap.head
+        prev = self.memmap.head
+        while curr:
+            if curr.status == 'L' and ua_used <= curr.qtd and curr.qtd < bf_val:
+                bf_node = curr
+                bf_prev = prev
+                bf_val = curr.qtd
+                if ua_used == curr.qtd:
                     break
-        if bf_pos == -1:
+            prev = curr
+            curr = curr.next
+
+        if bf_node == None:
             print("No space left! Exiting simulator...")
             exit()
 
-        super()._FreeSpaceManager__ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
+        super()._FreeSpaceManager__ptable_alloc(proc, prev, ua_used, real_ua_used)
+        self.print_table()
 
     @doc_inherit
     def free(self, proc):
         super().free(proc)
+        #pass
 
     @doc_inherit
     def print_table(self):
@@ -144,19 +163,26 @@ class WorstFit(FreeSpaceManager):
 
         mem_conv = lambda u: u*self.ua
         bf_val = -math.inf
-        bf_pos = -1
-        for idx, curr in enumerate(list(self.memmap)):
-            if curr[0] == 'L' and ua_used <= curr[2] and curr[2] > bf_val:
-                bf_pos = idx
-                bf_val = curr[2]
-                if ua_used == curr[2]:
+        bf_node = None
+        bf_prev = None
+        curr = self.memmap.head
+        prev = self.memmap.head
+        while curr:
+            if curr.status == 'L' and ua_used <= curr.qtd and curr.qtd > bf_val:
+                bf_node = curr
+                bf_prev = prev
+                bf_val = curr.qtd
+                if ua_used == curr.qtd:
                     break
+            prev = curr
+            curr = curr.next
 
-        if bf_pos == -1:
+        if bf_node == None:
             print("No space left! Exiting simulator...")
             exit()
 
-        super()._FreeSpaceManager__ptable_alloc(proc, bf_pos, ua_used, real_ua_used)
+        super()._FreeSpaceManager__ptable_alloc(proc, prev, ua_used, real_ua_used)
+        self.print_table()
 
     @doc_inherit
     def free(self, proc):
@@ -172,11 +198,8 @@ class QuickFit(FreeSpaceManager):
 
     @doc_inherit
     def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
-        mlist = LinkedList()
-        memmap = memmap[0]
-        mlist.add_node(memmap[0], memmap[1], memmap[2])
-        super().__init__(total_memory, ua, page_size, ptable, ftable, mlist)
-        self.mlist = mlist
+        self.mlist = memmap
+        super().__init__(total_memory, ua, page_size, ptable, ftable, self.mlist)
 
     @doc_inherit
     def malloc(self, proc):
@@ -296,9 +319,15 @@ class QuickFit(FreeSpaceManager):
 
 # TODO: remove this at the end
 def debug_vmem(mmem):
-    for i in range(len(mmem) - 1):
-        print(f"{mmem[i]} -> ", end="")
-    print(mmem[-1])
+    #curr = mmem.head
+    #print(curr)
+    #while curr.next:
+    #    print(f"{curr} -> ", end="")
+    #    curr = curr.next
+    #for i in range(len(mmem) - 1):
+    #    print(f"{mmem[i]} -> ", end="")
+    #print(curr)
+    mmem.print_nodes()
 
 def debug_ptable(ptable, page_size):
     print(f"== PAGES TABLE == -> {page_size}")
