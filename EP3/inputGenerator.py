@@ -4,7 +4,7 @@ from random import randint, sample
 INPUT = [
     #procs   comps   tf      max_dt   max_size   max_access
     #----------------------------------------------------
-    [10,     2,      20,     6,       10,        3]
+    [300,     2,      20,     6,       20,        3]
 ]
 
 MEM_INFOS = [50, 100, 4, 8]

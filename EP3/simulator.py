@@ -122,8 +122,8 @@ class Simulator(object):
                 self.compact(act_procs)
                 self.compact_list.popleft()
             self.pmem_manager.update()
-            self.fspc_manager.print_table()
-            self.pmem_manager.print_table()
+            #self.fspc_manager.print_table()
+            #self.pmem_manager.print_table()
             t += 1
 
     def compact(self, procs):

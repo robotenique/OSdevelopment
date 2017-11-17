@@ -46,3 +46,42 @@ class DocInherit(object):
         return func
 
 doc_inherit = DocInherit
+
+class LinkedList(object):
+    class Node(object):
+        def __init__(self, status, base, qtd, next_n=None):
+            self.status = status
+            self.base = base
+            self.qtd = qtd
+            self.next = next_n
+
+        def __eq__(self, other):
+            return other != None and \
+                   self.status == other.status \
+                   and self.base == other.base \
+                   and self.qtd == other.qtd \
+                   and self.next == other.next
+        def __repr__(self):
+            return f"({self.status}, {self.base}, {self.qtd})"
+
+    def __init__(self, head=None):
+        self.head = head
+
+    def add_node(self, status, base, qtd):
+        new_node = self.Node(status, base, qtd, self.head)
+        self.head = new_node
+
+    def print_nodes(self):
+        curr = self.head
+        while curr:
+            print(f"[{curr.status}, {curr.base}, {curr.qtd}]", end="")
+            if curr.next != None:
+                print(" -> ", end="")
+            else:
+                print("")
+            curr = curr.next
+
+l = LinkedList()
+l.add_node("L", 0, 4)
+l.add_node("L", 0, 33)
+l.print_nodes()
