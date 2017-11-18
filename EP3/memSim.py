@@ -35,18 +35,18 @@ class MemoryShell(cmd.Cmd):
     def do_executa(self, interval):
         """Runs the simulator and prints the memory state in 'interval' to 'interval' seconds, together with the bitmap content of the memory state"""
         sim = Simulator(self.file, self.fspc_id, self.pmem_id, interval)
-        #sim.loop()
+        sim.loop()
 
     def do_sai(self, arg):
-        """Exists the memory simulator interactive shell"""
+        """Exits the memory simulator interactive shell"""
         # TODO: close files then exit
         if (getattr(self, "file", None)):
             self.file.close()
         exit()
 
     def do_fullinit(self, arg):
-        self.file = open("input.in", "r")
-        sim = Simulator(self.file, 3, 1, 10)
+        self.file = open("input3.in", "r")
+        sim = Simulator(self.file, 2, 1, 10)
         sim.loop()
 
 

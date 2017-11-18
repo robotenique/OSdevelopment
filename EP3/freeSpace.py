@@ -57,15 +57,15 @@ class FreeSpaceManager(ABC):
     def __ptable_alloc(self, proc, node, ua_used, real_ua_used):
         """Allocate a given set of pages in the pages table and correctly
         adds to the memory list representation"""
-        if (self.memmap.head == node and not node.next):
+        print(node)
+        if (not node):
             curr = self.memmap.head
-            new_entry = LinkedList.Node('P', node.base, ua_used)
+            new_entry = LinkedList.Node('P', 0, ua_used, curr)
             self.memmap.head = new_entry
         else:
             curr = node.next
-            new_entry = LinkedList.Node('P', curr.base, ua_used)
+            new_entry = LinkedList.Node('P', curr.base, ua_used, curr)
             node.next = new_entry
-        new_entry.next = curr
 
         curr.base += ua_used
         curr.qtd -= ua_used
@@ -86,10 +86,16 @@ class FreeSpaceManager(ABC):
         if (prev and prev.status == 'L'):
             prev.qtd += curr.qtd
             prev.next = curr.next
+            if (curr.next and curr.next.status == 'L'):
+                prev.qtd += curr.next.qtd
+                prev.next = curr.next.next
         elif (curr.next and curr.next.status == 'L'):
             curr.next.qtd += curr.qtd
             curr.next.base -= curr.qtd
-            prev.next = curr.next
+            if prev:
+                prev.next = curr.next
+            else:
+                self.memmap.head = curr.next
         else:
             curr.status = 'L'
         pg_to_ua = math.ceil(self.pg_size/self.ua)
@@ -100,7 +106,7 @@ class FreeSpaceManager(ABC):
             if (frame != -1):
                 self.frames_table.reset_frame(frame)
             self.pages_table.reset_page(base_page+i)
-        #self.print_table()
+        self.print_table()
 
     def print_table(self):
         debug_vmem(self.memmap)
@@ -122,7 +128,7 @@ class BestFit(FreeSpaceManager):
         bf_node = None
         bf_prev = None
         curr = self.memmap.head
-        prev = self.memmap.head
+        prev = None
         while curr:
             if curr.status == 'L' and ua_used <= curr.qtd and curr.qtd < bf_val:
                 bf_node = curr
@@ -137,7 +143,7 @@ class BestFit(FreeSpaceManager):
             print("No space left! Exiting simulator...")
             exit()
 
-        super()._FreeSpaceManager__ptable_alloc(proc, prev, ua_used, real_ua_used)
+        super()._FreeSpaceManager__ptable_alloc(proc, bf_prev, ua_used, real_ua_used)
         self.print_table()
 
     @doc_inherit
@@ -166,14 +172,12 @@ class WorstFit(FreeSpaceManager):
         bf_node = None
         bf_prev = None
         curr = self.memmap.head
-        prev = self.memmap.head
+        prev = None
         while curr:
             if curr.status == 'L' and ua_used <= curr.qtd and curr.qtd > bf_val:
                 bf_node = curr
                 bf_prev = prev
                 bf_val = curr.qtd
-                if ua_used == curr.qtd:
-                    break
             prev = curr
             curr = curr.next
 
@@ -181,7 +185,7 @@ class WorstFit(FreeSpaceManager):
             print("No space left! Exiting simulator...")
             exit()
 
-        super()._FreeSpaceManager__ptable_alloc(proc, prev, ua_used, real_ua_used)
+        super()._FreeSpaceManager__ptable_alloc(proc, bf_prev, ua_used, real_ua_used)
         self.print_table()
 
     @doc_inherit

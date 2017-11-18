@@ -133,7 +133,7 @@ class Simulator(object):
         """Compacts the physical and virtual memories"""
         proc = 0
         top = 0
-        new_memmap = deque()
+        new_memmap = LinkedList()
         total_pages = self.virt_memory//self.page_size
         total_frames = self.phys_memory//self.page_size
         pg_to_ua = self.page_size//self.ua_size
@@ -152,15 +152,27 @@ class Simulator(object):
             last_pid = pid
         # Compact memory map
         page = 0
+        if (self.ptable.get_pid(page) != -1):
+            pid = self.ptable.get_pid(page)
+            size = 0
+            while (self.ptable.get_pid(page+size) == pid):
+                size += 1
+            new_memmap.head = LinkedList.Node("P", page*pg_to_ua, size*pg_to_ua)
+            page += size
+            curr = new_memmap.head
         while (page < total_pages and self.ptable.get_pid(page) != -1):
             pid = self.ptable.get_pid(page)
             size = 0
             while (self.ptable.get_pid(page+size) == pid):
                 size += 1
-            new_memmap.append(["P", page*pg_to_ua, size*pg_to_ua])
+            curr.next = LinkedList.Node("P", page*pg_to_ua, size*pg_to_ua)
             page += size
-        new_memmap.append(["L", page*pg_to_ua, (total_pages - page)*pg_to_ua])
-        self.memmap = list(new_memmap)
+            curr = curr.next
+        if (new_memmap.head == None):
+            new_memmap.head = LinkedList.Node("L", page*pg_to_ua, (total_pages - page)*pg_to_ua)
+        else:
+            curr.next = LinkedList.Node("L", page*pg_to_ua, (total_pages - page)*pg_to_ua)
+        self.memmap = new_memmap
         self.fspc_manager.memmap = self.memmap
         # Compact physical memory
         page = 0
