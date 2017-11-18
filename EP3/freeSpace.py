@@ -168,24 +168,24 @@ class WorstFit(FreeSpaceManager):
         real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
 
         mem_conv = lambda u: u*self.ua
-        bf_val = -math.inf
-        bf_node = None
-        bf_prev = None
+        wf_val = -math.inf
+        wf_node = None
+        wf_prev = None
         curr = self.memmap.head
         prev = None
         while curr:
-            if curr.status == 'L' and ua_used <= curr.qtd and curr.qtd > bf_val:
-                bf_node = curr
-                bf_prev = prev
-                bf_val = curr.qtd
+            if curr.status == 'L' and ua_used <= curr.qtd and curr.qtd > wf_val:
+                wf_node = curr
+                wf_prev = prev
+                wf_val = curr.qtd
             prev = curr
             curr = curr.next
 
-        if bf_node == None:
+        if wf_node == None:
             print("No space left! Exiting simulator...")
             exit()
 
-        super()._FreeSpaceManager__ptable_alloc(proc, bf_prev, ua_used, real_ua_used)
+        super()._FreeSpaceManager__ptable_alloc(proc, wf_prev, ua_used, real_ua_used)
         self.print_table()
 
     @doc_inherit
