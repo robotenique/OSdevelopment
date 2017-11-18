@@ -118,16 +118,17 @@ class Simulator(object):
                     p.mem_access.popleft()
             for p in list(act_procs.values()):
                 if (p.tf == t):
-                    self.fspc_manager.free(act_procs.pop(p.pid))
+                    self.fspc_manager.free(act_procs.pop(p.pid), self.pmem_manager)
                     #act_procs.pop(p.pid)
             if (len(self.compact_list) != 0 and self.compact_list[0] == t):
                 # Compacts physical and virtual memory
                 self.compact(act_procs)
                 self.compact_list.popleft()
             self.pmem_manager.update()
-            #self.fspc_manager.print_table()
+            self.fspc_manager.print_table()
             #self.pmem_manager.print_table()
             t += 1
+        print("Page faults:", self.pmem_manager.page_faults)
 
     def compact(self, procs):
         """Compacts the physical and virtual memories"""
@@ -186,4 +187,7 @@ class Simulator(object):
                     self.ftable.swap_frames(frame, pg_to_frame)
                     self.pmem_manager.swap_frames(frame, pg_to_frame)
                     self.ptable.set_frame(page, frame)
+            pg_to_frame = self.ptable.get_frame(page)
+            if (pg_to_frame != -1):
+                self.ftable.set_page(pg_to_frame, page)
             page += 1
