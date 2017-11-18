@@ -77,7 +77,7 @@ class FreeSpaceManager(ABC):
         proc.size = ua_used
         self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
 
-    def free(self, proc):
+    def free(self, proc, pmem_manager):
         curr = self.memmap.head
         prev = None
         while (curr.base != proc.base):
@@ -104,9 +104,9 @@ class FreeSpaceManager(ABC):
         for i in range(num_pages):
             frame = self.pages_table.get_frame(base_page+i)
             if (frame != -1):
-                self.frames_table.reset_frame(frame)
+                pmem_manager.delete_frame(frame)
             self.pages_table.reset_page(base_page+i)
-        self.print_table()
+        #self.print_table()
 
     def print_table(self):
         debug_vmem(self.memmap)
@@ -144,11 +144,11 @@ class BestFit(FreeSpaceManager):
             exit()
 
         super()._FreeSpaceManager__ptable_alloc(proc, bf_prev, ua_used, real_ua_used)
-        self.print_table()
+        #self.print_table()
 
     @doc_inherit
-    def free(self, proc):
-        super().free(proc)
+    def free(self, proc, pmem_manager):
+        super().free(proc, pmem_manager)
         #pass
 
     @doc_inherit
@@ -186,11 +186,11 @@ class WorstFit(FreeSpaceManager):
             exit()
 
         super()._FreeSpaceManager__ptable_alloc(proc, wf_prev, ua_used, real_ua_used)
-        self.print_table()
+        #self.print_table()
 
     @doc_inherit
-    def free(self, proc):
-        super().free(proc)
+    def free(self, proc, pmem_manager):
+        super().free(proc, pmem_manager)
 
     @doc_inherit
     def print_table(self):
@@ -294,7 +294,7 @@ class QuickFit(FreeSpaceManager):
 
 
     @doc_inherit
-    def free(self, proc):
+    def free(self, proc, pmem_manager):
         pass
         """
         TODO: tem Q pensarr >>>>>::(
@@ -340,6 +340,6 @@ def debug_vmem(mmem):
 
 def debug_ptable(ptable, page_size):
     print(f"== PAGES TABLE == -> {page_size}")
-    for p in ptable:
-        print(p)
+    for i, p in zip(range(len(ptable)), ptable):
+        print(i, p)
     print("")

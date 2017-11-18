@@ -110,6 +110,9 @@ class FrameTable(object):
             return -1
         return self.table[frame].page
 
+    def set_page(self, frame, page):
+        self.table[frame].page = page
+
     def write_stream(self, pos, page, stream):
         """Writes a stream of bytes to a frame.
            Used to copy the content of a page from the virtual to the
