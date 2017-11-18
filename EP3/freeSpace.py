@@ -202,8 +202,7 @@ class QuickFit(FreeSpaceManager):
 
     @doc_inherit
     def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
-        self.mlist = memmap
-        super().__init__(total_memory, ua, page_size, ptable, ftable, self.mlist)
+        super().__init__(total_memory, ua, page_size, ptable, ftable, memmap)
 
     @doc_inherit
     def malloc(self, proc):
@@ -211,21 +210,9 @@ class QuickFit(FreeSpaceManager):
         slist = self.fspc_sizes
         rlist = self.fspc_ref
 
-        # HACK: HARDCODED FOR TESTING
-        """self.mlist = LinkedList()
-        self.mlist.add_node('L', 10, 3)
-        self.mlist.add_node('L', 8, 2)
-        self.mlist.add_node('P', 5, 3)
-        self.mlist.add_node('P', 3, 2)
-        self.mlist.add_node('L', 0, 3)
-        ua_used = 5"""
-        # HACK: ENDED
-
         lkp = lambda s : bst.bisect_left(slist, s)
         checkEqual = lambda p, l, v : p < len(l) and l[p] == v
         pos_slist = lkp(ua_used)
-        print(f"Procurando: {ua_used}")
-        self.mlist.print_nodes()
         isFrequent = False
         found = False
         if checkEqual(pos_slist, slist, ua_used) and rlist[pos_slist] != []:
@@ -234,10 +221,9 @@ class QuickFit(FreeSpaceManager):
             node.status = 'P'
             isFrequent = True
         else: # Not a frequent size or not available, so manually find in the mlist
-            curr = self.mlist.head
+            curr = self.memmap.head
             ant = None # Previous node
             while curr and not found:
-                print("Vamos achar!")
                 if curr.status == 'L':
                     fx_ant = ant # Previous of the start node
                     start_node = curr
@@ -260,16 +246,21 @@ class QuickFit(FreeSpaceManager):
             if not found:
                 print("No memory available!")
                 exit()
+            temp = start_node
+            while temp and temp != end_node.next:
+                ptemp = lkp(temp.qtd)
+                if checkEqual(ptemp, slist, temp.qtd) and temp in rlist[ptemp]:
+                    rlist[ptemp].remove(temp)
+                temp = temp.next
             if start_node != end_node: # Compress the multiple nodes into a big full node
                 full_node = LinkedList.Node('L', start_node.base, sz_found)
                 if fx_ant == None:
-                    self.mlist.head = full_node
+                    self.memmap.head = full_node
                 else:
                     fx_ant.next = full_node
                 full_node.next = end_node.next
                 start_node = full_node # The new start_node is this compressed node
-                self.mlist.print_nodes()
-
+                self.memmap.print_nodes()
             # This is equivalent to __ptable_alloc ...
             new_node = LinkedList.Node('P', start_node.base, ua_used)
             inipos = start_node.base
@@ -277,7 +268,7 @@ class QuickFit(FreeSpaceManager):
             start_node.qtd -= ua_used
             new_node.next = start_node if start_node.qtd != 0 else start_node.next
             if fx_ant == None:
-                self.mlist.head = new_node
+                self.memmap.head = new_node
             else:
                 fx_ant.next = new_node
             if start_node.qtd != 0:
@@ -290,17 +281,59 @@ class QuickFit(FreeSpaceManager):
         proc.size = ua_used
         self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
         debug_ptable(self.pages_table.table, self.pg_size)
-        self.mlist.print_nodes()
 
 
     @doc_inherit
     def free(self, proc):
-        pass
-        """
-        TODO: tem Q pensarr >>>>>::(
-        """
+        curr = self.memmap.head
+        prev = None
+        slist = self.fspc_sizes
+        rlist = self.fspc_ref
+        lkp = lambda s : bst.bisect_left(slist, s)
+        checkEqual = lambda p, l, v : p < len(l) and l[p] == v
+        while curr and curr.base != proc.base:
+            prev = curr
+            curr = curr.next
+        pos_slist = lkp(curr.qtd)
+        if checkEqual(pos_slist, slist, curr.qtd):
+            curr.status = 'L'
+            rlist[pos_slist].append(curr)
+        else:
+            if prev and prev.status == 'L' and \
+               not checkEqual(lkp(prev.qtd), slist, prev.qtd):
+                prev.qtd += curr.qtd
+                prev.next = curr.next
+                if curr.next and curr.next.status == 'L' and \
+                   not checkEqual(lkp(curr.next.qtd), slist, curr.next.qtd):
+                    prev.qtd += curr.next.qtd
+                    prev.next = curr.next.next
+            elif curr.next and curr.next.status == 'L' and \
+                 not checkEqual(lkp(curr.next.qtd), slist, curr.next.qtd):
+                curr.next.qtd += curr.qtd
+                curr.next.base -= curr.qtd
+                if prev:
+                    prev.next = curr.next
+                else:
+                    self.memmap.head = curr.next
+            else:
+                curr.status = 'L'
+        pg_to_ua = math.ceil(self.pg_size/self.ua)
+        base_page = proc.base//pg_to_ua
+        num_pages = proc.size//pg_to_ua
+        for i in range(num_pages):
+            frame = self.pages_table.get_frame(base_page+i)
+            if (frame != -1):
+                self.frames_table.reset_frame(frame)
+            self.pages_table.reset_page(base_page+i)
+        self.memmap.print_nodes()
+        self.print_table()
 
-    def analize_processes(self, proc_deque):
+    def analyze_processes(self, proc_deque):
+        """
+        Analyze the list of processes to get the most frequent sizes requested,
+        then created the base list that will be populated later with the references
+        for the blocks
+        """
         MAX_SIZE = 5
         plist = list(proc_deque)
         pg_to_ua = math.ceil(self.pg_size/self.ua)
@@ -314,14 +347,9 @@ class QuickFit(FreeSpaceManager):
         # If the most requested size is already the size of vmemory
         i = bst.bisect(self.fspc_sizes, self.total_memory)
         if i < len(self.fspc_sizes) and self.fspc_sizes[i] == self.total_memory:
-            self.fspc_ref[i].append(self.mlist.head)
+            self.fspc_ref[i].append(self.memmap.head)
 
 
-        """
-        print(self.fspc_sizes)
-        print(self.fspc_ref)
-        exit()
-        """
     @doc_inherit
     def print_table(self):
         super().print_table()

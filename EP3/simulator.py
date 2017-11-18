@@ -69,7 +69,7 @@ class Simulator(object):
         self.pmem_manager = pagination_managers[pmem_id](self.phys_memory,
                             self.ua_size, self.page_size, self.ptable, self.ftable)
         if fspc_id == 3: # Analysis of the processes if it's quick fit
-            self.fspc_manager.analize_processes(self.procs)
+            self.fspc_manager.analyze_processes(self.procs)
 
     def init_procs(self, t):
         """Allocate memory for all processes which arrived at time t"""
