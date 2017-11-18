@@ -226,13 +226,15 @@ class QuickFit(FreeSpaceManager):
         pos_slist = lkp(ua_used)
         print(f"Procurando: {ua_used}")
         self.mlist.print_nodes()
+        isFrequent = False
+        found = False
         if checkEqual(pos_slist, slist, ua_used) and rlist[pos_slist] != []:
             # If it's a frequent size AND there's free size available
-            node = rlist[p].pop()
+            node = rlist[pos_slist].pop()
             node.status = 'P'
+            isFrequent = True
         else: # Not a frequent size or not available, so manually find in the mlist
             curr = self.mlist.head
-            found = False
             ant = None # Previous node
             while curr and not found:
                 print("Vamos achar!")
@@ -254,33 +256,36 @@ class QuickFit(FreeSpaceManager):
                 if not found and curr:
                     ant = curr
                     curr = curr.next
-        if not found:
-            print("No memory available!")
-            exit()
-        if start_node != end_node: # Compress the multiple nodes into a big full node
-            full_node = LinkedList.Node('L', start_node.base, sz_found)
-            if fx_ant == None:
-                self.mlist.head = full_node
-            else:
-                fx_ant.next = full_node
-            full_node.next = end_node.next
-            start_node = full_node # The new start_node is this compressed node
-            self.mlist.print_nodes()
+        if not isFrequent:
+            if not found:
+                print("No memory available!")
+                exit()
+            if start_node != end_node: # Compress the multiple nodes into a big full node
+                full_node = LinkedList.Node('L', start_node.base, sz_found)
+                if fx_ant == None:
+                    self.mlist.head = full_node
+                else:
+                    fx_ant.next = full_node
+                full_node.next = end_node.next
+                start_node = full_node # The new start_node is this compressed node
+                self.mlist.print_nodes()
 
-        # This is equivalent to __ptable_alloc ...
-        new_node = LinkedList.Node('P', start_node.base, ua_used)
-        inipos = start_node.base
-        start_node.base += ua_used
-        start_node.qtd -= ua_used
-        new_node.next = start_node if start_node.qtd != 0 else start_node.next
-        if fx_ant == None:
-            self.mlist.head = new_node
+            # This is equivalent to __ptable_alloc ...
+            new_node = LinkedList.Node('P', start_node.base, ua_used)
+            inipos = start_node.base
+            start_node.base += ua_used
+            start_node.qtd -= ua_used
+            new_node.next = start_node if start_node.qtd != 0 else start_node.next
+            if fx_ant == None:
+                self.mlist.head = new_node
+            else:
+                fx_ant.next = new_node
+            if start_node.qtd != 0:
+                snode_pos = lkp(start_node.qtd)
+                if checkEqual(snode_pos, slist, start_node.qtd):
+                    rlist[snode_pos].append(start_node)
         else:
-            fx_ant.next = new_node
-        if start_node.qtd != 0:
-            snode_pos = lkp(start_node.qtd)
-            if checkEqual(snode_pos, slist, start_node.qtd):
-                rlist[snode_pos].append(start_node)
+            inipos = node.base
         proc.base = inipos
         proc.size = ua_used
         self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
