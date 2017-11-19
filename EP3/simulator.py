@@ -13,37 +13,10 @@ from freeSpace import BestFit, WorstFit, QuickFit
 from paginators import Optimal, FIFO, LRU2, LRU4
 from math import ceil
 from tables import PageTable, FrameTable
-from memsimWrapper import LinkedList
+from memsimWrapper import LinkedList, Process
 
 fspc_managers = [None, BestFit, WorstFit, QuickFit]
 pagination_managers = [None, Optimal, FIFO, LRU2, LRU4]
-
-class Process(object):
-    next_pid = 0
-    def __init__(self, vals, ua_size):
-        self.name = vals.pop(3)
-        self.mem_access = deque()
-        print(vals)
-        vals = list(map(int, vals))
-        self.t0 = vals[0]
-        self.tf = vals[1]
-        self.original_sz = vals[2] # Bytes
-        self.b  = ceil(vals[2]/ua_size)*ua_size # Bytes
-        self.pid = Process.next_pid
-        self.base = 0 # UA
-        self.size = 0 # UA
-        Process.next_pid += 1
-        for i in range(3, len(vals) - 1, 2):
-            self.mem_access.append((vals[i], vals[i + 1]))
-
-    def __repr__(self):
-        return f"<pid: {self.pid}>"
-
-    def __str__(self):
-        return f"{self.name} ([t0, tf] = ({self.t0}, {self.tf}), [size] : {self.b}, mem_acess : {self.mem_access}"
-
-    def reset_pids():
-        Process.next_pid = 0
 
 class Simulator(object):
 

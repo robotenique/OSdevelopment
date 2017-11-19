@@ -20,6 +20,7 @@ class MemoryShell(cmd.Cmd):
     def do_carrega(self, file):
         """Loads the file specified as argument for the simulation. Can be either relative or absolute path"""
         self.file = open(file, "r")
+        self.filename = file
         print(f"File \'{file}\' loaded!")
 
 
@@ -35,7 +36,7 @@ class MemoryShell(cmd.Cmd):
 
     def do_executa(self, interval):
         """Runs the simulator and prints the memory state in 'interval' to 'interval' seconds, together with the bitmap content of the memory state"""
-        sim = Simulator(self.file, self.fspc_id, self.pmem_id, interval)
+        sim = Simulator(open(self.filename, "r"), self.fspc_id, self.pmem_id, interval)
         sim.loop()
 
     def do_sai(self, arg):

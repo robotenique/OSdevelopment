@@ -12,7 +12,7 @@ import math
 import bisect as bst
 from abc import ABC, abstractmethod
 from collections import deque, Counter
-from memsimWrapper import doc_inherit, LinkedList
+from memsimWrapper import doc_inherit, LinkedList, Process
 
 
 #TODO: Implement the FreeSpaceManagers algorithms
@@ -107,6 +107,7 @@ class FreeSpaceManager(ABC):
             if (frame != -1):
                 pmem_manager.delete_frame(frame)
             self.pages_table.reset_page(base_page+i)
+        Process.pidQueue.appendleft(proc.pid)
         #self.print_table()
 
     def print_table(self):
@@ -202,6 +203,7 @@ class QuickFit(FreeSpaceManager):
     def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
         super().__init__(total_memory, ua, page_size, ptable, ftable, memmap)
         self.id = 3
+
     @doc_inherit
     def malloc(self, proc):
         real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
@@ -341,6 +343,7 @@ class QuickFit(FreeSpaceManager):
             self.pages_table.reset_page(base_page+i)
         self.memmap.print_nodes()
         self.print_table()
+        Process.pidQueue.appendleft(proc.pid)
         print(f"{slist}")
         print(f"{rlist}")
 
@@ -367,6 +370,10 @@ class QuickFit(FreeSpaceManager):
             self.fspc_ref[i].append(self.memmap.head)
 
     def reorder_references(self):
+        """
+        Reorder the references after a memory compression, adding the updated
+        nodes with frequent sizes to the quick fit list
+        """
         lkp = lambda s : bst.bisect_left(slist, s)
         checkEqual = lambda p, l, v : p < len(l) and l[p] == v
         slist = self.fspc_sizes

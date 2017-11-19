@@ -1,4 +1,6 @@
 from functools import wraps
+from collections import deque
+from math import ceil
 
 class DocInherit(object):
     """
@@ -80,3 +82,35 @@ class LinkedList(object):
             else:
                 print("")
             curr = curr.next
+
+
+class Process(object):
+    next_pid = 0
+    pidQueue = deque((i for i in range(128)))
+    def __init__(self, vals, ua_size):
+        self.name = vals.pop(3)
+        self.mem_access = deque()
+        print(vals)
+        vals = list(map(int, vals))
+        self.t0 = vals[0]
+        self.tf = vals[1]
+        self.original_sz = vals[2] # Bytes
+        self.b  = ceil(vals[2]/ua_size)*ua_size # Bytes
+        if len(Process.pidQueue) == 0:
+            print("Can't run more than 127 processes at the same time!")
+            exit()
+        self.pid = Process.pidQueue.pop()
+        self.base = 0 # UA
+        self.size = 0 # UA
+        Process.next_pid += 1
+        for i in range(3, len(vals) - 1, 2):
+            self.mem_access.append((vals[i], vals[i + 1]))
+
+    def __repr__(self):
+        return f"<pid: {self.pid}>"
+
+    def __str__(self):
+        return f"{self.name} ([t0, tf] = ({self.t0}, {self.tf}), [size] : {self.b}, mem_acess : {self.mem_access}"
+
+    def reset_pids():
+        Process.pidQueue = deque((i for i in range(128)))
