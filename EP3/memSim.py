@@ -10,6 +10,7 @@ This is the main file, with the interactive shell of the memory simulator.
 """
 import cmd, sys
 from simulator import Simulator
+import numpy as np
 #import readline
 
 class MemoryShell(cmd.Cmd):
@@ -47,9 +48,30 @@ class MemoryShell(cmd.Cmd):
         exit()
 
     def do_fullinit(self, arg):
-        self.file = open("input6.in", "r")
-        sim = Simulator(self.file, 3, 4, 10)
+        self.file = open("input7.in", "r")
+        sim = Simulator(self.file, 1, 1, 10)
         sim.loop()
+
+    def do_qinit(self, arg):
+        arg1, arg2 = map(int, arg.split())
+        self.file = open("input7.in", "r")
+        sim = Simulator(self.file, arg1, arg2, 10)
+        sim.loop()
+
+    def do_test(self, arg):
+        self.file = open("input7.in", "r")
+        alloc_times = []
+        esp, sub = map(int, arg.split())
+        for i in range(30):
+            self.file.seek(0)
+            sim = Simulator(self.file, esp, sub, 10)
+            sim.loop()
+            alloc_times.append(sim.fspc_manager.alloc_time*1000)
+        print("Page faults:", sim.pmem_manager.page_faults)
+        print("Alloc times:", alloc_times)
+        alloc_times = np.array(alloc_times)
+        print("Average alloc time:", alloc_times.mean(), "ms")
+        print("alloc time standard dev:", alloc_times.std(), "ms")
 
 
 if __name__ == '__main__':

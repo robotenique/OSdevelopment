@@ -13,6 +13,7 @@ import bisect as bst
 from abc import ABC, abstractmethod
 from collections import deque, Counter
 from memsimWrapper import doc_inherit, LinkedList, Process
+from time import time
 
 
 #TODO: Implement the FreeSpaceManagers algorithms
@@ -36,6 +37,7 @@ class FreeSpaceManager(ABC):
         self.frames_table = ftable
         debug_ptable(self.pages_table.table, self.pg_size)
         self.id = 0
+        self.alloc_time = 0
 
     @abstractmethod
     def malloc(self, proc):
@@ -58,7 +60,6 @@ class FreeSpaceManager(ABC):
     def __ptable_alloc(self, proc, node, ua_used, real_ua_used):
         """Allocate a given set of pages in the pages table and correctly
         adds to the memory list representation"""
-        print(node)
         if (not node):
             curr = self.memmap.head
             new_entry = LinkedList.Node('P', 0, ua_used, curr)
@@ -111,8 +112,8 @@ class FreeSpaceManager(ABC):
         #self.print_table()
 
     def print_table(self):
-        #debug_vmem(self.memmap)
-        #debug_ptable(self.pages_table.table, self.pg_size)
+        debug_vmem(self.memmap)
+        debug_ptable(self.pages_table.table, self.pg_size)
         pass
 
 class BestFit(FreeSpaceManager):
@@ -123,6 +124,8 @@ class BestFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
+        init_time = time()
+
         real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
 
         mem_conv = lambda u: u*self.ua
@@ -147,6 +150,7 @@ class BestFit(FreeSpaceManager):
 
         super()._FreeSpaceManager__ptable_alloc(proc, bf_prev, ua_used, real_ua_used)
         #self.print_table()
+        self.alloc_time += time() - init_time
 
     @doc_inherit
     def free(self, proc, pmem_manager):
@@ -166,6 +170,8 @@ class WorstFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
+        init_time = time()
+
         real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
 
         mem_conv = lambda u: u*self.ua
@@ -188,6 +194,7 @@ class WorstFit(FreeSpaceManager):
 
         super()._FreeSpaceManager__ptable_alloc(proc, wf_prev, ua_used, real_ua_used)
         #self.print_table()
+        self.alloc_time += time() - init_time
 
     @doc_inherit
     def free(self, proc, pmem_manager):
@@ -206,6 +213,8 @@ class QuickFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
+        init_time = time()
+
         real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
         slist = self.fspc_sizes
         rlist = self.fspc_ref
@@ -215,11 +224,11 @@ class QuickFit(FreeSpaceManager):
         pos_slist = lkp(ua_used)
         isFrequent = False
         found = False
-        print("")
-        print(f"Alocando {proc.name}, size = {ua_used}")
-        print(f"{slist}")
-        print(f"{rlist}")
-        self.memmap.print_nodes()
+        #print("")
+        #print(f"Alocando {proc.name}, size = {ua_used}")
+        #print(f"{slist}")
+        #print(f"{rlist}")
+        #self.memmap.print_nodes()
         if checkEqual(pos_slist, slist, ua_used) and rlist[pos_slist] != []:
             # If it's a frequent size AND there's free size available
             node = rlist[pos_slist].pop()
@@ -265,7 +274,7 @@ class QuickFit(FreeSpaceManager):
                     fx_ant.next = full_node
                 full_node.next = end_node.next
                 start_node = full_node # The new start_node is this compressed node
-                self.memmap.print_nodes()
+                #self.memmap.print_nodes()
             # This is equivalent to __ptable_alloc ...
             new_node = LinkedList.Node('P', start_node.base, ua_used)
             inipos = start_node.base
@@ -285,11 +294,12 @@ class QuickFit(FreeSpaceManager):
         proc.base = inipos
         proc.size = ua_used
         self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
-        print(f"Base found = {proc.base}")
-        self.memmap.print_nodes()
-        print(f"{slist}")
-        print(f"{rlist}")
-        print("")
+        self.alloc_time += time() - init_time
+        #print(f"Base found = {proc.base}")
+        #self.memmap.print_nodes()
+        #print(f"{slist}")
+        #print(f"{rlist}")
+        #print("")
         #debug_ptable(self.pages_table.table, self.pg_size)
 
 
@@ -301,11 +311,11 @@ class QuickFit(FreeSpaceManager):
         rlist = self.fspc_ref
         lkp = lambda s : bst.bisect_left(slist, s)
         checkEqual = lambda p, l, v : p < len(l) and l[p] == v
-        print("")
-        print(f"{slist}")
-        print(f"{rlist}")
-        print(f"Liberando {proc.name}, de base = {proc.base}")
-        self.memmap.print_nodes()
+        #print("")
+        #print(f"{slist}")
+        #print(f"{rlist}")
+        #print(f"Liberando {proc.name}, de base = {proc.base}")
+        #self.memmap.print_nodes()
 
         while curr and curr.base != proc.base:
             prev = curr
@@ -341,11 +351,11 @@ class QuickFit(FreeSpaceManager):
             if (frame != -1):
                 self.frames_table.reset_frame(frame)
             self.pages_table.reset_page(base_page+i)
-        self.memmap.print_nodes()
-        self.print_table()
+        #self.memmap.print_nodes()
+        #self.print_table()
         Process.pidQueue.appendleft(proc.pid)
-        print(f"{slist}")
-        print(f"{rlist}")
+        #print(f"{slist}")
+        #print(f"{rlist}")
 
 
     def analyze_processes(self, proc_deque):
@@ -377,11 +387,11 @@ class QuickFit(FreeSpaceManager):
         lkp = lambda s : bst.bisect_left(slist, s)
         checkEqual = lambda p, l, v : p < len(l) and l[p] == v
         slist = self.fspc_sizes
-        print("")
-        print("MEMÓRIA FOI COMPACTADA!")
-        self.memmap.print_nodes()
-        print(f"{slist}")
-        print(f"{self.fspc_ref}")
+        #print("")
+        #print("MEMÓRIA FOI COMPACTADA!")
+        #self.memmap.print_nodes()
+        #print(f"{slist}")
+        #print(f"{self.fspc_ref}")
         qlist = [len(self.fspc_ref[i]) for i in range(len(slist))]
         self.fspc_ref = [[] for _ in self.fspc_ref]
         end_node = self.memmap.head
@@ -413,10 +423,10 @@ class QuickFit(FreeSpaceManager):
                 self.fspc_ref[pos].append(new_node)
 
                 qtd -= 1
-        print("Após reorder_references")
-        self.memmap.print_nodes()
-        print(f"{slist}")
-        print(f"{self.fspc_ref}\n")
+        #print("Após reorder_references")
+        #self.memmap.print_nodes()
+        #print(f"{slist}")
+        #print(f"{self.fspc_ref}\n")
 
 
 

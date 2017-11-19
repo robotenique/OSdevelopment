@@ -3,10 +3,11 @@ from random import randint, sample
 from math import ceil
 
 INPUT = [
-    #ua       page_size  procs   comps   tf      max_dt   max_size   max_access
-    #----------------------------------------------------
-    [4,       8,         10,     2,      20,     6,       10,        3],
-    [4,      12,         64,     7,     200,    30,       48,       10]
+    #ua       page_size  procs      comps     tf        max_dt   max_size   max_access
+    #----------------------------------------------------------------------------------
+    [4,       8,         10,        2,        20,       6,       10,        3],
+    [4,      12,         64,        7,       200,      30,       48,       10],
+    [4,      16,        100,        3,       300,      30,       80,       15]
 ]
 
 class Proc:
@@ -69,10 +70,11 @@ def generate(ua, page_size, num_procs, num_comps, tf, max_dt, max_size, max_acce
 
 
 def main():
-    f = open("input6.in", "w+")
-    ua = INPUT[1][0]
-    page_size = INPUT[1][1]
-    pmax, fmax, lines = generate(*(INPUT[1]))
+    seed = 2   # The INPUT line the algorithm will use to generate the trace
+    f = open("input7.in", "w+")
+    ua = INPUT[seed][0]
+    page_size = INPUT[seed][1]
+    pmax, fmax, lines = generate(*(INPUT[seed]))
     vsize = ceil(pmax*1.5)*page_size
     psize = ceil(fmax*1.5)*page_size
     f.write(f"{psize} {vsize} {ua} {page_size}\n")

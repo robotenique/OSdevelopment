@@ -29,8 +29,8 @@ class Simulator(object):
         self.parse(input_file)
         if sum((p.original_sz for p in self.procs)) > self.virt_memory:
             print("Wrong pattern in input file!")
-        for i in self.procs:
-            print(i)
+        #for i in self.procs:
+        #    print(i)
         #self.memmap = [['L', 0, self.virt_memory//self.ua_size]]
         self.memmap = LinkedList()
         self.memmap.add_node("L", 0, self.virt_memory//self.ua_size)
@@ -79,8 +79,8 @@ class Simulator(object):
         act_procs = {}
         t = 0
         while (len(self.procs) != 0 or len(act_procs) != 0):
-            if t%10 == 0:
-                print("t =", t)
+            #if t%10 == 0:
+            #    print("t =", t)
             while (len(self.procs) != 0 and self.procs[0].t0 == t):
                 proc = self.procs.popleft()
                 act_procs[proc.pid] = proc
@@ -99,7 +99,7 @@ class Simulator(object):
                 self.compact(act_procs)
                 self.compact_list.popleft()
             self.pmem_manager.update()
-            self.fspc_manager.print_table()
+            #self.fspc_manager.print_table()
             #self.pmem_manager.print_table()
             t += 1
         print("Page faults:", self.pmem_manager.page_faults)
