@@ -109,10 +109,9 @@ class FreeSpaceManager(ABC):
         #self.print_table()
 
     def print_table(self):
-        debug_vmem(self.memmap)
-        debug_ptable(self.pages_table.table, self.pg_size)
-
-
+        #debug_vmem(self.memmap)
+        #debug_ptable(self.pages_table.table, self.pg_size)
+        pass
 
 class BestFit(FreeSpaceManager):
     @doc_inherit
@@ -155,8 +154,6 @@ class BestFit(FreeSpaceManager):
     def print_table(self):
         super().print_table()
 
-
-
 class WorstFit(FreeSpaceManager):
 
     @doc_inherit
@@ -196,8 +193,6 @@ class WorstFit(FreeSpaceManager):
     def print_table(self):
         super().print_table()
 
-
-
 class QuickFit(FreeSpaceManager):
 
     @doc_inherit
@@ -215,6 +210,9 @@ class QuickFit(FreeSpaceManager):
         pos_slist = lkp(ua_used)
         isFrequent = False
         found = False
+        print("")
+        print(f"Alocando {proc.name}, size = {ua_used}")
+        self.memmap.print_nodes()
         if checkEqual(pos_slist, slist, ua_used) and rlist[pos_slist] != []:
             # If it's a frequent size AND there's free size available
             node = rlist[pos_slist].pop()
@@ -280,7 +278,12 @@ class QuickFit(FreeSpaceManager):
         proc.base = inipos
         proc.size = ua_used
         self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
-        debug_ptable(self.pages_table.table, self.pg_size)
+        print(f"Base found = {proc.base}")
+        self.memmap.print_nodes()
+        print(f"{slist}")
+        print(f"{rlist}")
+        print("")
+        #debug_ptable(self.pages_table.table, self.pg_size)
 
 
     @doc_inherit
@@ -291,6 +294,12 @@ class QuickFit(FreeSpaceManager):
         rlist = self.fspc_ref
         lkp = lambda s : bst.bisect_left(slist, s)
         checkEqual = lambda p, l, v : p < len(l) and l[p] == v
+        print("")
+        print(f"{slist}")
+        print(f"{rlist}")
+        print(f"Liberando {proc.name}, de base = {proc.base}")
+        self.memmap.print_nodes()
+
         while curr and curr.base != proc.base:
             prev = curr
             curr = curr.next
@@ -356,17 +365,10 @@ class QuickFit(FreeSpaceManager):
 
 # TODO: remove this at the end
 def debug_vmem(mmem):
-    #curr = mmem.head
-    #print(curr)
-    #while curr.next:
-    #    print(f"{curr} -> ", end="")
-    #    curr = curr.next
-    #for i in range(len(mmem) - 1):
-    #    print(f"{mmem[i]} -> ", end="")
-    #print(curr)
     mmem.print_nodes()
 
 def debug_ptable(ptable, page_size):
+    return
     print(f"== PAGES TABLE == -> {page_size}")
     for i, p in zip(range(len(ptable)), ptable):
         print(i, p)

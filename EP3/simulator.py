@@ -106,7 +106,8 @@ class Simulator(object):
         act_procs = {}
         t = 0
         while (len(self.procs) != 0 or len(act_procs) != 0):
-            print("t =", t)
+            if t%10 == 0:
+                print("t =", t)
             while (len(self.procs) != 0 and self.procs[0].t0 == t):
                 proc = self.procs.popleft()
                 act_procs[proc.pid] = proc

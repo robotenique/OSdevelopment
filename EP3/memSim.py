@@ -25,12 +25,12 @@ class MemoryShell(cmd.Cmd):
 
     def do_espaco(self, num):
         """Informs the memory simulator the algorithm to run for free space management."""
-        self.fspc_id = num
+        self.fspc_id = int(num)
         print(f"Free space manager loaded: \'{num}\'.")
 
     def do_substitui(self, num):
         """Informs the memory simulator the algorithm to run for pages substitution."""
-        self.pmem_id = num
+        self.pmem_id = int(num)
         print(f"Page substitution manager loaded: \'{num}\'.")
 
     def do_executa(self, interval):

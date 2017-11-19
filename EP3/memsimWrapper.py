@@ -80,8 +80,3 @@ class LinkedList(object):
             else:
                 print("")
             curr = curr.next
-
-l = LinkedList()
-l.add_node("L", 0, 4)
-l.add_node("L", 0, 33)
-l.print_nodes()

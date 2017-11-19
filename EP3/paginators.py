@@ -322,6 +322,7 @@ class LRU4(PaginationManager):
 
 
 def debug_ptable(ptable, page_size, aux_bits=None):
+    return
     if (not aux_bits):
         aux_bits = [None for i in range(len(ptable))]
     print(f"== FRAMES TABLE == -> {page_size}")
