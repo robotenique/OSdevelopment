@@ -93,6 +93,7 @@ class Optimal(PaginationManager):
         frame = self.pages_table.get_frame(page)
         print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
+            self.page_faults += 1
             frame = self.get_new_frame()
             out_page = self.frames_table.get_page(frame)
             if (out_page != -1):
@@ -152,6 +153,7 @@ class FIFO(PaginationManager):
         frame = self.pages_table.get_frame(page)
         print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
+            self.page_faults += 1
             frame = self.get_new_frame()
             out_page = self.frames_table.get_page(frame)
             if (out_page != -1):
@@ -310,7 +312,7 @@ class LRU4(PaginationManager):
 
     @doc_inherit
     def delete_frame(self, frame):
-        self.timer = 0
+        self.timer[frame] = 0
         super().delete_frame(frame)
 
     @doc_inherit
