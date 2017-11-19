@@ -10,6 +10,7 @@ This is the main file, with the interactive shell of the memory simulator.
 """
 import cmd, sys
 from simulator import Simulator
+import readline
 
 class MemoryShell(cmd.Cmd):
     intro = "Welcome to the Memory Simulator! Type help or ? to list commands.\n"
