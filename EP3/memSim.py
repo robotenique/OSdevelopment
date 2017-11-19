@@ -10,7 +10,7 @@ This is the main file, with the interactive shell of the memory simulator.
 """
 import cmd, sys
 from simulator import Simulator
-import readline
+#import readline
 
 class MemoryShell(cmd.Cmd):
     intro = "Welcome to the Memory Simulator! Type help or ? to list commands.\n"
@@ -46,8 +46,8 @@ class MemoryShell(cmd.Cmd):
         exit()
 
     def do_fullinit(self, arg):
-        self.file = open("input3.in", "r")
-        sim = Simulator(self.file, 1, 4, 10)
+        self.file = open("input6.in", "r")
+        sim = Simulator(self.file, 3, 4, 10)
         sim.loop()
 
 

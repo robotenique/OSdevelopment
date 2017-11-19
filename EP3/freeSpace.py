@@ -284,7 +284,7 @@ class QuickFit(FreeSpaceManager):
 
 
     @doc_inherit
-    def free(self, proc):
+    def free(self, proc, pmem_manager):
         curr = self.memmap.head
         prev = None
         slist = self.fspc_sizes
