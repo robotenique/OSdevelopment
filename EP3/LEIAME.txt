@@ -1,0 +1,8 @@
+João Gabriel Basi Nº USP: 9793801
+Juliano Garcia de Oliveira Nº USP: 9277086
+
+MAC0422
+20/11/17
+
+O algoritmo foi implementado em python, portanto, para executar basta rodar
+o comando "python memSim.py" no terminal
