@@ -28,10 +28,3 @@ class Teste(object):
     #@coisa
     def testador(self, a):
         print(a)
-
-"""g = Teste()
-g.testador("HMMM")"""
-
-from collections import deque
-f = Filho()
-f.coisinha()

@@ -35,6 +35,7 @@ class FreeSpaceManager(ABC):
         self.pages_table = ptable
         self.frames_table = ftable
         debug_ptable(self.pages_table.table, self.pg_size)
+        self.id = 0
 
     @abstractmethod
     def malloc(self, proc):
@@ -117,6 +118,7 @@ class BestFit(FreeSpaceManager):
     @doc_inherit
     def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
         super().__init__(total_memory, ua, page_size, ptable, ftable, memmap)
+        self.id = 1
 
     @doc_inherit
     def malloc(self, proc):
@@ -159,6 +161,7 @@ class WorstFit(FreeSpaceManager):
     @doc_inherit
     def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
         super().__init__(total_memory, ua, page_size, ptable, ftable, memmap)
+        self.id = 2
 
     @doc_inherit
     def malloc(self, proc):
@@ -198,7 +201,7 @@ class QuickFit(FreeSpaceManager):
     @doc_inherit
     def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
         super().__init__(total_memory, ua, page_size, ptable, ftable, memmap)
-
+        self.id = 3
     @doc_inherit
     def malloc(self, proc):
         real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
@@ -212,6 +215,8 @@ class QuickFit(FreeSpaceManager):
         found = False
         print("")
         print(f"Alocando {proc.name}, size = {ua_used}")
+        print(f"{slist}")
+        print(f"{rlist}")
         self.memmap.print_nodes()
         if checkEqual(pos_slist, slist, ua_used) and rlist[pos_slist] != []:
             # If it's a frequent size AND there's free size available
@@ -336,6 +341,9 @@ class QuickFit(FreeSpaceManager):
             self.pages_table.reset_page(base_page+i)
         self.memmap.print_nodes()
         self.print_table()
+        print(f"{slist}")
+        print(f"{rlist}")
+
 
     def analyze_processes(self, proc_deque):
         """
@@ -357,6 +365,52 @@ class QuickFit(FreeSpaceManager):
         i = bst.bisect(self.fspc_sizes, self.total_memory)
         if i < len(self.fspc_sizes) and self.fspc_sizes[i] == self.total_memory:
             self.fspc_ref[i].append(self.memmap.head)
+
+    def reorder_references(self):
+        lkp = lambda s : bst.bisect_left(slist, s)
+        checkEqual = lambda p, l, v : p < len(l) and l[p] == v
+        slist = self.fspc_sizes
+        print("")
+        print("MEMÓRIA FOI COMPACTADA!")
+        self.memmap.print_nodes()
+        print(f"{slist}")
+        print(f"{self.fspc_ref}")
+        qlist = [len(self.fspc_ref[i]) for i in range(len(slist))]
+        self.fspc_ref = [[] for _ in self.fspc_ref]
+        end_node = self.memmap.head
+        ant_end = None # Previous node
+        while end_node.next:
+            ant_end = end_node
+            end_node = end_node.next
+
+        for pos, sz in enumerate(slist):
+            qtd = qlist[pos]
+            while qtd != 0:
+                if end_node.qtd < sz:
+                    break
+                elif checkEqual(lkp(end_node.qtd), slist, end_node.qtd) and \
+                end_node in self.fspc_ref[lkp(end_node.qtd)]:
+                    break
+                new_node = LinkedList.Node('L', end_node.base, sz)
+                end_node.base += sz
+                end_node.qtd -= sz
+                if ant_end:
+                    ant_end.next = new_node
+                else:
+                    self.memmap.head = new_node
+                if end_node.qtd != 0:
+                    new_node.next = end_node
+                    ant_end = new_node
+                else:
+                    end_node = new_node
+                self.fspc_ref[pos].append(new_node)
+
+                qtd -= 1
+        print("Após reorder_references")
+        self.memmap.print_nodes()
+        print(f"{slist}")
+        print(f"{self.fspc_ref}\n")
+
 
 
     @doc_inherit

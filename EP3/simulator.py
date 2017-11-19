@@ -192,3 +192,6 @@ class Simulator(object):
             if (pg_to_frame != -1):
                 self.ftable.set_page(pg_to_frame, page)
             page += 1
+        # If it's quick fit, reset and re-add to the quick sizes list
+        if self.fspc_manager.id == 3:
+            self.fspc_manager.reorder_references()
