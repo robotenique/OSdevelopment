@@ -6,7 +6,7 @@ class DocInherit(object):
     """
     Docstring inheriting method descriptor
 
-    The class itself is also used as a decorator
+    The class itself is used as a decorator
     """
 
     def __init__(self, mthd):
@@ -99,7 +99,7 @@ class Process(object):
         if len(Process.pidQueue) == 0:
             print("Can't run more than 127 processes at the same time!")
             exit()
-        self.pid = Process.pidQueue.pop()
+        self.pid = Process.pidQueue.popleft()
         self.base = 0 # UA
         self.size = 0 # UA
         Process.next_pid += 1

@@ -16,8 +16,6 @@ from memsimWrapper import doc_inherit, LinkedList, Process
 from time import time
 
 
-#TODO: Implement the FreeSpaceManagers algorithms
-
 class FreeSpaceManager(ABC):
 
     def __init__(self, total_memory, ua, page_size, ptable, ftable, memmap):
@@ -434,7 +432,7 @@ class QuickFit(FreeSpaceManager):
     def print_table(self):
         super().print_table()
 
-# TODO: remove this at the end
+# For debug reasons
 def debug_vmem(mmem):
     mmem.print_nodes()
 
