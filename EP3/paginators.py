@@ -24,7 +24,6 @@ class PaginationManager(ABC):
         self.ua = ua
         self.pages_table = ptable
         self.frames_table = ftable
-        self.page_faults = 0
 
     @abstractmethod
     def update(self):
@@ -91,9 +90,7 @@ class Optimal(PaginationManager):
         pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
-        #print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
-            self.page_faults += 1
             frame = self.get_new_frame()
             out_page = self.frames_table.get_page(frame)
             if (out_page != -1):
@@ -106,7 +103,6 @@ class Optimal(PaginationManager):
             self.next_access[frame] = math.inf
         else:
             self.next_access[frame] = proc.mem_access[1][1] - self.time
-        #print(f"Process: {proc.pid}\nFrame accessed: {frame}")
 
     @doc_inherit
     def swap_frames(self, frame1, frame2):
@@ -135,8 +131,6 @@ class FIFO(PaginationManager):
 
     @doc_inherit
     def update(self):
-        #print(self.fifo)
-        #self.print_table()
         pass
 
     @doc_inherit
@@ -152,9 +146,7 @@ class FIFO(PaginationManager):
         pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
-        #print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
-            self.page_faults += 1
             frame = self.get_new_frame()
             out_page = self.frames_table.get_page(frame)
             if (out_page != -1):
@@ -164,8 +156,6 @@ class FIFO(PaginationManager):
             self.frames_table.write_stream(frame_pos, page, self.pages_table.read(page))
             self.pages_table.set_frame(page, frame)
             self.fifo.append(frame)
-        #print(f"Process: {proc.pid}\nFrame accessed: {frame}")
-        #self.print_table()
 
     @doc_inherit
     def swap_frames(self, frame1, frame2):
@@ -219,9 +209,7 @@ class LRU2(PaginationManager):
         pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
-        #print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
-            self.page_faults += 1
             frame = self.get_new_frame()
             out_page = self.frames_table.get_page(frame)
             if (out_page != -1):
@@ -235,8 +223,7 @@ class LRU2(PaginationManager):
         num ^= (1 << frame)                # Turns off the 'frame' bit
         for i in range(len(self.matrix)):
             self.matrix[i] &= num
-        #print(f"Process: {proc.pid}\nFrame accessed: {frame}")
-        #self.print_table()
+
 
     @doc_inherit
     def swap_frames(self, frame1, frame2):
@@ -274,7 +261,6 @@ class LRU4(PaginationManager):
                 self.timer[i] >>= 1
             self.timer[i] += self.ADD_BIT if (self.bit_r[i]) else 0
             self.bit_r[i] = False
-        #self.print_table()
 
 
     @doc_inherit
@@ -292,9 +278,7 @@ class LRU4(PaginationManager):
         pos = proc.mem_access[0][0]
         page = (proc.base*self.ua + pos)//self.page_size
         frame = self.pages_table.get_frame(page)
-        #print(f"pid {proc.pid}, base {proc.base}, pos {pos}, page size {self.page_size}, page {page}")
         if (frame == -1):
-            self.page_faults += 1
             frame = self.get_new_frame()
             out_page = self.frames_table.get_page(frame)
             if (out_page != -1):

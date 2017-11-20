@@ -91,12 +91,9 @@ class Simulator(object):
             self.pmem_manager.update()
             # Print the bitmap
             if self.interval and t%self.interval == 0:
-                self.__print_bitmap(act_procs)            
+                self.__print_bitmap(act_procs)
 
-            #self.fspc_manager.print_table()
-            #self.pmem_manager.print_table()
             t += 1
-        print("Page faults:", self.pmem_manager.page_faults)
 
     def compact(self, procs):
         """Compacts the physical and virtual memories"""
