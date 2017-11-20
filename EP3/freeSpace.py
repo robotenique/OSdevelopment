@@ -33,7 +33,6 @@ class FreeSpaceManager(ABC):
         self.memmap = memmap
         self.pages_table = ptable
         self.frames_table = ftable
-        debug_ptable(self.pages_table.table, self.pg_size)
         self.id = 0
 
     @abstractmethod
@@ -109,7 +108,7 @@ class FreeSpaceManager(ABC):
 
     def print_table(self):
         debug_vmem(self.memmap)
-        debug_ptable(self.pages_table.table, self.pg_size)
+        debug_ptable_fspc(self.pages_table.table, self.pg_size)
         pass
 
 class BestFit(FreeSpaceManager):
@@ -393,10 +392,10 @@ class QuickFit(FreeSpaceManager):
 
 # For debug reasons
 def debug_vmem(mmem):
+    return
     mmem.print_nodes()
 
-def debug_ptable(ptable, page_size):
-    return
+def debug_ptable_fspc(ptable, page_size):
     print(f"== PAGES TABLE == -> {page_size}")
     for i, p in zip(range(len(ptable)), ptable):
         print(i, p)

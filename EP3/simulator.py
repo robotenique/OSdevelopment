@@ -85,8 +85,10 @@ class Simulator(object):
                 self.compact(act_procs)
                 self.compact_list.popleft()
             self.pmem_manager.update()
-            # Print the bitmap
+            # Print the bitmap and memory state
             if self.interval and t%self.interval == 0:
+                self.fspc_manager.print_table()
+                self.pmem_manager.print_table()
                 self.__print_bitmap(act_procs)
 
             t += 1
