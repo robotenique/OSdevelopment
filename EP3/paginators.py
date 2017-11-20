@@ -117,7 +117,7 @@ class Optimal(PaginationManager):
 
     @doc_inherit
     def print_table(self):
-        debug_ptable(self.frames_table.table, self.page_size, self.next_access)
+        debug_ptable(self.pages_table, self.frames_table.table, self.page_size, self.next_access)
 
 
 class FIFO(PaginationManager):
@@ -175,7 +175,7 @@ class FIFO(PaginationManager):
 
     @doc_inherit
     def print_table(self):
-        debug_ptable(self.frames_table.table, self.page_size)
+        debug_ptable(self.pages_table, self.frames_table.table, self.page_size)
 
 
 
@@ -238,7 +238,8 @@ class LRU2(PaginationManager):
 
     @doc_inherit
     def print_table(self):
-        debug_ptable(self.frames_table.table, self.page_size, list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.matrix)))
+        debug_ptable(self.pages_table, self.frames_table.table, self.page_size,
+        list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.matrix)))
 
 
 class LRU4(PaginationManager):
@@ -302,15 +303,15 @@ class LRU4(PaginationManager):
 
     @doc_inherit
     def print_table(self):
-        debug_ptable(self.frames_table.table, self.page_size, list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.timer)))
+        debug_ptable(self.pages_table, self.frames_table.table, self.page_size,
+        list(map(lambda a: format(a, f"#0{self.tot_pages}b"), self.timer)))
 
 
 
-def debug_ptable(ptable, page_size, aux_bits=None):
-    return
+def debug_ptable(real_ptable, ptable, page_size, aux_bits=None):
     if (not aux_bits):
         aux_bits = [None for i in range(len(ptable))]
-    print(f"== FRAMES TABLE == -> {page_size}")
-    for p, bm in zip(ptable, aux_bits):
-        print("[", p, " aux:", bm, "]")
+    print(f"== FRAMES TABLE (Physical Memory) ==")
+    for i in range(len(ptable)):
+        print("[pid: ", real_ptable.get_pid(ptable[i].page), "]")
     print("")

@@ -26,7 +26,7 @@ class PageTable(object):
             self.lruC = 0
 
         def __str__(self):
-            return f"[{str(self.pid).zfill(3)}  frame: {self.page_frame}  p: {self.bit_p}]"
+            return f"[pid: {str(self.pid).zfill(3)}]"
 
     def __init__(self, total_memory, page_size):
         """Constructor method"""
@@ -93,7 +93,7 @@ class FrameTable(object):
             self.lruC = 0
 
         def __str__(self):
-            return f"Page: {str(self.page).zfill(3)}"
+            return f"{str(self.page).zfill(3)}"
 
     def __init__(self, total_memory, page_size):
         self.table = [self.PageFrame() for _ in range(ceil(total_memory/page_size))]

@@ -396,7 +396,7 @@ def debug_vmem(mmem):
     mmem.print_nodes()
 
 def debug_ptable_fspc(ptable, page_size):
-    print(f"== PAGES TABLE == -> {page_size}")
-    for i, p in zip(range(len(ptable)), ptable):
-        print(i, p)
+    print("== PAGES TABLE == (Virtual Memory)")
+    for p in ptable:
+        print(p)
     print("")
