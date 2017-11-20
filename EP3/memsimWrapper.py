@@ -1,3 +1,12 @@
+"""
+@author: João Gabriel Basi Nº USP: 9793801
+@author: Juliano Garcia de Oliveira Nº USP: 9277086
+
+MAC0422
+20/11/17
+
+Implementation of class decorator for documentation, Process and the Linked list
+"""
 from functools import wraps
 from collections import deque
 from math import ceil

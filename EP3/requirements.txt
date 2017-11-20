@@ -1,2 +1,1 @@
-re
-readline
+python 3.6

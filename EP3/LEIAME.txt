@@ -4,5 +4,5 @@ Juliano Garcia de Oliveira Nº USP: 9277086
 MAC0422
 20/11/17
 
-O algoritmo foi implementado em python, portanto, para executar basta rodar
-o comando "python memSim.py" no terminal
+O algoritmo foi implementado em python 3.6, portanto, para executar basta rodar
+o comando "python memSim.py" no terminal.
