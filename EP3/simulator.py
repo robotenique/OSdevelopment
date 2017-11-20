@@ -29,9 +29,6 @@ class Simulator(object):
         self.parse(input_file)
         if sum((p.original_sz for p in self.procs)) > self.virt_memory:
             print("Wrong pattern in input file!")
-        #for i in self.procs:
-        #    print(i)
-        #self.memmap = [['L', 0, self.virt_memory//self.ua_size]]
         self.memmap = LinkedList()
         self.memmap.add_node("L", 0, self.virt_memory//self.ua_size)
         self.ptable = PageTable(self.virt_memory, self.page_size)
@@ -83,7 +80,6 @@ class Simulator(object):
             for p in list(act_procs.values()):
                 if (p.tf == t):
                     self.fspc_manager.free(act_procs.pop(p.pid), self.pmem_manager)
-                    #act_procs.pop(p.pid)
             if (len(self.compact_list) != 0 and self.compact_list[0] == t):
                 # Compacts physical and virtual memory
                 self.compact(act_procs)

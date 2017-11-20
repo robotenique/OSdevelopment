@@ -99,7 +99,6 @@ class Process(object):
     def __init__(self, vals, ua_size):
         self.name = vals.pop(3)
         self.mem_access = deque()
-        #print(vals)
         vals = list(map(int, vals))
         self.t0 = vals[0]
         self.tf = vals[1]

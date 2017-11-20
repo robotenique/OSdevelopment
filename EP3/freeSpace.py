@@ -143,12 +143,10 @@ class BestFit(FreeSpaceManager):
             exit()
 
         super()._FreeSpaceManager__ptable_alloc(proc, bf_prev, ua_used, real_ua_used)
-        #self.print_table()
 
     @doc_inherit
     def free(self, proc, pmem_manager):
         super().free(proc, pmem_manager)
-        #pass
 
     @doc_inherit
     def print_table(self):
@@ -184,7 +182,6 @@ class WorstFit(FreeSpaceManager):
             exit()
 
         super()._FreeSpaceManager__ptable_alloc(proc, wf_prev, ua_used, real_ua_used)
-        #self.print_table()
 
     @doc_inherit
     def free(self, proc, pmem_manager):
