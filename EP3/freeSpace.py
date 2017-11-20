@@ -124,8 +124,6 @@ class BestFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
-        init_time = time()
-
         real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
 
         mem_conv = lambda u: u*self.ua
@@ -134,6 +132,7 @@ class BestFit(FreeSpaceManager):
         bf_prev = None
         curr = self.memmap.head
         prev = None
+        init_time = time()
         while curr:
             if curr.status == 'L' and ua_used <= curr.qtd and curr.qtd < bf_val:
                 bf_node = curr
@@ -143,6 +142,7 @@ class BestFit(FreeSpaceManager):
                     break
             prev = curr
             curr = curr.next
+        self.alloc_time += time() - init_time
 
         if bf_node == None:
             print("No space left! Exiting simulator...")
@@ -150,7 +150,6 @@ class BestFit(FreeSpaceManager):
 
         super()._FreeSpaceManager__ptable_alloc(proc, bf_prev, ua_used, real_ua_used)
         #self.print_table()
-        self.alloc_time += time() - init_time
 
     @doc_inherit
     def free(self, proc, pmem_manager):
@@ -170,8 +169,6 @@ class WorstFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
-        init_time = time()
-
         real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
 
         mem_conv = lambda u: u*self.ua
@@ -180,6 +177,7 @@ class WorstFit(FreeSpaceManager):
         wf_prev = None
         curr = self.memmap.head
         prev = None
+        init_time = time()
         while curr:
             if curr.status == 'L' and ua_used <= curr.qtd and curr.qtd > wf_val:
                 wf_node = curr
@@ -187,6 +185,7 @@ class WorstFit(FreeSpaceManager):
                 wf_val = curr.qtd
             prev = curr
             curr = curr.next
+        self.alloc_time += time() - init_time
 
         if wf_node == None:
             print("No space left! Exiting simulator...")
@@ -194,7 +193,6 @@ class WorstFit(FreeSpaceManager):
 
         super()._FreeSpaceManager__ptable_alloc(proc, wf_prev, ua_used, real_ua_used)
         #self.print_table()
-        self.alloc_time += time() - init_time
 
     @doc_inherit
     def free(self, proc, pmem_manager):
@@ -213,8 +211,6 @@ class QuickFit(FreeSpaceManager):
 
     @doc_inherit
     def malloc(self, proc):
-        init_time = time()
-
         real_ua_used, pg_to_ua, pgs_used, ua_used = super()._FreeSpaceManager__calc_units(proc)
         slist = self.fspc_sizes
         rlist = self.fspc_ref
@@ -229,6 +225,7 @@ class QuickFit(FreeSpaceManager):
         #print(f"{slist}")
         #print(f"{rlist}")
         #self.memmap.print_nodes()
+        init_time = time()
         if checkEqual(pos_slist, slist, ua_used) and rlist[pos_slist] != []:
             # If it's a frequent size AND there's free size available
             node = rlist[pos_slist].pop()
@@ -256,6 +253,7 @@ class QuickFit(FreeSpaceManager):
                 if not found and curr:
                     ant = curr
                     curr = curr.next
+        self.alloc_time += time() - init_time
         if not isFrequent:
             if not found:
                 print("No memory available!")
@@ -294,7 +292,6 @@ class QuickFit(FreeSpaceManager):
         proc.base = inipos
         proc.size = ua_used
         self.pages_table.palloc(proc.pid, inipos*self.ua, real_ua_used*self.ua)
-        self.alloc_time += time() - init_time
         #print(f"Base found = {proc.base}")
         #self.memmap.print_nodes()
         #print(f"{slist}")
