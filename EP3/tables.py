@@ -15,9 +15,7 @@ from memoryWriter import MemoryWriter
 MINUS_1 = 255
 
 class PageTable(object):
-    # TODO: At the end, set back to original file
-    #VMEMORY_PATH = "/tmp/ep3.vir"
-    VMEMORY_PATH = "ep3.vir"
+    VMEMORY_PATH = "/tmp/ep3.vir"
     class Page(object):
         page_size = 0
         def __init__(self):
@@ -86,9 +84,7 @@ class PageTable(object):
         self.file.close()
 
 class FrameTable(object):
-    # TODO: At the end, set back to original file
-    #PMEMORY_PATH = "/tmp/ep3.mem"
-    PMEMORY_PATH = "ep3.mem"
+    PMEMORY_PATH = "/tmp/ep3.mem"
     class PageFrame(object):
         page_size = 0
         def __init__(self):

@@ -1,3 +1,12 @@
+"""
+@author: João Gabriel Basi Nº USP: 9793801
+@author: Juliano Garcia de Oliveira Nº USP: 9277086
+
+MAC0422
+20/11/17
+
+Implementation of class decorator for documentation, Process and the Linked list
+"""
 from functools import wraps
 from collections import deque
 from math import ceil
@@ -6,7 +15,7 @@ class DocInherit(object):
     """
     Docstring inheriting method descriptor
 
-    The class itself is also used as a decorator
+    The class itself is used as a decorator
     """
 
     def __init__(self, mthd):
@@ -99,7 +108,7 @@ class Process(object):
         if len(Process.pidQueue) == 0:
             print("Can't run more than 127 processes at the same time!")
             exit()
-        self.pid = Process.pidQueue.pop()
+        self.pid = Process.pidQueue.popleft()
         self.base = 0 # UA
         self.size = 0 # UA
         Process.next_pid += 1

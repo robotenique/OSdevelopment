@@ -23,6 +23,8 @@ class MemoryWriter(object):
     def write_stream(self, pos, stream):
         self.file.seek(pos)
         self.file.write(stream)
+        self.file.flush()
+
 
     def write(self, pid, pos, size):
         """Writes a pid 'size' times, beginning at 'pos'"""
@@ -34,6 +36,8 @@ class MemoryWriter(object):
         """Cleans a page"""
         self.file.seek(page*self.page_size)
         self.file.write(bytes((MINUS_1 for i in range(self.page_size))))
+        self.file.flush()
+
 
     def close(self):
         """Closes the file"""

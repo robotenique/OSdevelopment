@@ -44,14 +44,6 @@ class Simulator(object):
         if fspc_id == 3: # Analysis of the processes if it's quick fit
             self.fspc_manager.analyze_processes(self.procs)
 
-    def init_procs(self, t):
-        """Allocate memory for all processes which arrived at time t"""
-        init_list = self.init_dict.get(t)
-        if init_list:
-            for p in init_list:
-                self.fspc_manager.malloc(p)
-
-
     def parse(self, input_file):
         """Parse the input file"""
         for num_line, line in enumerate(input_file):
@@ -79,8 +71,6 @@ class Simulator(object):
         act_procs = {}
         t = 0
         while (len(self.procs) != 0 or len(act_procs) != 0):
-            #if t%10 == 0:
-            #    print("t =", t)
             while (len(self.procs) != 0 and self.procs[0].t0 == t):
                 proc = self.procs.popleft()
                 act_procs[proc.pid] = proc
@@ -99,6 +89,10 @@ class Simulator(object):
                 self.compact(act_procs)
                 self.compact_list.popleft()
             self.pmem_manager.update()
+            # Print the bitmap
+            if self.interval and t%self.interval == 0:
+                self.__print_bitmap(act_procs)            
+
             #self.fspc_manager.print_table()
             #self.pmem_manager.print_table()
             t += 1
@@ -168,3 +162,17 @@ class Simulator(object):
         # If it's quick fit, reset and re-add to the quick sizes list
         if self.fspc_manager.id == 3:
             self.fspc_manager.reorder_references()
+
+    def __print_bitmap(self, act_procs):
+        """
+        Print the bitmap of the current memory state
+        """
+        curr = self.memmap.head
+        ndict = {p.base : p.pid for p in act_procs.values()}
+        while curr:
+            if curr.status == 'L':
+                print("-1 "*curr.qtd*self.ua_size, end="")
+            else:
+                print(f"{ndict[curr.base]} "*curr.qtd*self.ua_size, end="")
+            curr = curr.next
+        print("")
