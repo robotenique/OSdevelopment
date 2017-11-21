@@ -26,6 +26,7 @@ The simulator constructs a *dependency graph* each step, and calculates the *Str
 </p>
 
 ## 3. **memory-simulator**
+
 Simulator of virtual and physical memory allocation, using a trace file for the processes list (each process has a default size and make some memory access in a given time). The *memory-simulator* implements the following algorithms:
 
 **Virtual memory allocation**:
