@@ -1,5 +1,10 @@
 # OSdevelopment
-Development related to operational systems algorithms and techniques.
+Development related to Operating Sytems algorithms and techniques:
+- Threads
+- Barriers
+- Parallel programming synchronization
+- Process Scheduling
+- Memory Management
 
 ## 1. **CPU-schedulers**
 This app consists of two parts: 
